@@ -1674,6 +1674,8 @@ func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accoun
 		currentMonthData.SalaryIncomeThisMonth = se.currentMonthFlows.SalaryIncomeThisMonth
 		currentMonthData.BonusIncomeThisMonth = se.currentMonthFlows.BonusIncomeThisMonth
 		currentMonthData.RSUIncomeThisMonth = se.currentMonthFlows.RSUIncomeThisMonth
+		currentMonthData.SocialSecurityIncomeThisMonth = se.currentMonthFlows.SocialSecurityIncomeThisMonth
+		currentMonthData.PensionIncomeThisMonth = se.currentMonthFlows.PensionIncomeThisMonth
 		currentMonthData.HousingExpensesThisMonth = se.currentMonthFlows.HousingExpensesThisMonth
 		currentMonthData.TransportationExpensesThisMonth = se.currentMonthFlows.TransportationExpensesThisMonth
 		currentMonthData.FoodExpensesThisMonth = se.currentMonthFlows.FoodExpensesThisMonth

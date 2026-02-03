@@ -339,6 +339,9 @@ func (se *SimulationEngine) runQueueSimulationLoopWithTrace(input SimulationInpu
 		if se.currentMonthReturns != nil {
 			currentMonthData.Returns = *se.currentMonthReturns
 		}
+		// Copy retirement income tracking
+		currentMonthData.SocialSecurityIncomeThisMonth = se.currentMonthFlows.SocialSecurityIncomeThisMonth
+		currentMonthData.PensionIncomeThisMonth = se.currentMonthFlows.PensionIncomeThisMonth
 		monthlyDataList = append(monthlyDataList, *currentMonthData)
 
 		// Capture comprehensive state for final month

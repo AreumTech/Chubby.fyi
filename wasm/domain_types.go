@@ -579,6 +579,8 @@ type MonthlyDataSimulation struct {
 	CapitalGainsTaxPaidThisMonth        float64           `json:"capitalGainsTaxPaidThisMonth"`
 	DividendsReceivedThisMonth          DividendsReceived `json:"dividendsReceivedThisMonth"`
 	InterestIncomeThisMonth             float64           `json:"interestIncomeThisMonth"`
+	SocialSecurityIncomeThisMonth       float64           `json:"socialSecurityIncomeThisMonth"`
+	PensionIncomeThisMonth              float64           `json:"pensionIncomeThisMonth"`
 
 	// Tax tracking fields for year-to-date calculations
 	OrdinaryIncomeForTaxYTD           float64 `json:"ordinaryIncomeForTaxYTD"`

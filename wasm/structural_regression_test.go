@@ -1,10 +1,25 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
+	"os"
 	"testing"
 )
+
+// loadGoldenPlan loads a SimulationInput from a JSON file
+func loadGoldenPlan(path string) (*SimulationInput, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+	var input SimulationInput
+	if err := json.Unmarshal(data, &input); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+	}
+	return &input, nil
+}
 
 // StructuralSnapshot represents key structural aspects of a simulation result
 type StructuralSnapshot struct {

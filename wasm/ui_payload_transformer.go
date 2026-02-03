@@ -978,6 +978,7 @@ func generateCashFlowAnalysis(monthlyData []MonthlyDataSimulation, lastMonth Mon
 	shortTermCapitalGains := 0.0
 	longTermCapitalGains := 0.0
 	socialSecurity := 0.0
+	pension := 0.0
 
 	// Detailed expense breakdowns
 	housingExpenses := 0.0
@@ -1001,6 +1002,8 @@ func generateCashFlowAnalysis(monthlyData []MonthlyDataSimulation, lastMonth Mon
 		rsuVesting += month.RSUIncomeThisMonth
 		qualifiedDividends += month.DividendsReceivedThisMonth.Qualified
 		interestIncome += month.InterestIncomeThisMonth
+		socialSecurity += month.SocialSecurityIncomeThisMonth
+		pension += month.PensionIncomeThisMonth
 		// Note: Capital gains would come from annual tax calculation, not monthly
 
 		// Aggregate detailed expenses
@@ -1017,14 +1020,10 @@ func generateCashFlowAnalysis(monthlyData []MonthlyDataSimulation, lastMonth Mon
 	longTermCapitalGains = lastMonth.LTCGForTaxYTD
 	shortTermCapitalGains = lastMonth.STCGForTaxYTD
 
-	// TODO: Add social security tracking to MonthlyDataSimulation
-	// For now, social security remains 0
-	socialSecurity = 0.0
-
 	// Calculate totals for each category
 	employmentTotal := baseSalary + bonus + rsuVesting
 	investmentTotal := qualifiedDividends + interestIncome + shortTermCapitalGains + longTermCapitalGains
-	retirementTotal := socialSecurity  // + pension + annuities + withdrawals (when available)
+	retirementTotal := socialSecurity + pension // + annuities + withdrawals (when available)
 
 	netCashFlow := totalIncome - totalExpenses - totalTaxes
 	savingsRate := 0.0
@@ -1060,8 +1059,8 @@ func generateCashFlowAnalysis(monthlyData []MonthlyDataSimulation, lastMonth Mon
 			Retirement: RetirementIncome{
 				Total:          retirementTotal,
 				SocialSecurity: socialSecurity,
-				Pension:        0.0, // TODO: Track in monthly data
-				Annuities:      0.0, // TODO: Track in monthly data
+				Pension:        pension,
+				Annuities:      0.0, // TODO: Track annuities in monthly data
 				Withdrawals:    divestmentProceeds, // Asset liquidations to fund spending
 			},
 			DivestmentProceeds: divestmentProceeds,
