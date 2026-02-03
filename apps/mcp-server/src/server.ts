@@ -26,6 +26,68 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// =============================================================================
+// SECURITY: Rate limiting + Cloudflare support
+// =============================================================================
+
+// Rate limiting config
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 100; // per window per IP
+
+// In-memory rate limit store (use Redis in production for multi-instance)
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+/**
+ * Get client IP, respecting Cloudflare headers
+ */
+function getClientIp(req: IncomingMessage): string {
+  // Cloudflare
+  const cfIp = req.headers['cf-connecting-ip'];
+  if (cfIp) return Array.isArray(cfIp) ? cfIp[0] : cfIp;
+
+  // Standard proxy header
+  const xff = req.headers['x-forwarded-for'];
+  if (xff) {
+    const first = Array.isArray(xff) ? xff[0] : xff.split(',')[0];
+    return first.trim();
+  }
+
+  // Direct connection
+  return req.socket.remoteAddress || 'unknown';
+}
+
+/**
+ * Check rate limit for an IP
+ * Returns true if request is allowed, false if rate limited
+ */
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitStore.get(ip);
+
+  if (!record || now > record.resetAt) {
+    // New window
+    rateLimitStore.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+
+  record.count++;
+  return true;
+}
+
+// Cleanup old rate limit entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of rateLimitStore) {
+    if (now > record.resetAt) {
+      rateLimitStore.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000);
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import {
@@ -119,7 +181,10 @@ function generateFragmentUrl(result: any): string | null {
 
     return `${WIDGET_VIEWER_BASE_URL}/viewer#d=${base64}`;
   } catch (err) {
-    console.error('Failed to generate fragment URL:', err);
+    console.error('❌ Failed to generate fragment URL:');
+    console.error('   Error:', err);
+    console.error('   pako available:', typeof pako);
+    console.error('   pako.deflate:', typeof pako.deflate);
     return null;
   }
 }
@@ -322,7 +387,7 @@ Ask "what if income changed?" or "what if I retired at X?" to explore.`;
       } else if (phase === 'decumulation') {
         // Mode C: Lead with runway, mention flexibility if available
         const runwayText = breachPct <= 2
-          ? `No constraint observed within ${horizonYears}-year horizon`
+          ? `Assets stay funded through ${horizonYears}-year horizon`
           : `${formatRunwayText(result.mc?.runwayP50)} median runway`;
 
         const flexNote = result.flexibilityCurve && result.flexibilityCurve.length > 0
@@ -331,13 +396,13 @@ Ask "what if income changed?" or "what if I retired at X?" to explore.`;
 
         textSummary = `Simulation complete (${result.runId}).
 
-${runwayText}. ${breachPct}% of paths reached constraint.${flexNote}
+${runwayText}. ${breachPct}% of paths depleted assets.${flexNote}
 
 Ask "what if spending increased?" to explore scenarios.`;
       } else {
         // Mode B (transition): Show both runway and trajectory note
         const runwayText = breachPct === 0
-          ? `≥${horizonYears} years (no constraint observed)`
+          ? `≥${horizonYears} years (stays funded)`
           : `${formatRunwayText(result.mc?.runwayP50)} median, ${formatRunwayText(result.mc?.runwayP10)}–${formatRunwayText(runwayP75)} range`;
 
         textSummary = `Simulation complete (${result.runId}).
@@ -345,7 +410,7 @@ Ask "what if spending increased?" to explore scenarios.`;
 Runway: ${runwayText}
 Shows growth phase then retirement drawdown.
 
-The widget shows trajectories and constraint timing.`;
+The widget shows trajectories and when assets may be depleted.`;
       }
 
       // Sample trajectory at key intervals for model narration
@@ -481,14 +546,20 @@ The widget shows trajectories and constraint timing.`;
 
       // Generate fragment URL for Claude connector (privacy-first)
       // The fragment payload is NEVER sent to the server
+      console.error(`🔗 Generating fragment URL...`);
       const fragmentUrl = generateFragmentUrl(result);
+      console.error(`🔗 Fragment URL result: ${fragmentUrl ? 'SUCCESS (' + fragmentUrl.length + ' chars)' : 'FAILED (null)'}`);
 
       // Build text content with visualization link for Claude
       // Claude ignores _meta, so we include the link in the text content
       let textContent = textSummary;
       if (fragmentUrl) {
-        textContent += `\n\n📊 [View interactive visualization](${fragmentUrl})\n\n_Your data never leaves your browser._`;
+        textContent += `\n\n📊 [See your projections →](${fragmentUrl})\n\n_Your data never leaves your browser._`;
+        console.error(`📝 Added projections link to response`);
+      } else {
+        console.error(`⚠️ No fragment URL - visualization link NOT added`);
       }
+      console.error(`📤 Final text content length: ${textContent.length} chars`);
 
       return {
         content: [
@@ -641,6 +712,16 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
 
   const url = new URL(req.url, `http://${req.headers.host ?? 'localhost'}`);
 
+  // Rate limiting (skip for health check)
+  if (url.pathname !== '/health') {
+    const clientIp = getClientIp(req);
+    if (!checkRateLimit(clientIp)) {
+      res.setHeader('Retry-After', '60');
+      res.writeHead(429).end(JSON.stringify({ error: 'rate_limited', retry_after: 60 }));
+      return;
+    }
+  }
+
   // CORS preflight
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
@@ -652,15 +733,14 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
     return;
   }
 
-  // Root path - return server info for ChatGPT connector discovery
+  // Root path - minimal info (don't reveal secret path)
   if (req.method === 'GET' && url.pathname === '/') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Content-Type', 'application/json');
     res.writeHead(200).end(JSON.stringify({
-      name: 'areumfire-mcp-server',
+      name: 'chubby-mcp-server',
       version: '1.0.0',
-      description: 'AreumFire Monte Carlo financial simulation',
-      mcp_endpoint: '/mcp'
+      status: 'ok'
     }));
     return;
   }
@@ -736,13 +816,14 @@ httpServer.on('clientError', (err: Error, socket) => {
 });
 
 httpServer.listen(PORT, () => {
-  console.log(`\nAreumFire MCP Server (SSE) listening on http://localhost:${PORT}`);
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`Chubby MCP Server listening on http://localhost:${PORT}`);
+  console.log(`${'='.repeat(60)}`);
+  console.log(`\n🔐 Security: ${RATE_LIMIT_MAX_REQUESTS} req/${RATE_LIMIT_WINDOW_MS / 1000}s per IP (Cloudflare supported)`);
   console.log(`\nEndpoints:`);
-  console.log(`  GET  http://localhost:${PORT}${SSE_PATH}              - SSE stream for MCP`);
-  console.log(`  POST http://localhost:${PORT}${POST_PATH}?sessionId=X - POST messages`);
-  console.log(`  GET  http://localhost:${PORT}/health                  - Health check`);
-  console.log(`  GET  http://localhost:${PORT}/widget                  - Widget preview (ChatGPT)`);
-  console.log(`  GET  http://localhost:${PORT}/viewer                  - Fragment viewer (Claude)`);
-  console.log(`  GET  http://localhost:${PORT}/test                    - Test harness`);
-  console.log(`\nSessions: ${sessions.size}`);
+  console.log(`   MCP:     http://localhost:${PORT}${SSE_PATH}`);
+  console.log(`   Health:  http://localhost:${PORT}/health`);
+  console.log(`   Widget:  http://localhost:${PORT}/widget`);
+  console.log(`   Viewer:  http://localhost:${PORT}/viewer`);
+  console.log(`${'='.repeat(60)}\n`);
 });

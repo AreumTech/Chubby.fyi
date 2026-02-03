@@ -9,7 +9,7 @@
      * CSS Custom Properties - Aligned with OpenAI Apps SDK UI
      * ========================================================================= */
     :root {
-      /* Removed color-scheme: light dark - it forces browser canvas backgrounds that break transparency */
+      color-scheme: light dark;
 
       /* =====================================================================
        * Typography Scale (Apps SDK aligned)
@@ -205,8 +205,11 @@
       width: 100%;
       max-width: 100%; /* Fill container width - host handles constraints */
       box-sizing: border-box;
-      /* Transparent outer container - internal sections have their own backgrounds */
-      background: transparent;
+      /* Rounded card styling */
+      border-radius: var(--radius-3xl); /* 20px */
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
     /* Display mode variations */
@@ -665,6 +668,19 @@
       background: rgba(0, 0, 0, 0.03);
       border-radius: 4px;
       line-height: 1.4;
+    }
+
+    /* Screen reader only - visually hidden but accessible */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
     }
 
     .copy-summary-btn {
@@ -1673,10 +1689,11 @@
       <div class="traj-explanation" id="traj-explanation" style="display: none; font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: var(--space-2);"></div>
       <div id="trajectory-bars"></div>
       <div class="traj-legend">
-        <div class="traj-legend-item" title="P10–P50: Conservative to typical outcomes"><span class="traj-legend-swatch range"></span> Conservative → Typical</div>
-        <div class="traj-legend-item" title="P50 = median outcome across all simulated paths"><span class="traj-legend-swatch p50"></span> Median (P50)</div>
+        <div class="traj-legend-item" title="The bar shows the range from harder scenarios (left edge) to typical (right edge). 10% of outcomes fall below the left edge."><span class="traj-legend-swatch range"></span> Harder → Typical</div>
+        <div class="traj-legend-item" title="The median: half of simulated outcomes are better, half are worse"><span class="traj-legend-swatch p50"></span> Typical Outcome</div>
       </div>
-      <div class="traj-hint">Tap a year to see the math</div>
+      <div class="traj-legend-note" style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-1);" title="Each age shows percentiles across all simulated paths at that point — not one continuous 'typical path' over time">Percentiles recalculated at each age</div>
+      <div class="traj-hint">Tap an age to see the math</div>
       <div id="traj-horizon-note" class="traj-horizon-note" style="display: none;"></div>
     </div>
 
@@ -1690,7 +1707,7 @@
     </div> -->
 
     <!-- Year Inspector -->
-    <div class="inspector" id="inspector" role="dialog" aria-labelledby="inspector-title">
+    <div class="inspector" id="inspector" role="dialog" aria-modal="true" aria-labelledby="inspector-title">
       <div class="inspector-header">
         <span class="inspector-title" id="inspector-title">Year 2035 (Age 60)</span>
         <button class="inspector-close" id="inspector-close" aria-label="Close inspector" type="button">×</button>
@@ -1704,20 +1721,25 @@
     <details class="collapsible assumptions-details" id="assumptions-details">
       <summary>
         <span class="assumptions-summary" id="assumptions-summary">
-          <span>~7% returns</span>
+          <span>Stocks 7% / Bonds 4%</span>
           <span>~2.5% inflation</span>
           <span>No tax</span>
         </span>
       </summary>
       <div class="assumptions-expanded" id="assumptions-expanded">
         <div class="assumptions-section">
-          <div class="assumptions-section-title">Returns Model</div>
+          <div class="assumptions-section-title">Returns Model (nominal)</div>
           <div class="assumptions-section-content">
-            Geometric Brownian Motion with historical parameters:
             <ul>
               <li>Equities: ~7% mean annual return, ~18% volatility</li>
               <li>Bonds: ~4% mean annual return, ~6% volatility</li>
             </ul>
+            <div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-2);">
+              Higher volatility means a wider spread between "Harder" and "Optimistic" outcomes over time.
+            </div>
+            <div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-1); font-style: italic;">
+              These are long-run illustrative assumptions — not a prediction of future performance.
+            </div>
           </div>
         </div>
         <div class="assumptions-section">
@@ -1737,9 +1759,9 @@
 
     <!-- Footer -->
     <div class="footer" id="footer">
-      <span id="run-id">—</span>
+      <span id="run-id" title="Simulation ID — use this to reference or share this run">—</span>
       <span>through Age <span id="horizon-age">—</span></span>
-      <button id="copy-summary-btn" class="copy-summary-btn" title="Copy summary" aria-label="Copy summary"></button>
+      <button id="copy-summary-btn" class="copy-summary-btn" title="Copy summary" aria-label="Copy summary"><span class="sr-only">Copy summary</span></button>
       <details class="footer-advanced">
         <summary>Advanced</summary>
         <div class="footer-advanced-content">
@@ -1758,8 +1780,10 @@
 
     function applyTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme || 'light');
-      // Don't set colorScheme - it forces browser to apply default canvas background
-      // which breaks transparency in dark mode
+      document.documentElement.style.colorScheme = theme || 'light';
+      // Override browser's default canvas background that colorScheme applies
+      document.documentElement.style.background = 'transparent';
+      document.body.style.background = 'transparent';
       console.log('[AreumFire Widget] Theme:', theme);
     }
 
@@ -1929,6 +1953,34 @@
       return 0;
     }
 
+    // Find the first age where a constraint marker would fire (pctPathsFunded < 50%)
+    // Returns { age, pctDepleted } or null if no constraint fires
+    function getFirstConstraintAge(d) {
+      const trajectory = d.netWorthTrajectory || d.mc?.netWorthTrajectory || [];
+      const currentAge = d.inputs?.currentAge || 35;
+
+      for (const pt of trajectory) {
+        const pctPathsFunded = pt.pctPathsFunded ?? pt.survivalRate;
+        const p50 = pt.p50 || 0;
+
+        // Same logic as renderTrajectory: constraint fires when funded < 50% or p50 <= 0
+        const isConstrained = pctPathsFunded !== undefined
+          ? pctPathsFunded < 0.5
+          : p50 <= 0;
+
+        if (isConstrained) {
+          const monthOffset = pt.monthOffset || pt.month || 0;
+          const age = currentAge + Math.floor(monthOffset / 12);
+          const pctDepleted = pctPathsFunded !== undefined
+            ? Math.round((1 - pctPathsFunded) * 100)
+            : null;
+          return { age, pctDepleted };
+        }
+      }
+
+      return null;
+    }
+
     function renderDuration(d) {
       const pd = d.planDuration;
       const horizonMonths = d.inputs?.horizonMonths || 360;
@@ -1973,30 +2025,81 @@
       const answerEl = document.getElementById('duration-answer');
       const noteEl = document.getElementById('duration-note');
 
-      if (saturated) {
+      // Get ending assets to check if "saturated" is meaningful
+      const p50Assets = getMedianEndingAssets(d);
+      const annualSpending = d.inputs?.annualSpending || 0;
+
+      // Check if a constraint marker will appear in the trajectory
+      // This prevents saying "stays funded" when trajectory shows a constraint warning
+      const firstConstraint = getFirstConstraintAge(d);
+
+      // If technically saturated but ending with near-zero assets, show constrained view instead
+      // "Near-zero" = less than 1 year of spending or less than $10k
+      const nearZeroThreshold = Math.max(annualSpending, 10000);
+
+      // NOT effectively saturated if:
+      // 1. P50 assets at end are near-zero, OR
+      // 2. A constraint marker will fire in the trajectory
+      const effectivelySaturated = saturated && p50Assets > nearZeroThreshold && !firstConstraint;
+
+      if (effectivelySaturated) {
         // MODE: Plan Coverage (saturated case)
         // Different header and framing when plan never runs out
         labelEl.textContent = 'Plan Coverage';
         questionEl.style.display = 'none'; // No question needed - statement mode
 
-        const p50Assets = getMedianEndingAssets(d);
-
         // Calculate spending multiplier (pure arithmetic, not advice)
-        const annualSpending = d.inputs?.annualSpending || 0;
         const spendingMultiple = annualSpending > 0 ? Math.round(p50Assets / annualSpending) : null;
         const multiplierLine = spendingMultiple ?
           '<div class="duration-multiplier">≈ ' + spendingMultiple + '× current annual spending</div>' : '';
 
         answerEl.innerHTML =
           '<div class="duration-saturated">' +
-            '<div class="duration-saturated-headline" title="No spending constraint observed within the simulated window">This plan stays funded through Age ' + horizonAge + '</div>' +
+            '<div class="duration-saturated-headline" title="Assets remain positive through the entire simulation window">This plan stays funded through Age ' + horizonAge + '</div>' +
             '<div class="duration-saturated-details">(end of simulation)</div>' +
             '<div class="duration-saturated-assets">' +
-              '<span title="P50 = median outcome across all simulated paths">Typical assets at that age: <strong>~' + fmt(p50Assets) + '</strong></span>' +
+              '<span title="Half of simulated outcomes are better, half are worse">Typical assets at that age: <strong>~' + fmt(p50Assets) + '</strong></span>' +
               multiplierLine +
             '</div>' +
             '<div class="duration-horizon-note">' +
               'The simulation stops at Age ' + horizonAge + '. Outcomes beyond are not modeled.' +
+            '</div>' +
+          '</div>';
+        noteEl.style.display = 'none';
+      } else if (saturated && firstConstraint) {
+        // MODE: Constraint within saturated horizon
+        // P50 runway reaches horizon, but a significant portion of paths hit constraint earlier
+        labelEl.textContent = 'Plan Duration';
+        questionEl.style.display = 'none';
+
+        const constraintNote = firstConstraint.pctDepleted
+          ? 'In ' + firstConstraint.pctDepleted + '% of scenarios, assets are depleted by Age ' + firstConstraint.age + '.'
+          : 'In most scenarios, assets are depleted by Age ' + firstConstraint.age + '.';
+
+        answerEl.innerHTML =
+          '<div class="duration-saturated">' +
+            '<div class="duration-saturated-headline" title="Median path reaches horizon, but many paths deplete earlier">Plan reaches Age ' + horizonAge + ' in favorable scenarios</div>' +
+            '<div class="duration-saturated-details" style="color: var(--color-warning, #d97706);">' + constraintNote + '</div>' +
+            '<div class="duration-saturated-assets">' +
+              '<span title="Half of simulated outcomes are better, half are worse">Typical ending assets: <strong>~' + fmt(p50Assets) + '</strong></span>' +
+            '</div>' +
+          '</div>';
+        noteEl.style.display = 'none';
+      } else if (saturated && p50Assets <= nearZeroThreshold) {
+        // MODE: Marginal Coverage (technically saturated but ending near $0)
+        // Show a more nuanced message
+        labelEl.textContent = 'Plan Coverage';
+        questionEl.style.display = 'none';
+
+        answerEl.innerHTML =
+          '<div class="duration-saturated">' +
+            '<div class="duration-saturated-headline" title="Assets last through the simulation but are nearly depleted">This plan reaches Age ' + horizonAge + ' with minimal reserves</div>' +
+            '<div class="duration-saturated-details">(end of simulation)</div>' +
+            '<div class="duration-saturated-assets">' +
+              '<span title="Half of simulated outcomes are better, half are worse">Typical assets at that age: <strong>~' + fmt(p50Assets) + '</strong></span>' +
+            '</div>' +
+            '<div class="duration-horizon-note" style="color: var(--color-warning, #d97706);">' +
+              'Assets are nearly exhausted by horizon. Consider reducing spending or extending income.' +
             '</div>' +
           '</div>';
         noteEl.style.display = 'none';
@@ -2020,8 +2123,8 @@
           '<div class="duration-constrained">' +
             '<div class="duration-saturated-headline">This plan runs out around:</div>' +
             '<ul class="duration-outcomes">' +
-              '<li class="typical" title="P50 = median runway across all simulated paths"><span class="age">Age ' + mostAge + '</span> in a typical outcome</li>' +
-              '<li title="P10 = 10% of simulated paths hit constraint earlier than this"><span class="age">Age ' + earlierAge + '</span> in harder scenarios</li>' +
+              '<li class="typical" title="Half of simulated outcomes last longer, half run out sooner"><span class="age">Age ' + mostAge + '</span> in a typical outcome</li>' +
+              '<li title="In 10% of simulated paths, assets are depleted by this age"><span class="age">Age ' + earlierAge + '</span> in harder scenarios</li>' +
             '</ul>' +
             '<div class="duration-note">After this, baseline spending would become unsustainable.</div>' +
             causalNote +
@@ -2155,16 +2258,28 @@
         return;
       }
 
-      // Detect if assets grow despite spending (counterintuitive case)
+      // Detect phase and provide driver-aware explanation
       const firstPoint = trajectory[0];
       const lastPoint = trajectory[trajectory.length - 1];
       const startAssets = firstPoint?.p50 || d.inputs?.investableAssets || 0;
       const endAssets = lastPoint?.p50 || 0;
       const annualSpending = d.inputs?.annualSpending || 0;
+      const annualIncome = d.inputs?.expectedIncome || d.inputs?.annualIncome || 0;
 
-      // Show explanation if: assets grow AND user has meaningful spending
-      if (endAssets > startAssets && annualSpending > 0) {
-        explanationEl.textContent = 'Assets grow because expected investment returns exceed withdrawals.';
+      // Determine phase: accumulation (saving) vs decumulation (spending down)
+      const isAccumulating = annualIncome > annualSpending;
+      const assetsGrow = endAssets > startAssets;
+
+      // Show phase-appropriate explanation
+      if (assetsGrow && annualSpending > 0) {
+        if (isAccumulating) {
+          explanationEl.textContent = 'This scenario is in accumulation: modeled income exceeds spending, so assets rise from ongoing contributions. Market returns add uncertainty.';
+        } else {
+          explanationEl.textContent = 'Assets grow because expected investment returns exceed withdrawals.';
+        }
+        explanationEl.style.display = 'block';
+      } else if (!assetsGrow && annualSpending > annualIncome) {
+        explanationEl.textContent = 'This scenario is in decumulation: spending exceeds modeled income, so withdrawals fund the gap. Market returns drive how quickly assets change.';
         explanationEl.style.display = 'block';
       } else {
         explanationEl.style.display = 'none';
@@ -2251,7 +2366,14 @@
         // Once constraint is hit, show marker and stop - no point showing $0 repeatedly
         if (isConstrained) {
           if (!constraintMarkerShown) {
-            html += '<div class="traj-constraint-marker">⚠️ Spending constraint reached at Age ' + age + '</div>';
+            // Show percentage of paths that have depleted, if available
+            const depletedPct = pctPathsFunded !== undefined
+              ? Math.round((1 - pctPathsFunded) * 100)
+              : null;
+            const depletedText = depletedPct !== null
+              ? '⚠️ In ' + depletedPct + '% of scenarios, assets depleted by Age ' + age
+              : '⚠️ In most scenarios, assets depleted by Age ' + age;
+            html += '<div class="traj-constraint-marker">' + depletedText + '</div>';
             constraintMarkerShown = true;
           }
           return; // Skip rendering $0 rows
@@ -2263,9 +2385,9 @@
 
         const rowClass = age >= LONG_HORIZON_AGE ? 'traj-row long-horizon' : 'traj-row';
 
-        // Tooltip shows P75 (optimistic) on demand
-        const tooltipText = 'Age ' + age + ': P10 ' + fmt(p10) + ' · P50 ' + fmt(p50) + ' · P75 (optimistic) ' + fmt(p75);
-        const ariaLabel = 'Age ' + age + ', median net worth ' + fmt(p50) + '. Tap to view details.';
+        // Tooltip shows all three scenarios
+        const tooltipText = 'Age ' + age + ': Harder ' + fmt(p10) + ' · Typical ' + fmt(p50) + ' · Optimistic ' + fmt(p75) + ' (reflects stronger markets in this model)';
+        const ariaLabel = 'Age ' + age + ', median net worth ' + fmt(p50) + '. Press Enter or tap to view details.';
 
         // After age 65: show only P50 marker (long-horizon uncertainty)
         // Before age 65: show P10→P50 range bar with P50 marker
@@ -2284,10 +2406,10 @@
         '</div>';
       });
 
-      // Add explanatory note if constraint was reached
+      // Add explanatory note if assets depleted
       if (constraintMarkerShown) {
         html += '<div class="traj-constraint-note">' +
-          'Baseline spending becomes unsustainable at this point.' +
+          'At this point, assets are exhausted and spending can no longer be sustained.' +
         '</div>';
       }
 
@@ -2295,7 +2417,7 @@
       const hasLongHorizon = sortedAges.some(a => a >= LONG_HORIZON_AGE);
       if (hasLongHorizon && !constraintMarkerShown) {
         html += '<div class="traj-long-horizon-note">' +
-          'After 65: Long-horizon outcomes vary widely; only the median is shown. Hover for optimistic case.' +
+          'After 65, range bars are hidden because outcome spread becomes very wide. Only the median is shown. Tap any row for full percentiles.' +
         '</div>';
       }
 
@@ -2676,7 +2798,7 @@
       const inspector = document.getElementById('inspector');
       const year = (data.startYear || 2024) + yearOffset;
 
-      document.getElementById('inspector-title').textContent = 'Age ' + age + ' — What happens this year';
+      document.getElementById('inspector-title').innerHTML = 'Age ' + age + ' — What happens this year<div style="font-size: var(--font-size-2xs); font-weight: normal; color: var(--color-text-muted); margin-top: 2px;">One simulated path (example, not typical)</div>';
 
       // Find snapshot
       const snaps = data.annualSnapshots || [];
@@ -2735,7 +2857,7 @@
               '<div class="minimal-ledger-row" style="font-weight: 500; color: var(--color-text-tertiary); font-size: var(--font-size-2xs); text-transform: uppercase; letter-spacing: 0.3px; padding-bottom: var(--space-2);">Net Worth at This Age</div>' +
               '<div class="minimal-ledger-row total"><span>Typical outcome</span><span>' + (isConstrained ? '$0 ⚠️' : fmt(p50)) + '</span></div>' +
               '<div class="minimal-ledger-row"><span>Harder scenarios</span><span>' + fmt(p10) + '</span></div>' +
-              (isConstrained ? '<div style="margin-top: var(--space-2); padding: var(--space-2); background: rgba(217, 115, 13, 0.1); border-radius: 4px; font-size: var(--font-size-2xs); color: #d9730d;">Spending constraint reached — baseline spending exceeds available resources at this age.</div>' : '') +
+              (isConstrained ? '<div style="margin-top: var(--space-2); padding: var(--space-2); background: rgba(217, 115, 13, 0.1); border-radius: 4px; font-size: var(--font-size-2xs); color: #d9730d;">Assets depleted — spending exceeded available resources. Paths showing $0 have exhausted all funds.</div>' : '') +
               '<div style="margin-top: var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--color-border-subtle); font-size: var(--font-size-2xs); color: var(--color-text-tertiary);">' +
                 'Detailed cash flow not available for this year.' +
               '</div>' +

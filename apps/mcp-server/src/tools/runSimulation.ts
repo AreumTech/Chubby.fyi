@@ -532,13 +532,15 @@ function validateContributions(params: RunSimulationParams): string[] {
 /**
  * Validate Social Security configuration
  * Returns array of validation errors (empty if valid)
+ * @param params - Simulation parameters
+ * @param effectiveHorizon - Computed horizon in months (accounts for maxAge)
  */
-function validateSocialSecurity(params: RunSimulationParams): string[] {
+function validateSocialSecurity(params: RunSimulationParams, effectiveHorizon: number): string[] {
   const errors: string[] = [];
   if (!params.socialSecurity) return errors;
 
   const { claimingAge, monthlyBenefit } = params.socialSecurity;
-  const horizonMonths = params.horizonMonths || 360;
+  const horizonMonths = effectiveHorizon;
 
   if (claimingAge < 62 || claimingAge > 70) {
     errors.push('socialSecurity.claimingAge must be 62-70');
@@ -551,8 +553,9 @@ function validateSocialSecurity(params: RunSimulationParams): string[] {
   // Allow claimingAge < currentAge (already claiming) - monthOffset will be clamped to 0
   if (params.currentAge) {
     const monthsUntilClaiming = Math.max(0, (claimingAge - params.currentAge) * 12);
+    const horizonEndAge = params.currentAge + Math.floor(horizonMonths / 12);
     if (monthsUntilClaiming >= horizonMonths) {
-      errors.push(`socialSecurity.claimingAge ${claimingAge} is beyond simulation horizon`);
+      errors.push(`socialSecurity.claimingAge ${claimingAge} is beyond simulation horizon (ends at age ${horizonEndAge}). Set maxAge >= ${claimingAge + 1} to include SS.`);
     }
   }
 
@@ -629,12 +632,14 @@ function validateIncomeStreams(params: RunSimulationParams): string[] {
 /**
  * Validate Roth conversions configuration
  * Returns array of validation errors (empty if valid)
+ * @param params - Simulation parameters
+ * @param effectiveHorizon - Computed horizon in months (accounts for maxAge)
  */
-function validateRothConversions(params: RunSimulationParams): string[] {
+function validateRothConversions(params: RunSimulationParams, effectiveHorizon: number): string[] {
   const errors: string[] = [];
   if (!params.rothConversions) return errors;
 
-  const horizonMonths = params.horizonMonths || 360;
+  const horizonMonths = effectiveHorizon;
   const horizonYears = Math.floor(horizonMonths / 12);
 
   for (let i = 0; i < params.rothConversions.length; i++) {
@@ -1518,7 +1523,7 @@ export async function handleRunSimulation(
     }
 
     // Validate Social Security (if provided)
-    const ssErrors = validateSocialSecurity(params);
+    const ssErrors = validateSocialSecurity(params, effectiveHorizon);
     if (ssErrors.length > 0) {
       throw new SimulationError(
         ErrorCode.INVALID_RANGE,
@@ -1528,7 +1533,7 @@ export async function handleRunSimulation(
     }
 
     // Validate Roth conversions (if provided)
-    const rothErrors = validateRothConversions(params);
+    const rothErrors = validateRothConversions(params, effectiveHorizon);
     if (rothErrors.length > 0) {
       throw new SimulationError(
         ErrorCode.INVALID_RANGE,

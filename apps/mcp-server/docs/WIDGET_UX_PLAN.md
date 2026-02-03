@@ -66,6 +66,71 @@ Based on continued "life story" scenario testing.
   - Generates ASCII-friendly text summary
   - Copy to clipboard for pasting elsewhere
 
+### Round 7
+- ~~"Constraint" terminology → "Assets depleted"~~
+  - "Spending constraint reached" → "Assets depleted"
+  - "X% of paths reached constraint" → "X% of paths depleted assets"
+  - "No constraint observed" → "Assets stay funded" / "stays funded"
+- ~~Human-readable percentile labels~~
+  - Legend: "Harder → Typical" and "Typical Outcome" (removed P10/P50 jargon)
+  - Tooltips explain in plain language: "Half of simulated outcomes are better, half are worse"
+  - Row tooltips: "Harder · Typical · Optimistic" instead of P10/P50/P75
+- ~~P75 overconfidence warning~~
+  - Tooltip now says "Optimistic (requires favorable markets)"
+  - Long-horizon note: "Optimistic projections require sustained favorable markets"
+- ~~Bankruptcy/$0 path annotation~~
+  - "Paths showing $0 have exhausted all funds"
+  - "At this point, assets are exhausted and spending can no longer be sustained"
+- ~~Widget link copy~~
+  - "View interactive visualization" → "See your projections →"
+
+### Round 8
+- ~~Fixed headline mismatch when p50Assets near zero~~
+  - Added `effectivelySaturated` check: if p50Assets < max(annualSpending, $10k), don't show "stays funded"
+  - New "marginal coverage" mode: "This plan reaches Age X with minimal reserves"
+  - Warning note when assets nearly exhausted by horizon
+- ~~Constraint marker now percentile-specific~~
+  - Shows actual percentage: "In X% of scenarios, assets depleted by Age Y"
+  - Falls back to "In most scenarios" if percentage unavailable
+- ~~Accessibility improvements~~
+  - Added `aria-modal="true"` to inspector dialog
+  - Trajectory row aria-label now includes "Press Enter or tap to view details"
+  - Added `.sr-only` CSS class and sr-only span to copy button
+- ~~Fixed "Tap a year" copy~~
+  - Changed to "Tap an age to see the math"
+
+### Round 8.5
+- ~~Fixed header/constraint marker contradiction~~
+  - Added `getFirstConstraintAge()` helper to detect when trajectory will show constraint
+  - If constraint fires at earlier age while saturated, shows new mode: "Plan reaches Age X in favorable scenarios"
+  - Header now acknowledges constraint: "In X% of scenarios, assets depleted by Age Y"
+- ~~Added indicator when range bars disappear at 65+~~
+  - Updated long-horizon note: "After 65, range bars are hidden because outcome spread becomes very wide. Only the median is shown. Tap any row for full percentiles."
+- ~~Added Run ID tooltip~~
+  - Run ID span now has title="Simulation ID — use this to reference or share this run"
+
+### Round 9
+- ~~Added percentile continuity note~~
+  - Below legend: "Percentiles recalculated at each age" with tooltip explaining they're not one continuous path
+- ~~Labeled inspector as "one simulation"~~
+  - Inspector title now includes: "One simulated path (example, not typical)"
+- ~~Driver-aware trajectory explainer~~
+  - Accumulation: "modeled income exceeds spending, so assets rise from ongoing contributions. Market returns add uncertainty."
+  - Decumulation: "spending exceeds modeled income, so withdrawals fund the gap. Market returns drive how quickly assets change."
+- ~~Clarified returns pill and assumptions~~
+  - Summary: "Stocks 7% / Bonds 4%" instead of "~7% returns"
+  - Added volatility explanation: "Higher volatility means wider spread between outcomes"
+  - Added disclaimer: "These are long-run illustrative assumptions — not a prediction of future performance"
+- ~~Softened optimistic tooltip~~
+  - "(requires favorable markets)" → "(reflects stronger markets in this model)"
+
+### Round 9.5 (Bug Fixes)
+- ~~Fixed Social Security validation bug~~
+  - Bug: `validateSocialSecurity` used `params.horizonMonths || 360` instead of computed `effectiveHorizon` from maxAge
+  - Fix: Pass `effectiveHorizon` as parameter to validation functions
+  - Also fixed same bug in `validateRothConversions`
+  - Improved error message to show actual horizon end age and suggest fix
+
 ---
 
 ## Priority 1: Verify Deployed Fixes
@@ -111,6 +176,47 @@ After rebuild/redeploy, verify these work:
 ### Story mode input
 - "Work until X, then retire..." natural language
 - Age-based input vs month offsets
+- **Deferred:** Feature request
+
+### Clearer final net worth labeling
+- Label `finalNetWorthP50` as "Ending net worth at horizon (floored at $0)"
+- Show `constraintProbability` prominently alongside final figures
+- Helps users understand why trajectory shows values but final is $0
+- **Deferred:** UX clarity
+
+### Annual snapshots UX
+- Collapse behind "Show the math" accordion (closed by default)
+- Add 2-3 plain-English highlights above (e.g., "income drops at 60", "first constraint appears around age X in P10 paths")
+- **Deferred:** Reduce cognitive load for casual users
+
+### Constraint timing annotation
+- When `pctPathsFunded` starts dropping, show annotation: "Some simulated paths hit a spending constraint around age __"
+- Makes constraint concept more concrete
+- **Deferred:** Feature request
+
+### Scenario management
+- Scenario title input (name runs for reference)
+- One-click "copy share link" encoding inputs + seed for replay
+- **Deferred:** Feature request
+
+### Permanent change toggle
+- For retirement/income events, add UI toggle "Permanent change" instead of requiring `durationMonths` omission
+- Prevents `durationMonths: 0` validation confusion
+- **Deferred:** Input UX improvement
+
+### Social Security input clarity
+- `monthlyBenefit` asks for "today's dollars" but ssa.gov estimates project future wages
+- Add tooltip: "(enter your current ssa.gov estimate)"
+- **Deferred:** Input UX
+
+### Tax impact visibility
+- Taxes applied (~22% effective) but not broken out in output
+- Show "taxes paid over simulation" for users optimizing Roth conversions / withdrawal strategies
+- **Deferred:** Feature request (power users)
+
+### Sensitivity analysis
+- "What if returns are 1% lower?" slider
+- Quick way to stress-test assumptions
 - **Deferred:** Feature request
 
 ---
