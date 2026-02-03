@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Widget Component Variants</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --font-size-2xs: 10px;
+      --font-size-xs: 12px;
+      --font-size-sm: 14px;
+      --font-size-md: 16px;
+      --font-size-lg: 18px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --radius-xs: 4px;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+
+      --gray-0: light-dark(#ffffff, #0d0d0d);
+      --gray-50: light-dark(#f9f9f9, #131313);
+      --gray-100: light-dark(#ededed, #181818);
+      --gray-200: light-dark(#cdcdcd, #212121);
+      --gray-300: light-dark(#afafaf, #303030);
+      --gray-400: light-dark(#8f8f8f, #414141);
+      --gray-500: #5d5d5d;
+      --gray-600: light-dark(#414141, #8f8f8f);
+      --gray-700: light-dark(#303030, #afafaf);
+      --gray-1000: light-dark(#0d0d0d, #ffffff);
+
+      --color-text: var(--gray-1000);
+      --color-text-secondary: var(--gray-500);
+      --color-text-tertiary: var(--gray-400);
+      --color-surface: var(--gray-0);
+      --color-surface-secondary: var(--gray-50);
+      --color-surface-elevated: light-dark(#f5f5f5, #1a1a1a);
+      --color-border: light-dark(rgba(13,13,13,0.1), rgba(255,255,255,0.1));
+      --color-border-subtle: light-dark(rgba(13,13,13,0.06), rgba(255,255,255,0.08));
+      --color-bar-bg: light-dark(#ededed, #252525);
+      --color-bar-p50: var(--gray-700);
+      --color-bar-p75: light-dark(#c5c5c5, #4a4a4a);
+      --color-bar-p10: light-dark(#a0a0a0, #656565);
+
+      /* Muted positive/negative */
+      --color-positive: light-dark(#2d8a4e, #6db88a);
+      --color-negative: light-dark(#9a6458, #c4897c);
+      --color-link: light-dark(#0285ff, #60a5fa);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: ui-sans-serif, -apple-system, system-ui, sans-serif;
+      font-size: var(--font-size-sm);
+      background: var(--color-surface);
+      color: var(--color-text);
+      padding: 20px;
+    }
+
+    h1 { font-size: 18px; margin-bottom: 8px; }
+    h2 { font-size: 14px; margin: 32px 0 12px; color: var(--color-text-secondary); font-weight: 600; }
+    h3 { font-size: 12px; margin: 20px 0 10px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .subtitle { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 20px; }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding: 12px;
+      background: var(--color-surface-secondary);
+      border-radius: var(--radius-sm);
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: var(--color-link);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: var(--radius-xs);
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .variants {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .variant {
+      background: var(--color-surface-secondary);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .variant-label {
+      background: var(--gray-700);
+      color: var(--gray-0);
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .variant-content {
+      padding: 12px;
+    }
+
+    .positive { color: var(--color-positive); }
+    .negative { color: var(--color-negative); }
+
+    /* ========================================
+     * SECTION TITLE (Shared)
+     * ======================================== */
+    .section-title {
+      font-size: var(--font-size-2xs);
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: var(--space-2);
+    }
+
+    /* ========================================
+     * TRAJECTORY VARIANTS - "Median Assets"
+     * ======================================== */
+
+    /* Current: Full bars with bands */
+    .traj-current .row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 6px 0;
+    }
+    .traj-current .age {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      min-width: 32px;
+    }
+    .traj-current .bar-container {
+      flex: 1;
+      height: 16px;
+      background: var(--color-bar-bg);
+      border-radius: var(--radius-xs);
+      position: relative;
+    }
+    .traj-current .bar-p75 {
+      position: absolute;
+      height: 100%;
+      background: var(--color-bar-p75);
+      border-radius: var(--radius-xs);
+    }
+    .traj-current .bar-p50 {
+      position: absolute;
+      height: 100%;
+      background: var(--color-bar-p50);
+      border-radius: var(--radius-xs);
+    }
+    .traj-current .bar-p10 {
+      position: absolute;
+      height: 100%;
+      width: 2px;
+      background: var(--color-bar-p10);
+    }
+    .traj-current .value {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+      min-width: 44px;
+      text-align: right;
+    }
+    .traj-current .legend {
+      display: flex;
+      gap: var(--space-3);
+      margin-top: var(--space-2);
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+    }
+    .traj-current .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .traj-current .swatch {
+      width: 12px;
+      height: 8px;
+      border-radius: 2px;
+    }
+    .traj-current .swatch.p50 { background: var(--color-bar-p50); }
+    .traj-current .swatch.p75 { background: var(--color-bar-p75); }
+    .traj-current .swatch.p10 { background: var(--color-bar-p10); }
+
+    /* Tight A: Compact single-line bars (thinner) */
+    .traj-tight-a .row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 3px 0;
+    }
+    .traj-tight-a .age {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+      min-width: 24px;
+    }
+    .traj-tight-a .bar-container {
+      flex: 1;
+      height: 8px;
+      background: var(--color-bar-bg);
+      border-radius: 4px;
+      position: relative;
+    }
+    .traj-tight-a .bar-p75 {
+      position: absolute;
+      height: 100%;
+      background: var(--color-bar-p75);
+      border-radius: 4px;
+    }
+    .traj-tight-a .bar-p50 {
+      position: absolute;
+      height: 100%;
+      background: var(--color-bar-p50);
+      border-radius: 4px;
+    }
+    .traj-tight-a .value {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-secondary);
+      min-width: 36px;
+      text-align: right;
+    }
+
+    /* Tight B: Text-only table */
+    .traj-tight-b table {
+      width: 100%;
+      font-size: var(--font-size-xs);
+      border-collapse: collapse;
+    }
+    .traj-tight-b th {
+      font-weight: 500;
+      color: var(--color-text-tertiary);
+      text-align: left;
+      padding: 4px 8px 4px 0;
+      font-size: var(--font-size-2xs);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+    .traj-tight-b td {
+      padding: 3px 8px 3px 0;
+      color: var(--color-text-secondary);
+    }
+    .traj-tight-b td:first-child {
+      color: var(--color-text-tertiary);
+      font-size: var(--font-size-2xs);
+    }
+    .traj-tight-b td:not(:first-child) {
+      text-align: right;
+      font-weight: 500;
+    }
+
+    /* Tight C: Sparkline-style (miniature) */
+    .traj-tight-c {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 40px;
+      padding: 4px 0;
+    }
+    .traj-tight-c .spark-bar {
+      flex: 1;
+      background: var(--color-bar-p50);
+      border-radius: 2px 2px 0 0;
+      position: relative;
+    }
+    .traj-tight-c .spark-bar::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--color-bar-p75);
+      border-radius: 2px 2px 0 0;
+    }
+    .traj-tight-c-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+      margin-top: 4px;
+    }
+    .traj-tight-c-summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+      margin-bottom: 4px;
+    }
+    .traj-tight-c-summary .label {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+    .traj-tight-c-summary .value {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+    }
+
+    /* Tight D: Inline summary */
+    .traj-tight-d {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+    .traj-tight-d .highlight {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .traj-tight-d .range {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+    }
+
+    /* ========================================
+     * SURVIVAL VARIANTS - "Futures Still Funded"
+     * ======================================== */
+
+    /* Current: Full bars */
+    .surv-current .row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 4px 0;
+    }
+    .surv-current .age {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      min-width: 52px;
+    }
+    .surv-current .bar-bg {
+      flex: 1;
+      height: 8px;
+      background: var(--color-bar-bg);
+      border-radius: var(--radius-xs);
+      overflow: hidden;
+    }
+    .surv-current .bar {
+      height: 100%;
+      background: var(--color-bar-p50);
+      border-radius: var(--radius-xs);
+    }
+    .surv-current .pct {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      min-width: 32px;
+      text-align: right;
+    }
+
+    /* Tight A: Single summary line + inline data */
+    .surv-tight-a {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+    .surv-tight-a .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 4px 0;
+    }
+    .surv-tight-a .pct {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .surv-tight-a .ages {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+    }
+
+    /* Tight B: Horizontal pill strip */
+    .surv-tight-b .strip {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .surv-tight-b .pill {
+      flex: 1;
+      text-align: center;
+      padding: 6px 4px;
+      background: var(--color-surface-elevated);
+      border-radius: var(--radius-xs);
+      font-size: var(--font-size-2xs);
+    }
+    .surv-tight-b .pill-age {
+      color: var(--color-text-tertiary);
+      margin-bottom: 2px;
+    }
+    .surv-tight-b .pill-pct {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .surv-tight-b .pill.warning .pill-pct {
+      color: var(--color-negative);
+    }
+
+    /* Tight C: Single progress bar with markers */
+    .surv-tight-c .track {
+      position: relative;
+      height: 12px;
+      background: var(--color-bar-bg);
+      border-radius: 6px;
+      overflow: visible;
+    }
+    .surv-tight-c .fill {
+      height: 100%;
+      background: var(--color-bar-p50);
+      border-radius: 6px;
+    }
+    .surv-tight-c .markers {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+    }
+    .surv-tight-c .marker {
+      text-align: center;
+    }
+    .surv-tight-c .marker-pct {
+      font-weight: 500;
+      color: var(--color-text-secondary);
+    }
+
+    /* Tight D: Just percentages inline */
+    .surv-tight-d {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+    .surv-tight-d span {
+      display: inline-block;
+      margin-right: var(--space-3);
+    }
+    .surv-tight-d .age {
+      color: var(--color-text-tertiary);
+    }
+    .surv-tight-d .pct {
+      font-weight: 500;
+    }
+
+    /* Tight E: Single metric focus */
+    .surv-tight-e {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-2);
+    }
+    .surv-tight-e .big-pct {
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+    }
+    .surv-tight-e .context {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+    .surv-tight-e .detail {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+      margin-top: 4px;
+    }
+
+    /* ========================================
+     * FULL WIDGET DEMO
+     * ======================================== */
+    .widget-demo {
+      max-width: 400px;
+      padding: var(--space-4);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .widget-demo .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-3);
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+    .widget-demo .header-brand {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+    }
+    .widget-demo .header-tag {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+    }
+
+    .widget-demo .duration {
+      margin-bottom: var(--space-3);
+      padding: var(--space-3);
+      background: var(--color-surface-secondary);
+      border-radius: var(--radius-sm);
+    }
+    .widget-demo .duration-label {
+      font-size: var(--font-size-2xs);
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      margin-bottom: var(--space-1);
+    }
+    .widget-demo .duration-age {
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+    }
+    .widget-demo .duration-desc {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+
+    .widget-demo section {
+      margin-bottom: var(--space-3);
+    }
+  </style>
+</head>
+<body>
+  <h1>Widget Component Variants</h1>
+  <p class="subtitle">Comparing tighter layouts for Median Assets and Futures Still Funded sections</p>
+
+  <div class="controls">
+    <button onclick="toggleTheme()">Toggle Dark Mode</button>
+  </div>
+
+  <!-- ============================================
+       TRAJECTORY / MEDIAN ASSETS VARIANTS
+       ============================================ -->
+  <h2>Median Assets (Trajectory)</h2>
+  <p class="subtitle">The current design uses 16px tall bars. Here are tighter alternatives.</p>
+
+  <div class="variants">
+    <!-- Current -->
+    <div class="variant">
+      <div class="variant-label">Current (16px bars + legend)</div>
+      <div class="variant-content">
+        <div class="section-title">Median Assets</div>
+        <div class="traj-current">
+          <div class="row"><span class="age">50</span><div class="bar-container"><div class="bar-p75" style="width:85%"></div><div class="bar-p50" style="width:72%"></div><div class="bar-p10" style="left:58%"></div></div><span class="value">$1.2M</span></div>
+          <div class="row"><span class="age">55</span><div class="bar-container"><div class="bar-p75" style="width:95%"></div><div class="bar-p50" style="width:80%"></div><div class="bar-p10" style="left:62%"></div></div><span class="value">$1.5M</span></div>
+          <div class="row"><span class="age">60</span><div class="bar-container"><div class="bar-p75" style="width:100%"></div><div class="bar-p50" style="width:85%"></div><div class="bar-p10" style="left:55%"></div></div><span class="value">$1.8M</span></div>
+          <div class="row"><span class="age">65</span><div class="bar-container"><div class="bar-p75" style="width:90%"></div><div class="bar-p50" style="width:70%"></div><div class="bar-p10" style="left:40%"></div></div><span class="value">$1.4M</span></div>
+          <div class="row"><span class="age">70</span><div class="bar-container"><div class="bar-p75" style="width:75%"></div><div class="bar-p50" style="width:55%"></div><div class="bar-p10" style="left:25%"></div></div><span class="value">$980K</span></div>
+          <div class="row"><span class="age">75</span><div class="bar-container"><div class="bar-p75" style="width:55%"></div><div class="bar-p50" style="width:38%"></div><div class="bar-p10" style="left:12%"></div></div><span class="value">$650K</span></div>
+          <div class="legend">
+            <div class="legend-item"><span class="swatch p50"></span> Median</div>
+            <div class="legend-item"><span class="swatch p75"></span> 25% better</div>
+            <div class="legend-item"><span class="swatch p10"></span> 10% worse</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tight A: Compact bars -->
+    <div class="variant">
+      <div class="variant-label">Tight A: Compact bars (8px, no legend)</div>
+      <div class="variant-content">
+        <div class="section-title">Median Assets</div>
+        <div class="traj-tight-a">
+          <div class="row"><span class="age">50</span><div class="bar-container"><div class="bar-p75" style="width:85%"></div><div class="bar-p50" style="width:72%"></div></div><span class="value">$1.2M</span></div>
+          <div class="row"><span class="age">55</span><div class="bar-container"><div class="bar-p75" style="width:95%"></div><div class="bar-p50" style="width:80%"></div></div><span class="value">$1.5M</span></div>
+          <div class="row"><span class="age">60</span><div class="bar-container"><div class="bar-p75" style="width:100%"></div><div class="bar-p50" style="width:85%"></div></div><span class="value">$1.8M</span></div>
+          <div class="row"><span class="age">65</span><div class="bar-container"><div class="bar-p75" style="width:90%"></div><div class="bar-p50" style="width:70%"></div></div><span class="value">$1.4M</span></div>
+          <div class="row"><span class="age">70</span><div class="bar-container"><div class="bar-p75" style="width:75%"></div><div class="bar-p50" style="width:55%"></div></div><span class="value">$980K</span></div>
+          <div class="row"><span class="age">75</span><div class="bar-container"><div class="bar-p75" style="width:55%"></div><div class="bar-p50" style="width:38%"></div></div><span class="value">$650K</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tight B: Text table -->
+    <div class="variant">
+      <div class="variant-label">Tight B: Text table (no bars)</div>
+      <div class="variant-content">
+        <div class="section-title">Median Assets</div>
+        <div class="traj-tight-b">
+          <table>
+            <tr><th>Age</th><th>P10</th><th>Median</th><th>P75</th></tr>
+            <tr><td>50</td><td>$980K</td><td>$1.2M</td><td>$1.4M</td></tr>
+            <tr><td>55</td><td>$1.1M</td><td>$1.5M</td><td>$1.8M</td></tr>
+            <tr><td>60</td><td>$1.0M</td><td>$1.8M</td><td>$2.1M</td></tr>
+            <tr><td>65</td><td>$720K</td><td>$1.4M</td><td>$1.8M</td></tr>
+            <tr><td>70</td><td>$450K</td><td>$980K</td><td>$1.3M</td></tr>
+            <tr><td>75</td><td>$210K</td><td>$650K</td><td>$920K</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tight C: Sparkline -->
+    <div class="variant">
+      <div class="variant-label">Tight C: Sparkline with summary</div>
+      <div class="variant-content">
+        <div class="section-title">Median Assets</div>
+        <div class="traj-tight-c-summary">
+          <span class="label">Peak assets</span>
+          <span class="value">$1.8M <span style="font-weight:400;color:var(--color-text-secondary);font-size:12px">at 60</span></span>
+        </div>
+        <div class="traj-tight-c">
+          <div class="spark-bar" style="height:67%"></div>
+          <div class="spark-bar" style="height:83%"></div>
+          <div class="spark-bar" style="height:100%"></div>
+          <div class="spark-bar" style="height:78%"></div>
+          <div class="spark-bar" style="height:54%"></div>
+          <div class="spark-bar" style="height:36%"></div>
+        </div>
+        <div class="traj-tight-c-labels">
+          <span>50</span>
+          <span>55</span>
+          <span>60</span>
+          <span>65</span>
+          <span>70</span>
+          <span>75</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tight D: Inline summary -->
+    <div class="variant">
+      <div class="variant-label">Tight D: Prose summary</div>
+      <div class="variant-content">
+        <div class="section-title">Median Assets</div>
+        <div class="traj-tight-d">
+          Starting at <span class="highlight">$1.2M</span>, median assets grow to <span class="highlight">$1.8M</span> by age 60, then decline to <span class="highlight">$650K</span> by age 75.
+          <div class="range" style="margin-top:6px">
+            Range at 75: $210K (pessimistic) to $920K (optimistic)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       SURVIVAL / FUTURES STILL FUNDED VARIANTS
+       ============================================ -->
+  <h2>Futures Still Funded (Survival)</h2>
+  <p class="subtitle">The current design uses separate rows with bars. Here are tighter alternatives.</p>
+
+  <div class="variants">
+    <!-- Current -->
+    <div class="variant">
+      <div class="variant-label">Current (bar per decade)</div>
+      <div class="variant-content">
+        <div class="section-title">Futures Still Funded</div>
+        <div class="surv-current">
+          <div class="row"><span class="age">Age 60</span><div class="bar-bg"><div class="bar" style="width:100%"></div></div><span class="pct">100%</span></div>
+          <div class="row"><span class="age">Age 70</span><div class="bar-bg"><div class="bar" style="width:95%"></div></div><span class="pct">95%</span></div>
+          <div class="row"><span class="age">Age 80</span><div class="bar-bg"><div class="bar" style="width:78%"></div></div><span class="pct">78%</span></div>
+          <div class="row"><span class="age">Age 90</span><div class="bar-bg"><div class="bar" style="width:52%"></div></div><span class="pct">52%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tight A: Summary line -->
+    <div class="variant">
+      <div class="variant-label">Tight A: Summary line</div>
+      <div class="variant-content">
+        <div class="section-title">Futures Still Funded</div>
+        <div class="surv-tight-a">
+          <div class="summary-row">
+            <span>At age 80</span>
+            <span class="pct">78%</span>
+          </div>
+          <div class="ages">
+            60: 100% · 70: 95% · 90: 52%
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tight B: Pill strip -->
+    <div class="variant">
+      <div class="variant-label">Tight B: Horizontal pills</div>
+      <div class="variant-content">
+        <div class="section-title">Futures Still Funded</div>
+        <div class="surv-tight-b">
+          <div class="strip">
+            <div class="pill"><div class="pill-age">60</div><div class="pill-pct">100%</div></div>
+            <div class="pill"><div class="pill-age">70</div><div class="pill-pct">95%</div></div>
+            <div class="pill"><div class="pill-age">80</div><div class="pill-pct">78%</div></div>
+            <div class="pill warning"><div class="pill-age">90</div><div class="pill-pct">52%</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tight C: Progress bar with markers -->
+    <div class="variant">
+      <div class="variant-label">Tight C: Single progress bar</div>
+      <div class="variant-content">
+        <div class="section-title">Futures Still Funded</div>
+        <div class="surv-tight-c">
+          <div class="track">
+            <div class="fill" style="width:78%"></div>
+          </div>
+          <div class="markers">
+            <div class="marker"><div class="marker-pct">100%</div><div>60</div></div>
+            <div class="marker"><div class="marker-pct">95%</div><div>70</div></div>
+            <div class="marker"><div class="marker-pct">78%</div><div>80</div></div>
+            <div class="marker"><div class="marker-pct">52%</div><div>90</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tight D: Inline percentages -->
+    <div class="variant">
+      <div class="variant-label">Tight D: Inline percentages</div>
+      <div class="variant-content">
+        <div class="section-title">Futures Still Funded</div>
+        <div class="surv-tight-d">
+          <span><span class="age">60:</span> <span class="pct">100%</span></span>
+          <span><span class="age">70:</span> <span class="pct">95%</span></span>
+          <span><span class="age">80:</span> <span class="pct">78%</span></span>
+          <span><span class="age">90:</span> <span class="pct">52%</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tight E: Single metric focus -->
+    <div class="variant">
+      <div class="variant-label">Tight E: Single metric focus</div>
+      <div class="variant-content">
+        <div class="section-title">Futures Still Funded</div>
+        <div class="surv-tight-e">
+          <span class="big-pct">78%</span>
+          <span class="context">of simulations funded through age 80</span>
+        </div>
+        <div class="surv-tight-e detail">
+          Age 70: 95% · Age 90: 52%
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================
+       FULL WIDGET COMBINATIONS
+       ============================================ -->
+  <h2>Full Widget Combinations</h2>
+  <p class="subtitle">Showing how the tighter sections look together in context</p>
+
+  <div class="variants">
+    <!-- Combo 1: Compact bars + pills -->
+    <div class="variant">
+      <div class="variant-label">Combo 1: Compact bars + Pills</div>
+      <div class="variant-content">
+        <div class="widget-demo">
+          <div class="header">
+            <span class="header-brand">AreumFire</span>
+            <span class="header-tag">Educational</span>
+          </div>
+          <div class="duration">
+            <div class="duration-label">Plan Duration</div>
+            <div class="duration-age">Age 82</div>
+            <div class="duration-desc">all simulations funded through horizon</div>
+          </div>
+          <section>
+            <div class="section-title">Median Assets</div>
+            <div class="traj-tight-a">
+              <div class="row"><span class="age">50</span><div class="bar-container"><div class="bar-p75" style="width:85%"></div><div class="bar-p50" style="width:72%"></div></div><span class="value">$1.2M</span></div>
+              <div class="row"><span class="age">60</span><div class="bar-container"><div class="bar-p75" style="width:100%"></div><div class="bar-p50" style="width:85%"></div></div><span class="value">$1.8M</span></div>
+              <div class="row"><span class="age">70</span><div class="bar-container"><div class="bar-p75" style="width:75%"></div><div class="bar-p50" style="width:55%"></div></div><span class="value">$980K</span></div>
+              <div class="row"><span class="age">80</span><div class="bar-container"><div class="bar-p75" style="width:45%"></div><div class="bar-p50" style="width:30%"></div></div><span class="value">$520K</span></div>
+            </div>
+          </section>
+          <section>
+            <div class="section-title">Futures Still Funded</div>
+            <div class="surv-tight-b">
+              <div class="strip">
+                <div class="pill"><div class="pill-age">60</div><div class="pill-pct">100%</div></div>
+                <div class="pill"><div class="pill-age">70</div><div class="pill-pct">95%</div></div>
+                <div class="pill"><div class="pill-age">80</div><div class="pill-pct">78%</div></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- Combo 2: Text table + inline -->
+    <div class="variant">
+      <div class="variant-label">Combo 2: Text table + Inline %</div>
+      <div class="variant-content">
+        <div class="widget-demo">
+          <div class="header">
+            <span class="header-brand">AreumFire</span>
+            <span class="header-tag">Educational</span>
+          </div>
+          <div class="duration">
+            <div class="duration-label">Plan Duration</div>
+            <div class="duration-age">Age 82</div>
+            <div class="duration-desc">all simulations funded through horizon</div>
+          </div>
+          <section>
+            <div class="section-title">Median Assets</div>
+            <div class="traj-tight-b">
+              <table>
+                <tr><th>Age</th><th>P10</th><th>Median</th><th>P75</th></tr>
+                <tr><td>50</td><td>$980K</td><td>$1.2M</td><td>$1.4M</td></tr>
+                <tr><td>60</td><td>$1.0M</td><td>$1.8M</td><td>$2.1M</td></tr>
+                <tr><td>70</td><td>$450K</td><td>$980K</td><td>$1.3M</td></tr>
+                <tr><td>80</td><td>$180K</td><td>$520K</td><td>$780K</td></tr>
+              </table>
+            </div>
+          </section>
+          <section>
+            <div class="section-title">Futures Still Funded</div>
+            <div class="surv-tight-d">
+              <span><span class="age">60:</span> <span class="pct">100%</span></span>
+              <span><span class="age">70:</span> <span class="pct">95%</span></span>
+              <span><span class="age">80:</span> <span class="pct">78%</span></span>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- Combo 3: Sparkline + single metric -->
+    <div class="variant">
+      <div class="variant-label">Combo 3: Sparkline + Single metric</div>
+      <div class="variant-content">
+        <div class="widget-demo">
+          <div class="header">
+            <span class="header-brand">AreumFire</span>
+            <span class="header-tag">Educational</span>
+          </div>
+          <div class="duration">
+            <div class="duration-label">Plan Duration</div>
+            <div class="duration-age">Age 82</div>
+            <div class="duration-desc">all simulations funded through horizon</div>
+          </div>
+          <section>
+            <div class="section-title">Median Assets</div>
+            <div class="traj-tight-c-summary">
+              <span class="label">Peak assets</span>
+              <span class="value">$1.8M <span style="font-weight:400;color:var(--color-text-secondary);font-size:12px">at 60</span></span>
+            </div>
+            <div class="traj-tight-c">
+              <div class="spark-bar" style="height:67%"></div>
+              <div class="spark-bar" style="height:100%"></div>
+              <div class="spark-bar" style="height:54%"></div>
+              <div class="spark-bar" style="height:29%"></div>
+            </div>
+            <div class="traj-tight-c-labels">
+              <span>50</span>
+              <span>60</span>
+              <span>70</span>
+              <span>80</span>
+            </div>
+          </section>
+          <section>
+            <div class="section-title">Futures Still Funded</div>
+            <div class="surv-tight-e">
+              <span class="big-pct">78%</span>
+              <span class="context">funded through age 80</span>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- Combo 4: Prose summary -->
+    <div class="variant">
+      <div class="variant-label">Combo 4: Prose-only (minimal)</div>
+      <div class="variant-content">
+        <div class="widget-demo">
+          <div class="header">
+            <span class="header-brand">AreumFire</span>
+            <span class="header-tag">Educational</span>
+          </div>
+          <div class="duration">
+            <div class="duration-label">Plan Duration</div>
+            <div class="duration-age">Age 82</div>
+            <div class="duration-desc">all simulations funded through horizon</div>
+          </div>
+          <section>
+            <div class="section-title">Median Assets</div>
+            <div class="traj-tight-d">
+              Starting at <span class="highlight">$1.2M</span>, median assets grow to <span class="highlight">$1.8M</span> by age 60, then decline to <span class="highlight">$520K</span> by age 80.
+            </div>
+          </section>
+          <section>
+            <div class="section-title">Futures Still Funded</div>
+            <div class="surv-tight-a">
+              <div class="summary-row">
+                <span>At age 80</span>
+                <span class="pct">78%</span>
+              </div>
+              <div class="ages">
+                60: 100% · 70: 95%
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.style.colorScheme || 'light';
+      html.style.colorScheme = current === 'light' ? 'dark' : 'light';
+    }
+  </script>
+</body>
+</html>

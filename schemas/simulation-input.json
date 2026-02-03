@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chubby.fyi/schemas/simulation-input.json",
+  "title": "SimulationInput",
+  "description": "Input data for financial simulation",
+  "type": "object",
+  "definitions": {
+    "stochasticModelConfig": {
+      "type": "object",
+      "properties": {
+        "seed": {
+          "type": "integer"
+        },
+        "correlationMatrix": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "expectedReturns": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z_]+$": {
+              "type": "number"
+            }
+          }
+        },
+        "volatilities": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z_]+$": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "required": ["expectedReturns", "volatilities"],
+      "additionalProperties": false
+    },
+    "withdrawalSequence": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": ["taxable_first", "tax_deferred_first", "proportional", "bucket_strategy"]
+        },
+        "buckets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "accountType": {
+                "type": "string",
+                "enum": ["taxable", "tax_deferred", "roth"]
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "percentage": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": ["accountType", "priority"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["strategy"],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "initialAccounts": {
+      "type": "object",
+      "properties": {
+        "taxable": {
+          "type": "object",
+          "properties": {
+            "holdings": { "type": "array", "items": { "type": "object" } },
+            "totalValue": { "type": "number" }
+          }
+        },
+        "tax_deferred": {
+          "type": "object", 
+          "properties": {
+            "holdings": { "type": "array", "items": { "type": "object" } },
+            "totalValue": { "type": "number" }
+          }
+        },
+        "roth": {
+          "type": "object",
+          "properties": {
+            "holdings": { "type": "array", "items": { "type": "object" } },
+            "totalValue": { "type": "number" }
+          }
+        },
+        "cash": { "type": "number" }
+      },
+      "required": ["cash"]
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string" },
+          "monthOffset": { "type": "integer" },
+          "amount": { "type": "number" },
+          "metadata": { "type": "object" }
+        },
+        "required": ["id", "type", "monthOffset", "amount"]
+      }
+    },
+    "config": {
+      "$ref": "#/definitions/stochasticModelConfig"
+    },
+    "monthsToRun": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1200
+    },
+    "withdrawalStrategy": {
+      "$ref": "#/definitions/withdrawalSequence"
+    },
+    "goals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "targetAmount": { "type": "number", "minimum": 0 },
+          "targetMonthOffset": { "type": "integer", "minimum": 0 },
+          "priority": { "type": "integer", "minimum": 1, "maximum": 3 },
+          "category": { "type": "string", "enum": ["RETIREMENT", "EDUCATION", "MAJOR_PURCHASE", "CUSTOM"] }
+        },
+        "required": ["id", "name", "targetAmount", "targetMonthOffset", "priority", "category"],
+        "additionalProperties": false
+      },
+      "description": "Array of financial goals to track during simulation"
+    }
+  },
+  "required": ["initialAccounts", "events", "config", "monthsToRun", "withdrawalStrategy"],
+  "additionalProperties": false
+}

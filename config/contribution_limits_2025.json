@@ -1,0 +1,34 @@
+{
+  "retirementContributions": {
+    "e401k": {
+      "baseLimit": 23500,
+      "catchUpLimit": 7500,
+      "catchUpAge": 50
+    },
+    "ira": {
+      "baseLimit": 7000,
+      "catchUpLimit": 1000,
+      "catchUpAge": 50
+    },
+    "sep": {
+      "limitPercentage": 0.25,
+      "maxAmount": 70000
+    },
+    "simple": {
+      "baseLimit": 16000,
+      "catchUpLimit": 3500,
+      "catchUpAge": 50
+    }
+  },
+  "hsaContributions": {
+    "individual": 4300,
+    "family": 8550,
+    "catchUpLimit": 1000,
+    "catchUpAge": 55
+  },
+  "socialSecurityWageBase": 176100,
+  "netInvestmentIncomeThreshold": {
+    "single": 200000,
+    "marriedFilingJointly": 250000
+  }
+}

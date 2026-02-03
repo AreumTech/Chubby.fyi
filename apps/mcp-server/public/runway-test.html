@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Widget v2 Test - Plan Duration Hero</title>
+  <style>
+    :root {
+      --bg-color: #f5f5f5;
+      --text-color: #333;
+      --text-secondary: #666;
+      --card-bg: white;
+      --controls-bg: #e8e8e8;
+      --controls-text: #555;
+      --shadow: rgba(0,0,0,0.1);
+    }
+    [data-theme="dark"] {
+      --bg-color: #1a1a1a;
+      --text-color: #e5e5e5;
+      --text-secondary: #a1a1aa;
+      --card-bg: #262626;
+      --controls-bg: #333;
+      --controls-text: #a1a1aa;
+      --shadow: rgba(0,0,0,0.3);
+    }
+    body {
+      font-family: ui-sans-serif, -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-color);
+      padding: 20px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .test-container {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 18px;
+      color: var(--text-color);
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+    .theme-toggle-container {
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      background: var(--card-bg);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+    .theme-toggle-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .theme-toggle-btn {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .theme-toggle-btn:hover {
+      background: #0052a3;
+    }
+    [data-theme="dark"] .theme-toggle-btn {
+      background: #60a5fa;
+      color: #0d0d0d;
+    }
+    [data-theme="dark"] .theme-toggle-btn:hover {
+      background: #93c5fd;
+    }
+    .theme-indicator {
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding: 4px 8px;
+      background: var(--controls-bg);
+      border-radius: 4px;
+    }
+    .test-case {
+      background: var(--card-bg);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px var(--shadow);
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+    .test-label {
+      background: #333;
+      color: white;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    [data-theme="dark"] .test-label {
+      background: #0d0d0d;
+    }
+    iframe {
+      width: 100%;
+      height: 950px;
+      border: none;
+    }
+    .controls {
+      background: var(--controls-bg);
+      padding: 12px 16px;
+      font-size: 11px;
+      color: var(--controls-text);
+    }
+    button {
+      background: #333;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 8px;
+      font-size: 11px;
+    }
+    button:hover {
+      background: #555;
+    }
+    [data-theme="dark"] button {
+      background: #4b5563;
+    }
+    [data-theme="dark"] button:hover {
+      background: #6b7280;
+    }
+    .scenario-desc {
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>Widget v2 Test - Plan Duration Hero</h1>
+    <p class="subtitle">Plan Duration as PRIMARY • Scheduled Events • Clickable Trajectory • Year Inspector</p>
+
+    <!-- Theme Toggle -->
+    <div class="theme-toggle-container">
+      <span class="theme-toggle-label">Test Theme:</span>
+      <button class="theme-toggle-btn" onclick="toggleTheme()">Toggle Dark Mode</button>
+      <span class="theme-indicator" id="theme-indicator">Light</span>
+    </div>
+
+    <!-- Display Mode Toggle -->
+    <div class="theme-toggle-container">
+      <span class="theme-toggle-label">Display Mode:</span>
+      <button class="theme-toggle-btn" onclick="setDisplayMode('inline')">Inline</button>
+      <button class="theme-toggle-btn" onclick="setDisplayMode('pip')">PiP</button>
+      <button class="theme-toggle-btn" onclick="setDisplayMode('fullscreen')">Fullscreen</button>
+      <span class="theme-indicator" id="display-mode-indicator">inline</span>
+    </div>
+
+    <!-- Test Case 1: SATURATED RUNWAY (Wealthy) -->
+    <div class="test-case">
+      <div class="test-label">SCENARIO 1: Saturated Runway (Age 50, Wealthy)</div>
+      <div class="controls">
+        <button onclick="loadTest1()">Load Test Data</button>
+        <div class="scenario-desc">
+          <strong>Plan Duration:</strong> ≥Age 80 (no constraint)<br>
+          <strong>Schedule:</strong> Retire at 60, Social Security at 70<br>
+          <strong>Result:</strong> All ages show horizon saturation message
+        </div>
+      </div>
+      <iframe id="frame1" src="/simulation-widget.html"></iframe>
+    </div>
+
+    <!-- Test Case 2: TRANSITION (Retirement at 60) -->
+    <div class="test-case">
+      <div class="test-label">SCENARIO 2: Transition Phase (Age 50, Retiring at 60)</div>
+      <div class="controls">
+        <button onclick="loadTest2()">Load Test Data</button>
+        <div class="scenario-desc">
+          <strong>Plan Duration:</strong> ~Age 75 most paths, ~Age 68 earlier stress<br>
+          <strong>Schedule:</strong> Retire at 60, SS at 70, Mortgage paid at 62<br>
+          <strong>Result:</strong> Shows clickable trajectory with milestone dividers
+        </div>
+      </div>
+      <iframe id="frame2" src="/simulation-widget.html"></iframe>
+    </div>
+
+    <!-- Test Case 3: CONSTRAINED (High Spending) -->
+    <div class="test-case">
+      <div class="test-label">SCENARIO 3: High Constraint (Age 55, Early Retiree)</div>
+      <div class="controls">
+        <button onclick="loadTest3()">Load Test Data</button>
+        <div class="scenario-desc">
+          <strong>Plan Duration:</strong> ~Age 63 most paths (short runway)<br>
+          <strong>Schedule:</strong> Already retired, SS at 62<br>
+          <strong>Result:</strong> Shows constraint language in footer
+        </div>
+      </div>
+      <iframe id="frame3" src="/simulation-widget.html"></iframe>
+    </div>
+
+    <!-- Test Case 4: WITH EVENTS (Roth Ladder) -->
+    <div class="test-case">
+      <div class="test-label">SCENARIO 4: Complex Schedule (Roth Ladder + One-Time Events)</div>
+      <div class="controls">
+        <button onclick="loadTest4()">Load Test Data</button>
+        <div class="scenario-desc">
+          <strong>Plan Duration:</strong> ~Age 78 most paths<br>
+          <strong>Schedule:</strong> Multiple Roth conversions, Home purchase, SS<br>
+          <strong>Result:</strong> Shows rich event timeline
+        </div>
+      </div>
+      <iframe id="frame4" src="/simulation-widget.html"></iframe>
+    </div>
+  </div>
+
+  <script>
+    // Helper: generate breach probability by month
+    function generateBreachData(horizonMonths, pattern) {
+      const data = [];
+      for (let m = 1; m <= horizonMonths; m++) {
+        let prob = 0;
+        if (pattern === 'none') {
+          prob = 0;
+        } else if (pattern === 'gradual') {
+          // Gradual increase starting at year 15
+          prob = m < 180 ? 0 : Math.min(0.25, (m - 180) * 0.002);
+        } else if (pattern === 'steep') {
+          // Steep increase starting at year 5
+          prob = m < 60 ? m * 0.002 : Math.min(0.60, 0.12 + (m - 60) * 0.003);
+        } else if (pattern === 'moderate') {
+          // Moderate increase
+          prob = m < 120 ? 0 : Math.min(0.35, (m - 120) * 0.002);
+        }
+        data.push({ month: m, cumulativeBreachProb: prob });
+      }
+      return data;
+    }
+
+    // Test 1: SATURATED RUNWAY (Wealthy)
+    const testData1 = {
+      success: true,
+      runId: "AF-SATUR50",
+      startYear: 2024,
+      inputs: {
+        investableAssets: 2000000,
+        annualSpending: 80000,
+        currentAge: 50,
+        expectedIncome: 180000,
+        horizonMonths: 360  // 30 years to age 80
+      },
+      // v2: Plan Duration - SATURATED (no constraint within horizon)
+      planDuration: {
+        mostPathsAge: 80,
+        earlierStressAge: 80,
+        laterOutcomesAge: 80,
+        horizonAge: 80,
+        horizonSaturated: true
+      },
+      // v2: Schedule
+      schedule: {
+        startingPoint: {
+          age: 50,
+          assets: 2000000,
+          income: 180000,
+          spending: 80000
+        },
+        scheduledEvents: [
+          { age: 60, type: 'income', change: '$0', label: 'Retirement', icon: '📅' },
+          { age: 70, type: 'social_security', change: '+$48k/yr', label: 'Social Security', icon: '🏛️' }
+        ]
+      },
+      mc: {
+        everBreachProbability: 0.0,
+        finalNetWorthP10: 1800000,
+        finalNetWorthP50: 3500000,
+        finalNetWorthP75: 5200000,
+        runwayP10: 360,
+        runwayP50: 360,
+        runwayP75: 360,
+        breachProbabilityByMonth: generateBreachData(360, 'none')
+      },
+      netWorthTrajectory: [
+        { month: 0, p10: 2000000, p50: 2000000, p75: 2000000 },
+        { month: 60, p10: 2400000, p50: 2800000, p75: 3200000 },
+        { month: 120, p10: 2600000, p50: 3200000, p75: 4000000 },
+        { month: 180, p10: 2200000, p50: 3000000, p75: 4200000 },
+        { month: 240, p10: 1800000, p50: 2600000, p75: 4000000 },
+        { month: 300, p10: 1400000, p50: 2200000, p75: 3600000 },
+        { month: 360, p10: 1000000, p50: 1800000, p75: 3200000 },
+      ],
+      pathsRun: 100,
+      baseSeed: 12345,
+      annualSnapshots: [
+        {
+          year: 2024, age: 50, startBalance: 2000000, contributions: 100000, withdrawals: 0, returnPct: 0.08, endBalance: 2260000, totalIncome: 180000, totalExpenses: 80000,
+          cashFlow: {
+            incomeSources: { employment: 180000, socialSecurity: 0, investment: 8000 },
+            expenseSources: { living: 80000, healthcare: 0 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 120000, taxableBrokerage: 400000, account401k: 1500000, rothIRA: 240000 } }
+        },
+        {
+          year: 2029, age: 55, startBalance: 2800000, contributions: 100000, withdrawals: 0, returnPct: 0.07, endBalance: 3100000, totalIncome: 190000, totalExpenses: 85000,
+          cashFlow: {
+            incomeSources: { employment: 190000, socialSecurity: 0, investment: 15000 },
+            expenseSources: { living: 85000, healthcare: 0 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 150000, taxableBrokerage: 600000, account401k: 2000000, rothIRA: 350000 } }
+        },
+        {
+          year: 2034, age: 60, startBalance: 3500000, contributions: 0, withdrawals: 90000, returnPct: 0.05, endBalance: 3580000, totalIncome: 0, totalExpenses: 90000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 0, investment: 18000 },
+            expenseSources: { living: 85000, healthcare: 5000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 180000, taxableBrokerage: 750000, account401k: 2300000, rothIRA: 350000 } },
+          withdrawalsByAccount: { taxable: 72000, taxDeferred: 0, roth: 0 }
+        },
+        {
+          year: 2039, age: 65, startBalance: 3200000, contributions: 0, withdrawals: 95000, returnPct: 0.06, endBalance: 3290000, totalIncome: 0, totalExpenses: 95000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 0, investment: 16000 },
+            expenseSources: { living: 87000, healthcare: 8000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 160000, taxableBrokerage: 680000, account401k: 2100000, rothIRA: 350000 } },
+          withdrawalsByAccount: { taxable: 79000, taxDeferred: 0, roth: 0 }
+        },
+        {
+          year: 2044, age: 70, startBalance: 2900000, contributions: 0, withdrawals: 100000, returnPct: 0.04, endBalance: 2916000, totalIncome: 48000, totalExpenses: 100000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 48000, investment: 14000 },
+            expenseSources: { living: 90000, healthcare: 10000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 140000, taxableBrokerage: 620000, account401k: 1800000, rothIRA: 356000 } },
+          withdrawalsByAccount: { taxable: 38000, taxDeferred: 0, roth: 0 }
+        },
+        {
+          year: 2049, age: 75, startBalance: 2500000, contributions: 0, withdrawals: 105000, returnPct: 0.07, endBalance: 2570000, totalIncome: 52000, totalExpenses: 105000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 52000, investment: 12000 },
+            expenseSources: { living: 92000, healthcare: 13000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 120000, taxableBrokerage: 550000, account401k: 1550000, rothIRA: 350000 } },
+          withdrawalsByAccount: { taxable: 41000, taxDeferred: 0, roth: 0 }
+        },
+        {
+          year: 2054, age: 80, startBalance: 2100000, contributions: 0, withdrawals: 110000, returnPct: 0.03, endBalance: 2050000, totalIncome: 55000, totalExpenses: 110000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 55000, investment: 10000 },
+            expenseSources: { living: 95000, healthcare: 15000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 100000, taxableBrokerage: 480000, account401k: 1150000, rothIRA: 320000 } },
+          withdrawalsByAccount: { taxable: 45000, taxDeferred: 0, roth: 0 }
+        },
+      ],
+      incomeChange: {
+        monthOffset: 120,
+        newAnnualIncome: 0,
+        description: "Retirement"
+      },
+      socialSecurity: {
+        claimingAge: 70,
+        monthlyBenefit: 4000
+      }
+    };
+
+    // Test 2: TRANSITION (Retirement at 60)
+    const testData2 = {
+      success: true,
+      runId: "AF-TRANS50",
+      startYear: 2024,
+      inputs: {
+        investableAssets: 1200000,
+        annualSpending: 80000,
+        currentAge: 50,
+        expectedIncome: 180000,
+        horizonMonths: 360  // 30 years to age 80
+      },
+      // v2: Plan Duration - shows constraint at ~Age 75
+      planDuration: {
+        mostPathsAge: 75,
+        earlierStressAge: 68,
+        laterOutcomesAge: 80,
+        horizonAge: 80,
+        horizonSaturated: false
+      },
+      // v2: Schedule with multiple events
+      schedule: {
+        startingPoint: {
+          age: 50,
+          assets: 1200000,
+          income: 180000,
+          spending: 80000
+        },
+        scheduledEvents: [
+          { age: 60, type: 'income', change: '$0', label: 'Retirement', icon: '📅' },
+          { age: 62, type: 'spending', change: '$70k/yr', label: 'Mortgage paid off', icon: '📅' },
+          { age: 70, type: 'social_security', change: '+$48k/yr', label: 'Social Security', icon: '🏛️' }
+        ]
+      },
+      mc: {
+        everBreachProbability: 0.18,
+        finalNetWorthP10: 450000,
+        finalNetWorthP50: 1400000,
+        finalNetWorthP75: 2600000,
+        runwayP10: 216,   // 18 years (age 68)
+        runwayP50: 300,   // 25 years (age 75)
+        runwayP75: 360,   // full horizon
+        breachProbabilityByMonth: generateBreachData(360, 'moderate')
+      },
+      netWorthTrajectory: [
+        { month: 0, p10: 1200000, p50: 1200000, p75: 1200000 },
+        { month: 60, p10: 1600000, p50: 2000000, p75: 2500000 },
+        { month: 120, p10: 2000000, p50: 2800000, p75: 3700000 },
+        { month: 180, p10: 1500000, p50: 2400000, p75: 3500000 },
+        { month: 240, p10: 900000, p50: 1800000, p75: 3000000 },
+        { month: 300, p10: 400000, p50: 1200000, p75: 2400000 },
+        { month: 360, p10: 100000, p50: 800000, p75: 1800000 },
+      ],
+      pathsRun: 100,
+      baseSeed: 67890,
+      annualSnapshots: [
+        {
+          year: 2024, age: 50, startBalance: 1200000, contributions: 100000, withdrawals: 0, returnPct: 0.08, endBalance: 1404000, totalIncome: 180000, totalExpenses: 80000,
+          cashFlow: {
+            incomeSources: { employment: 180000, socialSecurity: 0, investment: 6000 },
+            expenseSources: { living: 80000, healthcare: 0, taxes: { total: 45000, federal: 32000, state: 10000, fica: 3000 } }
+          },
+          balanceSheet: { investmentAccounts: { cash: 60000, taxableBrokerage: 240000, account401k: 750000, rothIRA: 150000 } }
+        },
+        {
+          year: 2029, age: 55, startBalance: 2000000, contributions: 100000, withdrawals: 0, returnPct: 0.07, endBalance: 2247000, totalIncome: 190000, totalExpenses: 85000,
+          cashFlow: {
+            incomeSources: { employment: 190000, socialSecurity: 0, investment: 10000 },
+            expenseSources: { living: 85000, healthcare: 0, taxes: { total: 48000, federal: 34000, state: 11000, fica: 3000 } }
+          },
+          balanceSheet: { investmentAccounts: { cash: 100000, taxableBrokerage: 400000, account401k: 1500000, rothIRA: 247000 } }
+        },
+        {
+          year: 2034, age: 60, startBalance: 2800000, contributions: 0, withdrawals: 80000, returnPct: 0.06, endBalance: 2888000, totalIncome: 0, totalExpenses: 80000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 0, investment: 14000 },
+            expenseSources: { living: 75000, healthcare: 5000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 140000, taxableBrokerage: 580000, account401k: 1850000, rothIRA: 318000 } },
+          withdrawalsByAccount: { taxable: 66000, taxDeferred: 0, roth: 0 }
+        },
+        {
+          year: 2036, age: 62, startBalance: 2700000, contributions: 0, withdrawals: 70000, returnPct: 0.05, endBalance: 2765000, totalIncome: 0, totalExpenses: 70000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 0, investment: 13000 },
+            expenseSources: { living: 64000, healthcare: 6000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 130000, taxableBrokerage: 550000, account401k: 1760000, rothIRA: 325000 } },
+          withdrawalsByAccount: { taxable: 57000, taxDeferred: 0, roth: 0 }
+        },
+        {
+          year: 2039, age: 65, startBalance: 2500000, contributions: 0, withdrawals: 70000, returnPct: 0.04, endBalance: 2528000, totalIncome: 0, totalExpenses: 70000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 0, investment: 12000 },
+            expenseSources: { living: 62000, healthcare: 8000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 120000, taxableBrokerage: 500000, account401k: 1588000, rothIRA: 320000 } },
+          withdrawalsByAccount: { taxable: 58000, taxDeferred: 0, roth: 0 }
+        },
+        {
+          year: 2044, age: 70, startBalance: 2200000, contributions: 0, withdrawals: 70000, returnPct: 0.07, endBalance: 2280000, totalIncome: 48000, totalExpenses: 70000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 48000, investment: 11000 },
+            expenseSources: { living: 60000, healthcare: 10000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 100000, taxableBrokerage: 450000, account401k: 1400000, rothIRA: 330000 } },
+          withdrawalsByAccount: { taxable: 11000, taxDeferred: 0, roth: 0 }
+        },
+        {
+          year: 2049, age: 75, startBalance: 1800000, contributions: 0, withdrawals: 75000, returnPct: 0.05, endBalance: 1815000, totalIncome: 52000, totalExpenses: 75000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 52000, investment: 9000 },
+            expenseSources: { living: 62000, healthcare: 13000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 80000, taxableBrokerage: 380000, account401k: 1055000, rothIRA: 300000 } },
+          withdrawalsByAccount: { taxable: 14000, taxDeferred: 0, roth: 0 }
+        },
+        {
+          year: 2054, age: 80, startBalance: 1400000, contributions: 0, withdrawals: 80000, returnPct: 0.03, endBalance: 1362000, totalIncome: 55000, totalExpenses: 80000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 55000, investment: 7000 },
+            expenseSources: { living: 65000, healthcare: 15000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 60000, taxableBrokerage: 300000, account401k: 752000, rothIRA: 250000 } },
+          withdrawalsByAccount: { taxable: 18000, taxDeferred: 0, roth: 0 }
+        },
+      ],
+      incomeChange: {
+        monthOffset: 120,
+        newAnnualIncome: 0,
+        description: "Retirement"
+      },
+      spendingChange: {
+        monthOffset: 144,
+        newAnnualSpending: 70000,
+        description: "Mortgage paid off"
+      },
+      socialSecurity: {
+        claimingAge: 70,
+        monthlyBenefit: 4000
+      }
+    };
+
+    // Test 3: HIGH CONSTRAINT (Short Runway)
+    const testData3 = {
+      success: true,
+      runId: "AF-CONST55",
+      startYear: 2024,
+      inputs: {
+        investableAssets: 400000,
+        annualSpending: 80000,
+        currentAge: 55,
+        expectedIncome: 0,
+        horizonMonths: 360  // 30 years to age 85
+      },
+      // v2: Plan Duration - shows short runway (~Age 63)
+      planDuration: {
+        mostPathsAge: 63,
+        earlierStressAge: 59,
+        laterOutcomesAge: 69,
+        horizonAge: 85,
+        horizonSaturated: false
+      },
+      // v2: Schedule
+      schedule: {
+        startingPoint: {
+          age: 55,
+          assets: 400000,
+          income: 0,
+          spending: 80000
+        },
+        scheduledEvents: [
+          { age: 62, type: 'social_security', change: '+$30k/yr', label: 'Social Security', icon: '🏛️' }
+        ]
+      },
+      mc: {
+        everBreachProbability: 0.55,
+        finalNetWorthP10: 0,
+        finalNetWorthP50: 0,
+        finalNetWorthP75: 120000,
+        runwayP10: 48,    // 4 years (age 59)
+        runwayP50: 96,    // 8 years (age 63)
+        runwayP75: 168,   // 14 years (age 69)
+        breachProbabilityByMonth: generateBreachData(360, 'steep')
+      },
+      netWorthTrajectory: [
+        { month: 0, p10: 400000, p50: 400000, p75: 400000 },
+        { month: 24, p10: 150000, p50: 250000, p75: 350000 },
+        { month: 48, p10: 0, p50: 100000, p75: 250000 },
+        { month: 72, p10: 0, p50: 0, p75: 150000 },
+        { month: 96, p10: 0, p50: 0, p75: 80000 },
+        { month: 144, p10: 0, p50: 0, p75: 20000 },
+        { month: 180, p10: 0, p50: 0, p75: 0 },
+      ],
+      pathsRun: 100,
+      baseSeed: 22222,
+      annualSnapshots: [
+        {
+          year: 2024, age: 55, startBalance: 400000, contributions: 0, withdrawals: 80000, returnPct: 0.05, endBalance: 336000, totalIncome: 0, totalExpenses: 80000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 0, investment: 2000 },
+            expenseSources: { living: 70000, healthcare: 10000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 20000, taxableBrokerage: 80000, account401k: 216000, rothIRA: 20000 } },
+          withdrawalsByAccount: { taxable: 60000, taxDeferred: 18000, roth: 0 }
+        },
+        {
+          year: 2026, age: 57, startBalance: 280000, contributions: 0, withdrawals: 80000, returnPct: -0.08, endBalance: 184000, totalIncome: 0, totalExpenses: 82000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 0, investment: 1400 },
+            expenseSources: { living: 70000, healthcare: 12000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 10000, taxableBrokerage: 30000, account401k: 134000, rothIRA: 10000 } },
+          withdrawalsByAccount: { taxable: 50000, taxDeferred: 30000, roth: 0 }
+        },
+        {
+          year: 2028, age: 59, startBalance: 140000, contributions: 0, withdrawals: 82000, returnPct: 0.04, endBalance: 60000, totalIncome: 0, totalExpenses: 85000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 0, investment: 700 },
+            expenseSources: { living: 70000, healthcare: 15000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 5000, taxableBrokerage: 0, account401k: 50000, rothIRA: 5000 } },
+          withdrawalsByAccount: { taxable: 30000, taxDeferred: 50000, roth: 0 }
+        },
+        {
+          year: 2030, age: 61, startBalance: 20000, contributions: 0, withdrawals: 40000, returnPct: 0.02, endBalance: 0, totalIncome: 0, totalExpenses: 88000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 0, investment: 100 },
+            expenseSources: { living: 70000, healthcare: 18000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 0, taxableBrokerage: 0, account401k: 0, rothIRA: 0 } },
+          withdrawalsByAccount: { taxable: 0, taxDeferred: 15000, roth: 5000 }
+        },
+        {
+          year: 2031, age: 62, startBalance: 0, contributions: 0, withdrawals: 0, returnPct: 0, endBalance: 0, totalIncome: 30000, totalExpenses: 85000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 30000, investment: 0 },
+            expenseSources: { living: 65000, healthcare: 20000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 0, taxableBrokerage: 0, account401k: 0, rothIRA: 0 } }
+        },
+        {
+          year: 2034, age: 65, startBalance: 0, contributions: 0, withdrawals: 0, returnPct: 0, endBalance: 0, totalIncome: 32000, totalExpenses: 90000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 32000, investment: 0 },
+            expenseSources: { living: 68000, healthcare: 22000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 0, taxableBrokerage: 0, account401k: 0, rothIRA: 0 } }
+        },
+      ],
+      socialSecurity: {
+        claimingAge: 62,
+        monthlyBenefit: 2500
+      }
+    };
+
+    // Test 4: COMPLEX SCHEDULE (Roth Ladder + Events)
+    const testData4 = {
+      success: true,
+      runId: "AF-ROTH55",
+      startYear: 2024,
+      inputs: {
+        investableAssets: 1500000,
+        annualSpending: 70000,
+        currentAge: 55,
+        expectedIncome: 150000,
+        horizonMonths: 360  // 30 years to age 85
+      },
+      // v2: Plan Duration
+      planDuration: {
+        mostPathsAge: 78,
+        earlierStressAge: 72,
+        laterOutcomesAge: 85,
+        horizonAge: 85,
+        horizonSaturated: false
+      },
+      // v2: Schedule with multiple Roth conversions and events
+      schedule: {
+        startingPoint: {
+          age: 55,
+          assets: 1500000,
+          income: 150000,
+          spending: 70000
+        },
+        scheduledEvents: [
+          { age: 58, type: 'expense', change: '$300k', label: 'Home purchase', icon: '💸' },
+          { age: 60, type: 'income', change: '$0', label: 'Retirement', icon: '📅' },
+          { age: 60, type: 'roth_conversion', change: '$50k', label: 'Roth conversion', icon: '🔄' },
+          { age: 61, type: 'roth_conversion', change: '$50k', label: 'Roth conversion', icon: '🔄' },
+          { age: 62, type: 'roth_conversion', change: '$50k', label: 'Roth conversion', icon: '🔄' },
+          { age: 67, type: 'social_security', change: '+$42k/yr', label: 'Social Security', icon: '🏛️' }
+        ]
+      },
+      mc: {
+        everBreachProbability: 0.12,
+        finalNetWorthP10: 200000,
+        finalNetWorthP50: 800000,
+        finalNetWorthP75: 1600000,
+        runwayP10: 204,   // 17 years (age 72)
+        runwayP50: 276,   // 23 years (age 78)
+        runwayP75: 360,   // full horizon
+        breachProbabilityByMonth: generateBreachData(360, 'gradual')
+      },
+      netWorthTrajectory: [
+        { month: 0, p10: 1500000, p50: 1500000, p75: 1500000 },
+        { month: 36, p10: 1100000, p50: 1300000, p75: 1500000 },
+        { month: 60, p10: 1000000, p50: 1250000, p75: 1550000 },
+        { month: 120, p10: 700000, p50: 1000000, p75: 1400000 },
+        { month: 180, p10: 400000, p50: 800000, p75: 1300000 },
+        { month: 240, p10: 200000, p50: 600000, p75: 1100000 },
+        { month: 300, p10: 50000, p50: 400000, p75: 900000 },
+        { month: 360, p10: 0, p50: 300000, p75: 700000 },
+      ],
+      pathsRun: 100,
+      baseSeed: 33333,
+      annualSnapshots: [
+        {
+          year: 2024, age: 55, startBalance: 1500000, contributions: 80000, withdrawals: 0, returnPct: 0.07, endBalance: 1690000, totalIncome: 150000, totalExpenses: 70000,
+          cashFlow: {
+            incomeSources: { employment: 150000, socialSecurity: 0, investment: 7500 },
+            expenseSources: { living: 70000, healthcare: 0, taxes: { total: 38000, federal: 27000, state: 8500, fica: 2500 } }
+          },
+          balanceSheet: { investmentAccounts: { cash: 85000, taxableBrokerage: 340000, account401k: 1100000, rothIRA: 165000 } }
+        },
+        {
+          year: 2027, age: 58, startBalance: 1900000, contributions: 80000, withdrawals: 300000, returnPct: 0.05, endBalance: 1764000, totalIncome: 155000, totalExpenses: 370000,
+          cashFlow: {
+            incomeSources: { employment: 155000, socialSecurity: 0, investment: 9500 },
+            expenseSources: { living: 70000, healthcare: 0, taxes: { total: 40000, federal: 28000, state: 9000, fica: 3000 } }
+          },
+          balanceSheet: { investmentAccounts: { cash: 90000, taxableBrokerage: 150000, account401k: 1324000, rothIRA: 200000 } },
+          withdrawalsByAccount: { taxable: 280000, taxDeferred: 20000, roth: 0 }
+        },
+        {
+          year: 2029, age: 60, startBalance: 1600000, contributions: 0, withdrawals: 70000, returnPct: 0.08, endBalance: 1652000, totalIncome: 0, totalExpenses: 70000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 0, investment: 8000 },
+            expenseSources: { living: 65000, healthcare: 5000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 80000, taxableBrokerage: 170000, account401k: 1152000, rothIRA: 250000 } },
+          withdrawalsByAccount: { taxable: 62000, taxDeferred: 0, roth: 0 }
+        },
+        {
+          year: 2034, age: 65, startBalance: 1400000, contributions: 0, withdrawals: 75000, returnPct: 0.04, endBalance: 1381000, totalIncome: 0, totalExpenses: 75000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 0, investment: 7000 },
+            expenseSources: { living: 67000, healthcare: 8000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 70000, taxableBrokerage: 140000, account401k: 821000, rothIRA: 350000 } },
+          withdrawalsByAccount: { taxable: 30000, taxDeferred: 38000, roth: 0 }
+        },
+        {
+          year: 2036, age: 67, startBalance: 1300000, contributions: 0, withdrawals: 75000, returnPct: 0.06, endBalance: 1299000, totalIncome: 42000, totalExpenses: 75000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 42000, investment: 6500 },
+            expenseSources: { living: 65000, healthcare: 10000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 65000, taxableBrokerage: 120000, account401k: 714000, rothIRA: 400000 } },
+          withdrawalsByAccount: { taxable: 10000, taxDeferred: 17000, roth: 0 }
+        },
+        {
+          year: 2044, age: 75, startBalance: 1000000, contributions: 0, withdrawals: 80000, returnPct: 0.05, endBalance: 966000, totalIncome: 48000, totalExpenses: 80000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 48000, investment: 5000 },
+            expenseSources: { living: 65000, healthcare: 15000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 48000, taxableBrokerage: 80000, account401k: 388000, rothIRA: 450000 } },
+          withdrawalsByAccount: { taxable: 10000, taxDeferred: 17000, roth: 0 }
+        },
+        {
+          year: 2054, age: 85, startBalance: 600000, contributions: 0, withdrawals: 85000, returnPct: 0.03, endBalance: 530000, totalIncome: 52000, totalExpenses: 85000,
+          cashFlow: {
+            incomeSources: { employment: 0, socialSecurity: 52000, investment: 3000 },
+            expenseSources: { living: 65000, healthcare: 20000 }
+          },
+          balanceSheet: { investmentAccounts: { cash: 25000, taxableBrokerage: 40000, account401k: 115000, rothIRA: 350000 } },
+          withdrawalsByAccount: { taxable: 10000, taxDeferred: 10000, roth: 10000 }
+        },
+      ],
+      incomeChange: {
+        monthOffset: 60,
+        newAnnualIncome: 0,
+        description: "Retirement"
+      },
+      oneTimeEvents: [
+        {
+          monthOffset: 36,
+          amount: 300000,
+          type: "expense",
+          description: "Home purchase"
+        }
+      ],
+      rothConversions: [
+        { yearOffset: 5, amount: 50000 },
+        { yearOffset: 6, amount: 50000 },
+        { yearOffset: 7, amount: 50000 }
+      ],
+      socialSecurity: {
+        claimingAge: 67,
+        monthlyBenefit: 3500
+      }
+    };
+
+    function loadTest1() {
+      document.getElementById('frame1').contentWindow.postMessage({
+        type: 'simulationResult',
+        result: testData1
+      }, '*');
+    }
+
+    function loadTest2() {
+      document.getElementById('frame2').contentWindow.postMessage({
+        type: 'simulationResult',
+        result: testData2
+      }, '*');
+    }
+
+    function loadTest3() {
+      document.getElementById('frame3').contentWindow.postMessage({
+        type: 'simulationResult',
+        result: testData3
+      }, '*');
+    }
+
+    function loadTest4() {
+      document.getElementById('frame4').contentWindow.postMessage({
+        type: 'simulationResult',
+        result: testData4
+      }, '*');
+    }
+
+    // Theme toggle functionality
+    let currentTheme = 'light';
+    let currentDisplayMode = 'inline';
+
+    function toggleTheme() {
+      currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+      applyTheme(currentTheme);
+    }
+
+    function applyTheme(theme) {
+      // Apply to test page
+      document.documentElement.setAttribute('data-theme', theme);
+      document.getElementById('theme-indicator').textContent = theme === 'dark' ? 'Dark' : 'Light';
+
+      // Propagate to all iframes (simulating ChatGPT Apps SDK)
+      const frames = document.querySelectorAll('iframe');
+      frames.forEach(frame => {
+        try {
+          // Set data-theme on iframe's html element
+          if (frame.contentDocument && frame.contentDocument.documentElement) {
+            frame.contentDocument.documentElement.setAttribute('data-theme', theme);
+            frame.contentDocument.documentElement.style.colorScheme = theme;
+          }
+          // Also send openai:set_globals event (how ChatGPT does it)
+          frame.contentWindow.postMessage({
+            type: 'themeChange',
+            theme: theme
+          }, '*');
+        } catch (e) {
+          // Cross-origin iframe, try postMessage only
+          frame.contentWindow.postMessage({
+            type: 'themeChange',
+            theme: theme
+          }, '*');
+        }
+      });
+    }
+
+    function setDisplayMode(mode) {
+      currentDisplayMode = mode;
+      document.getElementById('display-mode-indicator').textContent = mode;
+
+      // Propagate to all iframes
+      const frames = document.querySelectorAll('iframe');
+      frames.forEach(frame => {
+        try {
+          // Set data-display-mode on widget element
+          if (frame.contentDocument) {
+            const widget = frame.contentDocument.getElementById('root');
+            if (widget) {
+              widget.setAttribute('data-display-mode', mode);
+            }
+          }
+          // Also send postMessage
+          frame.contentWindow.postMessage({
+            type: 'displayModeChange',
+            mode: mode
+          }, '*');
+        } catch (e) {
+          // Cross-origin iframe, try postMessage only
+          frame.contentWindow.postMessage({
+            type: 'displayModeChange',
+            mode: mode
+          }, '*');
+        }
+      });
+    }
+
+    // Auto-load all tests after frames load
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        loadTest1();
+        loadTest2();
+        loadTest3();
+        loadTest4();
+        // Apply initial theme and display mode to iframes
+        applyTheme(currentTheme);
+        setDisplayMode(currentDisplayMode);
+      }, 500);
+    });
+  </script>
+</body>
+</html>

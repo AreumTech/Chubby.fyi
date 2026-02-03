@@ -1,0 +1,31 @@
+{
+  "name": "@areumfire/mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for AreumFire financial simulation (ChatGPT App integration)",
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "node tests/integration.test.js",
+    "test:ci": "npm run build && node tests/integration.test.js",
+    "test:perf": "npx tsx tests/performance.test.ts",
+    "test:perf:quick": "PERF_ITERATIONS=3 PERF_WARMUP=0 npx tsx tests/performance.test.ts",
+    "chatgpt": "node scripts/chatgpt-test.js",
+    "chatgpt:tunnel": "node scripts/chatgpt-test.js --tunnel"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "pako": "^2.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/pako": "^2.0.4",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

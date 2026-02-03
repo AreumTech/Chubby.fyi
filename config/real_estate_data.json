@@ -1,0 +1,132 @@
+{
+  "description": "Real Estate Market Data for Accurate Housing Return Calculations",
+  "dataSource": "Case-Shiller Home Price Index, Federal Housing Finance Agency, NAR data",
+  "lastUpdated": "2025-09-16",
+  "methodology": "Replace real estate approximations with actual regional housing data",
+  "notes": {
+    "homeAppreciation": "Based on Case-Shiller 20-City Composite Home Price Index",
+    "regionalVariation": "Geographic adjustment factors for major metro areas",
+    "maintenanceCosts": "Annual maintenance as percentage of home value",
+    "transactionCosts": "Buying/selling costs including realtor fees, taxes, inspections"
+  },
+  "nationalHousingData": {
+    "2020": {
+      "appreciation": 0.1056,
+      "maintenanceCost": 0.015,
+      "propertyTaxRate": 0.011,
+      "insuranceCost": 0.004,
+      "netReturn": 0.0756
+    },
+    "2021": {
+      "appreciation": 0.1941,
+      "maintenanceCost": 0.016,
+      "propertyTaxRate": 0.011,
+      "insuranceCost": 0.004,
+      "netReturn": 0.1631
+    },
+    "2022": {
+      "appreciation": 0.1006,
+      "maintenanceCost": 0.018,
+      "propertyTaxRate": 0.012,
+      "insuranceCost": 0.005,
+      "netReturn": 0.0656
+    },
+    "2023": {
+      "appreciation": 0.0551,
+      "maintenanceCost": 0.019,
+      "propertyTaxRate": 0.012,
+      "insuranceCost": 0.005,
+      "netReturn": 0.0191
+    },
+    "2024": {
+      "appreciation": 0.0389,
+      "maintenanceCost": 0.020,
+      "propertyTaxRate": 0.013,
+      "insuranceCost": 0.006,
+      "netReturn": 0.0000
+    }
+  },
+  "regionalMultipliers": {
+    "description": "Regional adjustment factors for major metropolitan areas",
+    "methodology": "Multipliers applied to national data based on local market conditions",
+    "sanFrancisco": 1.45,
+    "newYork": 1.32,
+    "seattle": 1.28,
+    "boston": 1.21,
+    "washingtonDC": 1.18,
+    "losAngeles": 1.35,
+    "chicago": 0.92,
+    "dallas": 1.08,
+    "atlanta": 1.02,
+    "phoenix": 1.15,
+    "miami": 1.26,
+    "denver": 1.19,
+    "national": 1.00
+  },
+  "transactionCosts": {
+    "buying": {
+      "realtorFee": 0.03,
+      "titleInsurance": 0.005,
+      "inspection": 0.001,
+      "loanOrigination": 0.01,
+      "total": 0.046
+    },
+    "selling": {
+      "realtorFee": 0.06,
+      "staging": 0.005,
+      "repairs": 0.015,
+      "total": 0.08
+    },
+    "roundTrip": 0.126
+  },
+  "rentalMarketData": {
+    "description": "Rental cost inflation and regional variation",
+    "nationalRentGrowth": {
+      "2020": 0.0143,
+      "2021": 0.0891,
+      "2022": 0.0794,
+      "2023": 0.0521,
+      "2024": 0.0332
+    },
+    "regionMultipliers": {
+      "sanFrancisco": 1.68,
+      "newYork": 1.54,
+      "seattle": 1.41,
+      "boston": 1.33,
+      "washingtonDC": 1.29,
+      "losAngeles": 1.47,
+      "chicago": 0.88,
+      "dallas": 0.94,
+      "atlanta": 0.87,
+      "phoenix": 1.03,
+      "miami": 1.21,
+      "denver": 1.14,
+      "national": 1.00
+    }
+  },
+  "affordabilityMetrics": {
+    "description": "Housing affordability ratios for financial planning",
+    "medianHomePriceToIncome": {
+      "national": 5.2,
+      "sanFrancisco": 9.8,
+      "newYork": 8.1,
+      "seattle": 6.9,
+      "boston": 6.4,
+      "losAngeles": 8.9,
+      "chicago": 4.1,
+      "dallas": 3.8,
+      "atlanta": 3.6
+    },
+    "rentToIncomeRatio": {
+      "national": 0.28,
+      "sanFrancisco": 0.47,
+      "newYork": 0.43,
+      "seattle": 0.39,
+      "boston": 0.37,
+      "losAngeles": 0.41,
+      "chicago": 0.25,
+      "dallas": 0.24,
+      "atlanta": 0.24
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "simulationInput": {
+    "initialAccounts": {
+      "cash": 2000
+    },
+    "events": [
+      {
+        "id": "test-expense",
+        "type": "EXPENSE",
+        "monthOffset": 0,
+        "amount": 800,
+        "metadata": {
+          "name": "Test Monthly Expense",
+          "frequency": "one-time",
+          "category": "living"
+        }
+      }
+    ],
+    "config": {
+      "expectedReturns": {
+        "CASH": 0.02
+      },
+      "volatilities": {
+        "CASH": 0.01
+      }
+    },
+    "monthsToRun": 2,
+    "withdrawalStrategy": {
+      "strategy": "taxable_first"
+    }
+  },
+  "expectedOutputs": {
+    "expense_amount": 800,
+    "final_cash": 1200,
+    "simulation_success": true
+  }
+}

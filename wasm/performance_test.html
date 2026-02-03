@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WASM Performance Test</title>
+    <style>
+        body { font-family: monospace; margin: 20px; }
+        .result { margin: 10px 0; padding: 5px; }
+        .pass { background-color: #d4edda; color: #155724; }
+        .fail { background-color: #f8d7da; color: #721c24; }
+        .warn { background-color: #fff3cd; color: #856404; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { margin: 5px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>WASM Performance Test</h1>
+    <div id="output"></div>
+    <button onclick="runFullTest()">🚀 Run Full Performance Test</button>
+    <button onclick="runQuickTest()">⚡ Quick Test</button>
+    <button onclick="clearOutput()">🗑️ Clear</button>
+    
+    <script src="../public/wasm_exec.js"></script>
+    <script>
+        let wasmModule = null;
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(div);
+            console.log(message);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+        
+        async function loadWASM() {
+            if (wasmModule) return true;
+            
+            try {
+                log('🔄 Loading WASM module...', 'info');
+                const loadStart = performance.now();
+                
+                const go = new Go();
+                const result = await WebAssembly.instantiateStreaming(fetch('../public/pathfinder.wasm'), go.importObject);
+                wasmModule = result.instance;
+                go.run(wasmModule);
+                
+                const loadTime = Math.round(performance.now() - loadStart);
+                log(`✅ WASM loaded in ${loadTime}ms`, 'pass');
+                
+                // Check if functions are available
+                if (typeof window.runSingleSimulation === 'function') {
+                    log('✅ runSingleSimulation function available', 'pass');
+                    return true;
+                } else {
+                    log('❌ runSingleSimulation function not found', 'fail');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ WASM loading failed: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+        
+        function createTestInput(months = 12, complexity = 'simple') {
+            const base = {
+                initialAccounts: {
+                    cash: 10000,
+                    taxable: { totalValue: 50000, holdings: [] },
+                    taxDeferred: { totalValue: 100000, holdings: [] },
+                    roth: { totalValue: 25000, holdings: [] }
+                },
+                events: [],
+                monthsToRun: months,
+                config: {
+                    stochasticModel: {
+                        correlationMatrix: [
+                            [1.0, 0.2, 0.3],
+                            [0.2, 1.0, 0.1], 
+                            [0.3, 0.1, 1.0]
+                        ]
+                    }
+                }
+            };
+            
+            if (complexity === 'simple') {
+                base.events = [
+                    { id: "expense1", type: "EXPENSE", amount: 1000, startMonth: 1, endMonth: -1 },
+                    { id: "income1", type: "INCOME", amount: 5000, startMonth: 0, endMonth: -1 }
+                ];
+            } else if (complexity === 'complex') {
+                base.events = [
+                    { id: "expense1", type: "EXPENSE", amount: 1000, startMonth: 1, endMonth: -1 },
+                    { id: "expense2", type: "EXPENSE", amount: 500, startMonth: 6, endMonth: -1 },
+                    { id: "income1", type: "INCOME", amount: 5000, startMonth: 0, endMonth: -1 },
+                    { id: "income2", type: "INCOME", amount: 2000, startMonth: 3, endMonth: 24 },
+                    { id: "contrib1", type: "CONTRIBUTION", amount: 1000, startMonth: 2, endMonth: -1, metadata: { targetAccountType: "tax_deferred" }},
+                    { id: "withdraw1", type: "WITHDRAWAL", amount: 800, startMonth: 12, endMonth: 24, metadata: { sourceAccountType: "taxable" }}
+                ];
+            }
+            
+            return base;
+        }
+        
+        async function runSingleTest(description, testInput, expectedTime = 1000) {
+            log(`🧪 ${description}...`, 'info');
+            
+            try {
+                const startTime = performance.now();
+                const result = window.runSingleSimulation(JSON.stringify(testInput));
+                const endTime = performance.now();
+                const duration = Math.round(endTime - startTime);
+                
+                // Parse result
+                let parsedResult;
+                try {
+                    parsedResult = typeof result === 'string' ? JSON.parse(result) : result;
+                } catch (e) {
+                    log(`❌ ${description}: Failed to parse result`, 'fail');
+                    return { success: false, duration };
+                }
+                
+                // Evaluate performance
+                let perfStatus = 'pass';
+                let perfMessage = '';
+                if (duration < expectedTime * 0.5) {
+                    perfStatus = 'pass';
+                    perfMessage = 'EXCELLENT';
+                } else if (duration < expectedTime) {
+                    perfStatus = 'pass'; 
+                    perfMessage = 'GOOD';
+                } else if (duration < expectedTime * 2) {
+                    perfStatus = 'warn';
+                    perfMessage = 'ACCEPTABLE';
+                } else {
+                    perfStatus = 'fail';
+                    perfMessage = 'SLOW';
+                }
+                
+                if (parsedResult.success === true) {
+                    log(`✅ ${description}: ${duration}ms (${perfMessage}) - $${parsedResult.finalNetWorth?.toFixed(2) || 'N/A'} net worth`, perfStatus);
+                    return { success: true, duration, netWorth: parsedResult.finalNetWorth };
+                } else {
+                    log(`❌ ${description}: Failed - ${parsedResult.error || 'Unknown error'}`, 'fail');
+                    return { success: false, duration, error: parsedResult.error };
+                }
+            } catch (error) {
+                log(`❌ ${description}: Exception - ${error.message}`, 'fail');
+                return { success: false, duration: 0, error: error.message };
+            }
+        }
+        
+        async function runQuickTest() {
+            log('=== Quick Performance Test ===', 'info');
+            
+            const loaded = await loadWASM();
+            if (!loaded) return;
+            
+            // Quick test - simple 12-month simulation
+            const quickInput = createTestInput(12, 'simple');
+            const result = await runSingleTest('Quick 12-month simulation', quickInput, 500);
+            
+            if (result.success) {
+                log('✅ Quick test completed successfully', 'pass');
+            } else {
+                log('❌ Quick test failed', 'fail');
+            }
+        }
+        
+        async function runFullTest() {
+            log('=== Full Performance Test Suite ===', 'info');
+            
+            const loaded = await loadWASM();
+            if (!loaded) return;
+            
+            const tests = [
+                { name: 'Short simulation (6 months)', input: createTestInput(6, 'simple'), expected: 300 },
+                { name: 'Standard simulation (12 months)', input: createTestInput(12, 'simple'), expected: 500 },
+                { name: 'Long simulation (24 months)', input: createTestInput(24, 'simple'), expected: 800 },
+                { name: 'Complex events (12 months)', input: createTestInput(12, 'complex'), expected: 600 },
+                { name: 'Long complex (24 months)', input: createTestInput(24, 'complex'), expected: 1000 }
+            ];
+            
+            const results = [];
+            for (const test of tests) {
+                const result = await runSingleTest(test.name, test.input, test.expected);
+                results.push({ ...test, ...result });
+                
+                // Small delay between tests to prevent overload
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            // Summary
+            const successCount = results.filter(r => r.success).length;
+            const avgTime = Math.round(results.reduce((sum, r) => sum + r.duration, 0) / results.length);
+            const maxTime = Math.max(...results.map(r => r.duration));
+            
+            log('=== Test Summary ===', 'info');
+            log(`📊 ${successCount}/${results.length} tests passed`, successCount === results.length ? 'pass' : 'warn');
+            log(`⏱️ Average time: ${avgTime}ms`, avgTime < 500 ? 'pass' : avgTime < 1000 ? 'warn' : 'fail');
+            log(`🏃 Max time: ${maxTime}ms`, maxTime < 1000 ? 'pass' : maxTime < 2000 ? 'warn' : 'fail');
+            
+            if (successCount === results.length && avgTime < 1000) {
+                log('🎉 PERFORMANCE TEST PASSED - Simulation is fast and stable!', 'pass');
+            } else if (successCount === results.length) {
+                log('⚠️ All tests passed but performance could be better', 'warn');
+            } else {
+                log('❌ Some tests failed - check for errors above', 'fail');
+            }
+        }
+        
+        // Auto-load WASM on page load
+        window.addEventListener('load', () => {
+            log('🔄 Page loaded, ready to test WASM performance', 'info');
+        });
+    </script>
+</body>
+</html>

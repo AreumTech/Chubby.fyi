@@ -1,0 +1,49 @@
+{
+  "tiers": {
+    "bronze": {
+      "name": "Standard",
+      "blockedOutputs": [
+        {
+          "outputName": "Sensitivity Analysis",
+          "reason": "Additional inputs required",
+          "upgradeMessage": "Provide scenario variations to enable sensitivity analysis",
+          "requiredTier": "silver"
+        },
+        {
+          "outputName": "Tax Optimization",
+          "reason": "Optimization not implemented",
+          "upgradeMessage": "Tax optimization requires additional configuration",
+          "requiredTier": "gold"
+        },
+        {
+          "outputName": "Scenario Comparison",
+          "reason": "Single scenario mode",
+          "upgradeMessage": "Run multiple simulations to compare scenarios",
+          "requiredTier": "silver"
+        }
+      ],
+      "maxMcPaths": 100,
+      "features": ["basic_simulation", "net_worth_projection", "breach_probability", "instant_loss_comparison"]
+    },
+    "silver": {
+      "name": "Advanced",
+      "blockedOutputs": [
+        {
+          "outputName": "Tax Optimization",
+          "reason": "Optimization not implemented",
+          "upgradeMessage": "Tax optimization requires additional configuration",
+          "requiredTier": "gold"
+        }
+      ],
+      "maxMcPaths": 1000,
+      "features": ["basic_simulation", "net_worth_projection", "breach_probability", "sensitivity_analysis", "scenario_comparison"]
+    },
+    "gold": {
+      "name": "Full",
+      "blockedOutputs": [],
+      "maxMcPaths": 10000,
+      "features": ["basic_simulation", "net_worth_projection", "breach_probability", "sensitivity_analysis", "scenario_comparison", "tax_optimization"]
+    }
+  },
+  "defaultTier": "bronze"
+}

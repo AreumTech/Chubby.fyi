@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Setup — Chubby</title>
+  <meta name="description" content="Connect Chubby Monte Carlo simulation to Claude Desktop or claude.ai.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="../css/style.css">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-inner">
+      <a href="../" class="logo"><img src="../chubby.png" alt="Chubby" class="logo-img"><span class="logo-text">Chubby</span></a>
+
+      <div class="header-cta">
+        <a href="https://claude.ai" class="btn btn-primary">Open Claude</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Intro -->
+  <section class="intro">
+    <div class="container">
+      <div class="doc-kicker mono">Setup Guide</div>
+      <h1>Connect to Claude</h1>
+
+      <p class="lead">
+        Run Monte Carlo simulations in Claude Desktop or claude.ai. Fragment URLs mean your data never leaves your browser.
+      </p>
+    </div>
+  </section>
+
+  <!-- Setup Steps -->
+  <section class="section section-muted">
+    <div class="container">
+      <h2 class="section-title">Claude Desktop</h2>
+
+      <div class="steps mb-12">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3 class="step-title">Open Claude Desktop</h3>
+            <p class="step-description">Launch the Claude Desktop application.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3 class="step-title">Add Custom Connector</h3>
+            <p class="step-description">
+              Go to <strong>Settings → Connectors → Add custom connector</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3 class="step-title">Enter the MCP Server URL</h3>
+            <div class="trust-inline-code mono" style="margin-top: var(--space-3);">
+              https://mcp.chubby.fyi/mcp
+            </div>
+            <p class="step-description" style="margin-top: var(--space-2);">
+              Authentication: <span class="mono">None</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h3 class="step-title">Save and Chat</h3>
+            <p class="step-description">The connector is available in your next conversation.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h2 class="section-title">Claude.ai (Browser)</h2>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3 class="step-title">Go to claude.ai</h3>
+            <p class="step-description">Sign in at <a href="https://claude.ai" target="_blank" class="doc-link">claude.ai</a></p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3 class="step-title">Add Connector</h3>
+            <p class="step-description"><strong>Settings → Connectors → Add custom connector</strong></p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3 class="step-title">Paste URL</h3>
+            <div class="trust-inline-code mono" style="margin-top: var(--space-3);">
+              https://mcp.chubby.fyi/mcp
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h3 class="step-title">Enable and Start</h3>
+            <p class="step-description">Toggle the connector on and start chatting.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Test -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Test Your Connection</h2>
+
+      <p class="lead-sm mb-6">Try this prompt to verify the connector is working:</p>
+
+      <div class="trust-inline-code mono" style="max-width: 700px;">
+        Run a simulation: age 55, $400k saved, no income, spending $80k/year. Seed 22222.
+      </div>
+
+      <p class="step-description" style="margin-top: var(--space-4);">
+        Claude should invoke the <span class="mono">run_simulation_packet</span> tool and return a fragment URL pointing to <span class="mono">widget.chubby.fyi</span>.
+      </p>
+    </div>
+  </section>
+
+  <!-- Privacy -->
+  <section class="section section-muted">
+    <div class="container">
+      <h2 class="section-title">Privacy Advantage</h2>
+
+      <div class="trust-essay">
+        <p class="trust-paragraph">
+          Claude's connector returns fragment URLs. The <span class="mono">#fragment</span> portion of a URL is never sent to servers — this is browser security, not a choice we make.
+        </p>
+        <div class="trust-inline-code mono">
+          https://widget.chubby.fyi/#d=eJxLTEo...  <span class="trust-note">#fragment never reaches servers</span>
+        </div>
+        <p class="trust-paragraph">
+          This means your simulation data exists only in your browser. We can't see it, store it, or share it.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <p class="footer-disclaimer">
+        Chubby is an educational tool, not financial advice.<br>
+        This simulation answers: "What tends to happen under these assumptions?"
+      </p>
+
+      <div class="footer-links">
+        <a href="../" class="doc-link">← Back to home</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

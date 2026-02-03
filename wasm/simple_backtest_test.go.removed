@@ -1,0 +1,173 @@
+package main
+
+import (
+	"math"
+	"testing"
+)
+
+// TestHistoricalCalculations tests basic historical calculation functions
+func TestHistoricalCalculations(t *testing.T) {
+
+	t.Run("BacktestResultCalculation", func(t *testing.T) {
+		scenario := HistoricalScenario{
+			Name:               "Test Scenario",
+			InitialInvestment:  10000,
+			ExpectedFinalValue: 20000,
+			Tolerance:          0.05, // 5% tolerance
+		}
+
+		// Test within tolerance
+		result1 := CalculateBacktestResult("test", scenario, 20500, 120) // 10 years, within 5%
+		if !result1.WithinTolerance {
+			t.Errorf("Result should be within tolerance: %.2f%% difference vs %.1f%% tolerance",
+				result1.PercentageDiff*100, result1.Tolerance*100)
+		}
+
+		// Test outside tolerance
+		result2 := CalculateBacktestResult("test", scenario, 22000, 120) // 10 years, 10% difference
+		if result2.WithinTolerance {
+			t.Errorf("Result should be outside tolerance: %.2f%% difference vs %.1f%% tolerance",
+				result2.PercentageDiff*100, result2.Tolerance*100)
+		}
+
+		// Validate annualized return calculation
+		years := 10.0
+		expectedAnnualReturn := math.Pow(scenario.ExpectedFinalValue/scenario.InitialInvestment, 1.0/years) - 1.0
+		if math.Abs(result1.ExpectedReturn-expectedAnnualReturn) > 0.0001 {
+			t.Errorf("Expected return calculation incorrect: expected %.4f, got %.4f",
+				expectedAnnualReturn, result1.ExpectedReturn)
+		}
+	})
+}
+
+// TestHistoricalDataValidation tests validation of historical market data
+func TestHistoricalDataValidation(t *testing.T) {
+	// Test data that represents reasonable market conditions
+	testData := map[string]HistoricalYear{
+		"1980": {SPYReturn: 0.3256, BondReturn: 0.0241, Inflation: 0.1355},
+		"1981": {SPYReturn: -0.0491, BondReturn: 0.0664, Inflation: 0.1016},
+		"2008": {SPYReturn: -0.3700, BondReturn: 0.0520, Inflation: 0.0038}, // Financial crisis
+		"2009": {SPYReturn: 0.2646, BondReturn: 0.0593, Inflation: -0.0036}, // Recovery
+	}
+
+	for year, data := range testData {
+		// Validate return ranges are reasonable
+		if data.SPYReturn < -0.6 || data.SPYReturn > 0.6 {
+			t.Errorf("Year %s: SPY return seems extreme: %.2f", year, data.SPYReturn)
+		}
+		if data.BondReturn < -0.3 || data.BondReturn > 0.5 {
+			t.Errorf("Year %s: Bond return seems extreme: %.2f", year, data.BondReturn)
+		}
+		if data.Inflation < -0.1 || data.Inflation > 0.2 {
+			t.Errorf("Year %s: Inflation seems extreme: %.2f", year, data.Inflation)
+		}
+
+		// Test monthly conversion
+		monthlySPY := calculateMonthlyReturn(data.SPYReturn)
+		monthlyBond := calculateMonthlyReturn(data.BondReturn)
+		monthlyInflation := calculateMonthlyReturn(data.Inflation)
+
+		// Validate monthly conversions are reasonable
+		if math.IsNaN(monthlySPY) || math.IsInf(monthlySPY, 0) {
+			t.Errorf("Year %s: Invalid monthly SPY return: %.6f", year, monthlySPY)
+		}
+		if math.IsNaN(monthlyBond) || math.IsInf(monthlyBond, 0) {
+			t.Errorf("Year %s: Invalid monthly bond return: %.6f", year, monthlyBond)
+		}
+		if math.IsNaN(monthlyInflation) || math.IsInf(monthlyInflation, 0) {
+			t.Errorf("Year %s: Invalid monthly inflation: %.6f", year, monthlyInflation)
+		}
+	}
+}
+
+// TestCompoundGrowthValidation tests compound growth calculations over time
+func TestCompoundGrowthValidation(t *testing.T) {
+	initialValue := 10000.0
+
+	// Test simple 10% annual growth over 10 years
+	annualReturn := 0.10
+	years := 10
+	monthlyReturn := calculateMonthlyReturn(annualReturn)
+
+	// Apply monthly compounding
+	currentValue := initialValue
+	for month := 0; month < years*12; month++ {
+		currentValue = currentValue * (1.0 + monthlyReturn)
+	}
+
+	// Calculate expected value using annual compounding
+	expectedValue := initialValue * math.Pow(1.0+annualReturn, float64(years))
+
+	// Should be very close (within 0.1% due to monthly vs annual compounding)
+	percentDiff := math.Abs(currentValue-expectedValue) / expectedValue
+	if percentDiff > 0.001 {
+		t.Errorf("Compound growth validation failed: monthly compounding %.2f vs annual compounding %.2f (%.4f%% difference)",
+			currentValue, expectedValue, percentDiff*100)
+	}
+
+	t.Logf("Compound growth validation: $%.2f initial -> $%.2f final over %d years at %.1f%% annual return",
+		initialValue, currentValue, years, annualReturn*100)
+}
+
+// TestSimpleBacktestScenario tests a simplified backtesting scenario
+func TestSimpleBacktestScenario(t *testing.T) {
+	// Create a simple scenario: $10,000 invested with 10% annual returns for 5 years
+	initialInvestment := 10000.0
+	annualReturn := 0.10
+	years := 5
+
+	// Expected final value: $10,000 * (1.10)^5 = $16,105.10
+	expectedFinalValue := initialInvestment * math.Pow(1.0+annualReturn, float64(years))
+
+	// Simulate monthly growth
+	currentValue := initialInvestment
+	monthlyReturn := calculateMonthlyReturn(annualReturn)
+
+	for month := 0; month < years*12; month++ {
+		currentValue = currentValue * (1.0 + monthlyReturn)
+	}
+
+	// Calculate result metrics
+	result := CalculateBacktestResult("simple_test", HistoricalScenario{
+		Name:               "Simple Test",
+		InitialInvestment:  initialInvestment,
+		ExpectedFinalValue: expectedFinalValue,
+		Tolerance:          0.01, // 1% tolerance
+	}, currentValue, years*12)
+
+	// Validate the result
+	if !result.WithinTolerance {
+		t.Errorf("Simple backtest failed validation: expected %.2f, got %.2f (%.2f%% difference)",
+			result.ExpectedFinalValue, result.FinalValue, result.PercentageDiff*100)
+	}
+
+	// Validate return calculation
+	expectedAnnualReturn := math.Pow(expectedFinalValue/initialInvestment, 1.0/float64(years)) - 1.0
+	if math.Abs(result.ExpectedReturn-expectedAnnualReturn) > 0.0001 {
+		t.Errorf("Expected return calculation incorrect: expected %.4f, got %.4f",
+			expectedAnnualReturn, result.ExpectedReturn)
+	}
+
+	t.Logf("Simple backtest results:")
+	t.Logf("  Initial: $%.2f", result.InitialValue)
+	t.Logf("  Expected: $%.2f", result.ExpectedFinalValue)
+	t.Logf("  Actual: $%.2f", result.FinalValue)
+	t.Logf("  Annual Return: %.2f%%", result.ActualReturn*100)
+	t.Logf("  Within Tolerance: %v", result.WithinTolerance)
+}
+
+// BenchmarkBacktestCalculations benchmarks backtesting calculations
+func BenchmarkBacktestCalculations(b *testing.B) {
+	scenario := HistoricalScenario{
+		Name:               "Benchmark Test",
+		InitialInvestment:  10000,
+		ExpectedFinalValue: 50000,
+		Tolerance:          0.02,
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		result := CalculateBacktestResult("benchmark", scenario, 48500, 120)
+		_ = ValidateBacktestResult(result)
+	}
+}

@@ -1,0 +1,34 @@
+{
+  "federalTaxBracketsSingle2024": [
+    {"incomeMin": 0, "incomeMax": 11600, "rate": 0.10},
+    {"incomeMin": 11600, "incomeMax": 47150, "rate": 0.12},
+    {"incomeMin": 47150, "incomeMax": 100525, "rate": 0.22},
+    {"incomeMin": 100525, "incomeMax": 191950, "rate": 0.24},
+    {"incomeMin": 191950, "incomeMax": 243725, "rate": 0.32},
+    {"incomeMin": 243725, "incomeMax": 609350, "rate": 0.35},
+    {"incomeMin": 609350, "incomeMax": 999999999, "rate": 0.37}
+  ],
+  "federalTaxBracketsMFJ2024": [
+    {"incomeMin": 0, "incomeMax": 23200, "rate": 0.10},
+    {"incomeMin": 23200, "incomeMax": 94300, "rate": 0.12},
+    {"incomeMin": 94300, "incomeMax": 201050, "rate": 0.22},
+    {"incomeMin": 201050, "incomeMax": 383900, "rate": 0.24},
+    {"incomeMin": 383900, "incomeMax": 487450, "rate": 0.32},
+    {"incomeMin": 487450, "incomeMax": 731200, "rate": 0.35},
+    {"incomeMin": 731200, "incomeMax": 999999999, "rate": 0.37}
+  ],
+  "ltcgBracketsSingle2024": [
+    {"incomeMin": 0, "incomeMax": 47025, "rate": 0.0},
+    {"incomeMin": 47025, "incomeMax": 518900, "rate": 0.15},
+    {"incomeMin": 518900, "incomeMax": 999999999, "rate": 0.20}
+  ],
+  "ltcgBracketsMFJ2024": [
+    {"incomeMin": 0, "incomeMax": 94050, "rate": 0.0},
+    {"incomeMin": 94050, "incomeMax": 583750, "rate": 0.15},
+    {"incomeMin": 583750, "incomeMax": 999999999, "rate": 0.20}
+  ],
+  "standardDeduction": {
+    "single": 14600,
+    "marriedFilingJointly": 29200
+  }
+}

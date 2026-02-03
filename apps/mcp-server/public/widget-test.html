@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AreumFire Widget Test Harness</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f0f0;
+      padding: 20px;
+    }
+    .harness {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    .controls {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .controls h2 {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .control-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .control-group {
+      flex: 1;
+      min-width: 200px;
+    }
+    .control-group label {
+      display: block;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .control-group input, .control-group select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button.primary {
+      background: #0066cc;
+      color: white;
+    }
+    button.primary:hover {
+      background: #0055aa;
+    }
+    button.secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+    button.secondary:hover {
+      background: #d0d0d0;
+    }
+    .widget-container {
+      display: flex;
+      gap: 20px;
+    }
+    .widget-frame {
+      flex: 1;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .widget-frame h3 {
+      background: #f8f8f8;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #666;
+      border-bottom: 1px solid #eee;
+    }
+    .widget-frame iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .data-panel {
+      width: 400px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .data-panel h3 {
+      background: #f8f8f8;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #666;
+      border-bottom: 1px solid #eee;
+    }
+    .data-panel pre {
+      padding: 16px;
+      font-size: 11px;
+      overflow: auto;
+      max-height: 560px;
+      background: #fafafa;
+    }
+    .status {
+      padding: 8px 16px;
+      font-size: 12px;
+      color: #666;
+      border-top: 1px solid #eee;
+    }
+    .status.success { color: #0a0; }
+    .status.error { color: #c00; }
+  </style>
+</head>
+<body>
+  <div class="harness">
+    <h1>AreumFire Widget Test Harness</h1>
+
+    <div class="controls">
+      <h2>Simulation Parameters</h2>
+      <div class="control-row">
+        <div class="control-group">
+          <label>Investable Assets</label>
+          <input type="number" id="investableAssets" value="300000">
+        </div>
+        <div class="control-group">
+          <label>Annual Spending</label>
+          <input type="number" id="annualSpending" value="50000">
+        </div>
+        <div class="control-group">
+          <label>Current Age</label>
+          <input type="number" id="currentAge" value="40">
+        </div>
+        <div class="control-group">
+          <label>Expected Income</label>
+          <input type="number" id="expectedIncome" value="100000">
+        </div>
+      </div>
+      <div class="control-row">
+        <div class="control-group">
+          <label>Tax Mode</label>
+          <select id="taxMode">
+            <option value="not_applied">Not Applied</option>
+            <option value="default_assumptions">Default Assumptions (Single, CA, 22-28%)</option>
+            <option value="user_declared">User Declared</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Filing Status (for user_declared)</label>
+          <select id="filingStatus">
+            <option value="single">Single</option>
+            <option value="married">Married</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label>Effective Rate % (for user_declared)</label>
+          <input type="number" id="effectiveRate" value="25" min="0" max="50">
+        </div>
+      </div>
+      <div class="buttons">
+        <button class="primary" onclick="runSimulation()">Run Simulation</button>
+        <button class="secondary" onclick="loadMockData()">Load Mock Data</button>
+        <button class="secondary" onclick="loadMockDataWithModules()">Load with Event Modules</button>
+      </div>
+    </div>
+
+    <div class="widget-container">
+      <div class="widget-frame">
+        <h3>Widget Preview (ChatGPT Inline Card)</h3>
+        <iframe id="widgetFrame" src="about:blank"></iframe>
+        <div id="widgetStatus" class="status">Ready</div>
+      </div>
+      <div class="data-panel">
+        <h3>Structured Content (toolOutput)</h3>
+        <pre id="dataOutput">{}</pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Simulation service URL
+    const SIMULATION_SERVICE_URL = 'http://localhost:3002/simulate';
+
+    // Mock data for offline testing
+    const MOCK_DATA = {
+      success: true,
+      runId: 'AF-MOCK1',
+      dollarsMode: 'NOMINAL',
+      taxMode: 'DEFAULT_ASSUMPTIONS',
+      taxConfig: {
+        enabled: true,
+        filingStatus: 'single',
+        state: 'CA',
+        effectiveRate: 0.25,
+        capitalGainsRate: 0.175,
+        effectiveRateRange: [0.22, 0.28],
+        capitalGainsRateRange: [0.15, 0.20]
+      },
+      mc: {
+        everBreachProbability: 0,
+        finalNetWorthP10: 554352,
+        finalNetWorthP50: 3895031,
+        finalNetWorthP75: 15217997,
+        finalNetWorthP90: 46315897,
+        finalNetWorthP95: 122453276,
+        minCashP10: 34059,
+        minCashP50: 34232,
+        minCashP90: 34384
+      },
+      pathsRun: 100
+    };
+
+    // Mock data with event modules for testing
+    const MOCK_DATA_WITH_MODULES = {
+      ...MOCK_DATA,
+      runId: 'AF-MOCK2',
+      incomeChange: {
+        monthOffset: 60,
+        newAnnualIncome: 0,
+        durationMonths: 12,
+        description: 'Sabbatical'
+      },
+      spendingChange: {
+        monthOffset: 120,
+        newAnnualSpending: 40000,
+        description: 'Retirement lifestyle'
+      },
+      oneTimeEvents: [
+        {
+          monthOffset: 24,
+          amount: 300000,
+          type: 'expense',
+          description: 'Down payment (20%)'
+        },
+        {
+          monthOffset: 60,
+          amount: 50000,
+          type: 'expense',
+          description: 'College tuition',
+          recurring: { count: 4, intervalMonths: 12 }
+        }
+      ],
+      mc: {
+        everBreachProbability: 0.03,
+        finalNetWorthP10: 245123,
+        finalNetWorthP50: 1892456,
+        finalNetWorthP75: 8234521,
+        finalNetWorthP90: 23456789,
+        finalNetWorthP95: 56789012,
+        minCashP10: 12345,
+        minCashP50: 28456,
+        minCashP90: 31234
+      }
+    };
+
+    // Load mock data for offline testing
+    function loadMockData() {
+      updateWidget(MOCK_DATA);
+      setStatus('Loaded mock data', 'success');
+    }
+
+    // Load mock data with event modules
+    function loadMockDataWithModules() {
+      updateWidget(MOCK_DATA_WITH_MODULES);
+      setStatus('Loaded mock data with event modules (sabbatical, spending change, home purchase, tuition)', 'success');
+    }
+
+    // Run actual simulation
+    async function runSimulation() {
+      const params = {
+        investableAssets: Number(document.getElementById('investableAssets').value),
+        annualSpending: Number(document.getElementById('annualSpending').value),
+        currentAge: Number(document.getElementById('currentAge').value),
+        expectedIncome: Number(document.getElementById('expectedIncome').value),
+        seed: Math.floor(Date.now() / 1000),
+        startYear: new Date().getFullYear()
+      };
+
+      // Build tax assumptions
+      const taxMode = document.getElementById('taxMode').value;
+      let taxAssumptions = null;
+
+      if (taxMode === 'default_assumptions') {
+        taxAssumptions = { mode: 'default_assumptions' };
+      } else if (taxMode === 'user_declared') {
+        const rate = Number(document.getElementById('effectiveRate').value) / 100;
+        taxAssumptions = {
+          mode: 'user_declared',
+          filingStatus: document.getElementById('filingStatus').value,
+          state: 'CA',
+          effectiveRateRange: [rate - 0.02, rate + 0.02]
+        };
+      }
+
+      // Build request
+      const packetBuildRequest = {
+        ...params,
+        mcPaths: 50,
+        taxConfig: taxAssumptions ? {
+          enabled: true,
+          filingStatus: taxAssumptions.filingStatus || 'single',
+          state: taxAssumptions.state || 'CA',
+          effectiveRate: taxAssumptions.effectiveRateRange
+            ? (taxAssumptions.effectiveRateRange[0] + taxAssumptions.effectiveRateRange[1]) / 2
+            : 0.25,
+          capitalGainsRate: 0.175,
+          effectiveRateRange: taxAssumptions.effectiveRateRange || [0.22, 0.28],
+          capitalGainsRateRange: [0.15, 0.20]
+        } : null
+      };
+
+      setStatus('Running simulation...', '');
+
+      try {
+        const response = await fetch(SIMULATION_SERVICE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ packetBuildRequest })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+
+        // Build the structured content that would be returned by MCP
+        const structuredContent = {
+          success: result.success,
+          runId: `AF-${Math.random().toString(36).substr(2, 5).toUpperCase()}`,
+          dollarsMode: 'NOMINAL',
+          taxMode: taxMode === 'not_applied' ? 'NOT_APPLIED'
+            : taxMode === 'default_assumptions' ? 'DEFAULT_ASSUMPTIONS'
+            : 'USER_DECLARED',
+          taxConfig: packetBuildRequest.taxConfig,
+          mc: result.mc,
+          pathsRun: result.pathsRun || 50
+        };
+
+        updateWidget(structuredContent);
+        setStatus('Simulation complete', 'success');
+      } catch (error) {
+        setStatus(`Error: ${error.message}`, 'error');
+        console.error('Simulation error:', error);
+      }
+    }
+
+    // Update the widget iframe with new data
+    function updateWidget(data) {
+      // Update data panel
+      document.getElementById('dataOutput').textContent = JSON.stringify(data, null, 2);
+
+      // Load widget HTML and inject data
+      const iframe = document.getElementById('widgetFrame');
+
+      // Fetch the widget HTML
+      fetch('simulation-widget.html')
+        .then(r => r.text())
+        .then(html => {
+          // JSON data won't contain script tags, so just stringify directly
+          const safeJson = JSON.stringify(data);
+
+          // Inject mock window.openai before the widget's script
+          // Note: closing script tag is split to prevent HTML parser issues
+          const mockScript = '<scr' + 'ipt>\n' +
+            'window.openai = {\n' +
+            '  toolOutput: ' + safeJson + ',\n' +
+            '  toolInput: {},\n' +
+            '  theme: "light",\n' +
+            '  displayMode: "inline"\n' +
+            '};\n' +
+            '</' + 'script>';
+
+          // Insert mock script before closing </head>
+          const modifiedHtml = html.replace('</head>', mockScript + '</head>');
+
+          // Write to iframe - use srcdoc for cleaner isolation
+          iframe.srcdoc = modifiedHtml;
+        })
+        .catch(err => {
+          setStatus(`Failed to load widget: ${err.message}`, 'error');
+        });
+    }
+
+    // Update status message
+    function setStatus(message, type) {
+      const el = document.getElementById('widgetStatus');
+      el.textContent = message;
+      el.className = 'status ' + (type || '');
+    }
+
+    // Load mock data on page load for immediate preview
+    window.onload = () => loadMockData();
+  </script>
+</body>
+</html>

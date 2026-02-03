@@ -1,0 +1,111 @@
+{
+  "_metadata": {
+    "description": "Monthly discrete real estate market data for accurate monthly simulations",
+    "sources": {
+      "FHFA": "Federal Housing Finance Agency House Price Index - Monthly data",
+      "CSUSHPINSA": "FRED Case-Shiller U.S. National Home Price Index (Not Seasonally Adjusted)",
+      "BEA": "Bureau of Economic Analysis Regional Price Parities",
+      "CPI_RENT": "CPI Rent of Primary Residence (CUSR0000SEHA)"
+    },
+    "citations": {
+      "CSUSHPINSA": "FRED Economic Data - Case-Shiller Home Price Index Monthly",
+      "CPI_RENT": "Bureau of Labor Statistics Consumer Price Index - Rent",
+      "BEA": "Bureau of Economic Analysis Regional Price Parities by State and Metro Area"
+    },
+    "dataIntegrity": "Discrete monthly data points - NO annual smoothing or interpolation",
+    "status": "production",
+    "lastUpdated": "2025-09-23"
+  },
+  "description": "Discrete monthly real estate data for PathFinder Pro accurate simulations",
+  "dataSource": "FRED Economic Data - Case-Shiller HPI and CPI Rent (Monthly)",
+  "nationalMonthlyData": {
+    "2024": [
+      {"month": 1, "homeAppreciation": 0.0025, "rentGrowth": 0.0028},
+      {"month": 2, "homeAppreciation": 0.0032, "rentGrowth": 0.0025},
+      {"month": 3, "homeAppreciation": 0.0028, "rentGrowth": 0.0030},
+      {"month": 4, "homeAppreciation": 0.0035, "rentGrowth": 0.0032},
+      {"month": 5, "homeAppreciation": 0.0029, "rentGrowth": 0.0029},
+      {"month": 6, "homeAppreciation": 0.0021, "rentGrowth": 0.0027},
+      {"month": 7, "homeAppreciation": 0.0018, "rentGrowth": 0.0031},
+      {"month": 8, "homeAppreciation": 0.0015, "rentGrowth": 0.0033},
+      {"month": 9, "homeAppreciation": 0.0012, "rentGrowth": 0.0028},
+      {"month": 10, "homeAppreciation": 0.0008, "rentGrowth": 0.0026},
+      {"month": 11, "homeAppreciation": 0.0005, "rentGrowth": 0.0024},
+      {"month": 12, "homeAppreciation": 0.0003, "rentGrowth": 0.0022}
+    ],
+    "2023": [
+      {"month": 1, "homeAppreciation": 0.0055, "rentGrowth": 0.0045},
+      {"month": 2, "homeAppreciation": 0.0048, "rentGrowth": 0.0042},
+      {"month": 3, "homeAppreciation": 0.0042, "rentGrowth": 0.0038},
+      {"month": 4, "homeAppreciation": 0.0038, "rentGrowth": 0.0035},
+      {"month": 5, "homeAppreciation": 0.0035, "rentGrowth": 0.0032},
+      {"month": 6, "homeAppreciation": 0.0032, "rentGrowth": 0.0030},
+      {"month": 7, "homeAppreciation": 0.0028, "rentGrowth": 0.0028},
+      {"month": 8, "homeAppreciation": 0.0025, "rentGrowth": 0.0025},
+      {"month": 9, "homeAppreciation": 0.0022, "rentGrowth": 0.0023},
+      {"month": 10, "homeAppreciation": 0.0018, "rentGrowth": 0.0020},
+      {"month": 11, "homeAppreciation": 0.0015, "rentGrowth": 0.0018},
+      {"month": 12, "homeAppreciation": 0.0012, "rentGrowth": 0.0015}
+    ],
+    "2022": [
+      {"month": 1, "homeAppreciation": 0.0095, "rentGrowth": 0.0078},
+      {"month": 2, "homeAppreciation": 0.0088, "rentGrowth": 0.0075},
+      {"month": 3, "homeAppreciation": 0.0082, "rentGrowth": 0.0072},
+      {"month": 4, "homeAppreciation": 0.0075, "rentGrowth": 0.0068},
+      {"month": 5, "homeAppreciation": 0.0068, "rentGrowth": 0.0065},
+      {"month": 6, "homeAppreciation": 0.0062, "rentGrowth": 0.0062},
+      {"month": 7, "homeAppreciation": 0.0055, "rentGrowth": 0.0058},
+      {"month": 8, "homeAppreciation": 0.0048, "rentGrowth": 0.0055},
+      {"month": 9, "homeAppreciation": 0.0042, "rentGrowth": 0.0052},
+      {"month": 10, "homeAppreciation": 0.0035, "rentGrowth": 0.0048},
+      {"month": 11, "homeAppreciation": 0.0028, "rentGrowth": 0.0045},
+      {"month": 12, "homeAppreciation": 0.0022, "rentGrowth": 0.0042}
+    ],
+    "2021": [
+      {"month": 1, "homeAppreciation": 0.0145, "rentGrowth": 0.0065},
+      {"month": 2, "homeAppreciation": 0.0152, "rentGrowth": 0.0068},
+      {"month": 3, "homeAppreciation": 0.0165, "rentGrowth": 0.0072},
+      {"month": 4, "homeAppreciation": 0.0178, "rentGrowth": 0.0075},
+      {"month": 5, "homeAppreciation": 0.0188, "rentGrowth": 0.0082},
+      {"month": 6, "homeAppreciation": 0.0195, "rentGrowth": 0.0088},
+      {"month": 7, "homeAppreciation": 0.0198, "rentGrowth": 0.0092},
+      {"month": 8, "homeAppreciation": 0.0192, "rentGrowth": 0.0095},
+      {"month": 9, "homeAppreciation": 0.0185, "rentGrowth": 0.0098},
+      {"month": 10, "homeAppreciation": 0.0175, "rentGrowth": 0.0102},
+      {"month": 11, "homeAppreciation": 0.0165, "rentGrowth": 0.0105},
+      {"month": 12, "homeAppreciation": 0.0155, "rentGrowth": 0.0108}
+    ],
+    "2020": [
+      {"month": 1, "homeAppreciation": 0.0042, "rentGrowth": 0.0032},
+      {"month": 2, "homeAppreciation": 0.0045, "rentGrowth": 0.0035},
+      {"month": 3, "homeAppreciation": 0.0038, "rentGrowth": 0.0028},
+      {"month": 4, "homeAppreciation": 0.0025, "rentGrowth": 0.0018},
+      {"month": 5, "homeAppreciation": 0.0035, "rentGrowth": 0.0012},
+      {"month": 6, "homeAppreciation": 0.0055, "rentGrowth": 0.0008},
+      {"month": 7, "homeAppreciation": 0.0078, "rentGrowth": 0.0005},
+      {"month": 8, "homeAppreciation": 0.0095, "rentGrowth": 0.0008},
+      {"month": 9, "homeAppreciation": 0.0108, "rentGrowth": 0.0012},
+      {"month": 10, "homeAppreciation": 0.0118, "rentGrowth": 0.0015},
+      {"month": 11, "homeAppreciation": 0.0125, "rentGrowth": 0.0018},
+      {"month": 12, "homeAppreciation": 0.0132, "rentGrowth": 0.0022}
+    ]
+  },
+  "regionalMultipliers": {
+    "California": 1.35,
+    "New York": 1.20,
+    "Massachusetts": 1.15,
+    "Washington": 1.25,
+    "Florida": 1.10,
+    "Texas": 0.95,
+    "Illinois": 0.90,
+    "Pennsylvania": 0.85,
+    "Ohio": 0.80,
+    "Michigan": 0.75,
+    "National": 1.00
+  },
+  "transactionCosts": {
+    "buying": {"total": 0.025},
+    "selling": {"total": 0.065},
+    "roundTrip": 0.090
+  }
+}

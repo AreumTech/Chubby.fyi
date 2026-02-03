@@ -1,0 +1,138 @@
+{
+  "_metadata": {
+    "description": "State income tax brackets for most populous states",
+    "dataSource": "Official state tax authorities and Tax Foundation verification",
+    "sources": {
+      "CA": "https://www.ftb.ca.gov/forms/2024/2024-540-tax-table.pdf",
+      "NY": "https://www.tax.ny.gov/pdf/current_forms/it/it201i.pdf",
+      "OH": "https://tax.ohio.gov/wps/portal/gov/tax/individual/resources",
+      "GA": "https://dor.georgia.gov/taxes/individual-income-tax"
+    },
+    "citations": {
+      "CA": "California Franchise Tax Board, 2024 Tax Tables",
+      "NY": "NYS Department of Taxation and Finance, Form IT-201-I",
+      "OH": "Ohio Department of Taxation, 2024 Individual Income Tax",
+      "GA": "Georgia Department of Revenue, Individual Income Tax"
+    },
+    "taxYear": 2024,
+    "lastUpdated": "2024-09-18"
+  },
+  "states": {
+    "CA": {
+      "name": "California",
+      "taxType": "progressive",
+      "single": [
+        {"incomeMin": 0, "incomeMax": 10099, "rate": 0.01},
+        {"incomeMin": 10099, "incomeMax": 23942, "rate": 0.02},
+        {"incomeMin": 23942, "incomeMax": 37788, "rate": 0.04},
+        {"incomeMin": 37788, "incomeMax": 52455, "rate": 0.06},
+        {"incomeMin": 52455, "incomeMax": 66295, "rate": 0.08},
+        {"incomeMin": 66295, "incomeMax": 338639, "rate": 0.093},
+        {"incomeMin": 338639, "incomeMax": 406364, "rate": 0.103},
+        {"incomeMin": 406364, "incomeMax": 677278, "rate": 0.113},
+        {"incomeMin": 677278, "incomeMax": "Infinity", "rate": 0.123}
+      ],
+      "marriedFilingJointly": [
+        {"incomeMin": 0, "incomeMax": 20198, "rate": 0.01},
+        {"incomeMin": 20198, "incomeMax": 47884, "rate": 0.02},
+        {"incomeMin": 47884, "incomeMax": 75576, "rate": 0.04},
+        {"incomeMin": 75576, "incomeMax": 104910, "rate": 0.06},
+        {"incomeMin": 104910, "incomeMax": 132590, "rate": 0.08},
+        {"incomeMin": 132590, "incomeMax": 677278, "rate": 0.093},
+        {"incomeMin": 677278, "incomeMax": 812728, "rate": 0.103},
+        {"incomeMin": 812728, "incomeMax": 1354556, "rate": 0.113},
+        {"incomeMin": 1354556, "incomeMax": "Infinity", "rate": 0.123}
+      ]
+    },
+    "NY": {
+      "name": "New York",
+      "taxType": "progressive",
+      "single": [
+        {"incomeMin": 0, "incomeMax": 8500, "rate": 0.04},
+        {"incomeMin": 8500, "incomeMax": 11700, "rate": 0.045},
+        {"incomeMin": 11700, "incomeMax": 13900, "rate": 0.0525},
+        {"incomeMin": 13900, "incomeMax": 80650, "rate": 0.059},
+        {"incomeMin": 80650, "incomeMax": 215400, "rate": 0.0645},
+        {"incomeMin": 215400, "incomeMax": 1077550, "rate": 0.0685},
+        {"incomeMin": 1077550, "incomeMax": "Infinity", "rate": 0.103}
+      ],
+      "marriedFilingJointly": [
+        {"incomeMin": 0, "incomeMax": 17150, "rate": 0.04},
+        {"incomeMin": 17150, "incomeMax": 23600, "rate": 0.045},
+        {"incomeMin": 23600, "incomeMax": 27900, "rate": 0.0525},
+        {"incomeMin": 27900, "incomeMax": 161550, "rate": 0.059},
+        {"incomeMin": 161550, "incomeMax": 323200, "rate": 0.0645},
+        {"incomeMin": 323200, "incomeMax": 2155350, "rate": 0.0685},
+        {"incomeMin": 2155350, "incomeMax": "Infinity", "rate": 0.103}
+      ]
+    },
+    "TX": {
+      "name": "Texas",
+      "taxType": "none",
+      "rate": 0.0
+    },
+    "FL": {
+      "name": "Florida",
+      "taxType": "none",
+      "rate": 0.0
+    },
+    "PA": {
+      "name": "Pennsylvania",
+      "taxType": "flat",
+      "rate": 0.0307
+    },
+    "IL": {
+      "name": "Illinois",
+      "taxType": "flat",
+      "rate": 0.0495
+    },
+    "OH": {
+      "name": "Ohio",
+      "taxType": "progressive",
+      "single": [
+        {"incomeMin": 0, "incomeMax": 26050, "rate": 0.0},
+        {"incomeMin": 26050, "incomeMax": 46700, "rate": 0.02765},
+        {"incomeMin": 46700, "incomeMax": 93450, "rate": 0.03226},
+        {"incomeMin": 93450, "incomeMax": 115300, "rate": 0.03688},
+        {"incomeMin": 115300, "incomeMax": "Infinity", "rate": 0.0399}
+      ],
+      "marriedFilingJointly": [
+        {"incomeMin": 0, "incomeMax": 26050, "rate": 0.0},
+        {"incomeMin": 26050, "incomeMax": 46700, "rate": 0.02765},
+        {"incomeMin": 46700, "incomeMax": 93450, "rate": 0.03226},
+        {"incomeMin": 93450, "incomeMax": 115300, "rate": 0.03688},
+        {"incomeMin": 115300, "incomeMax": "Infinity", "rate": 0.0399}
+      ]
+    },
+    "GA": {
+      "name": "Georgia",
+      "taxType": "progressive",
+      "single": [
+        {"incomeMin": 0, "incomeMax": 750, "rate": 0.01},
+        {"incomeMin": 750, "incomeMax": 2250, "rate": 0.02},
+        {"incomeMin": 2250, "incomeMax": 3750, "rate": 0.03},
+        {"incomeMin": 3750, "incomeMax": 5250, "rate": 0.04},
+        {"incomeMin": 5250, "incomeMax": 7000, "rate": 0.05},
+        {"incomeMin": 7000, "incomeMax": "Infinity", "rate": 0.0575}
+      ],
+      "marriedFilingJointly": [
+        {"incomeMin": 0, "incomeMax": 1000, "rate": 0.01},
+        {"incomeMin": 1000, "incomeMax": 3000, "rate": 0.02},
+        {"incomeMin": 3000, "incomeMax": 5000, "rate": 0.03},
+        {"incomeMin": 5000, "incomeMax": 7000, "rate": 0.04},
+        {"incomeMin": 7000, "incomeMax": 10000, "rate": 0.05},
+        {"incomeMin": 10000, "incomeMax": "Infinity", "rate": 0.0575}
+      ]
+    },
+    "NC": {
+      "name": "North Carolina",
+      "taxType": "flat",
+      "rate": 0.049
+    },
+    "MI": {
+      "name": "Michigan",
+      "taxType": "flat",
+      "rate": 0.0425
+    }
+  }
+}

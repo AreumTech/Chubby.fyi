@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Year Inspector Variants</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --font-size-2xs: 10px;
+      --font-size-xs: 12px;
+      --font-size-sm: 14px;
+      --font-size-md: 16px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --radius-xs: 4px;
+      --radius-sm: 6px;
+
+      --gray-0: light-dark(#ffffff, #0d0d0d);
+      --gray-50: light-dark(#f9f9f9, #131313);
+      --gray-100: light-dark(#ededed, #181818);
+      --gray-400: light-dark(#8f8f8f, #414141);
+      --gray-500: #5d5d5d;
+      --gray-600: light-dark(#414141, #8f8f8f);
+      --gray-700: light-dark(#303030, #afafaf);
+      --gray-1000: light-dark(#0d0d0d, #ffffff);
+
+      --color-text: var(--gray-1000);
+      --color-text-secondary: var(--gray-500);
+      --color-text-tertiary: var(--gray-400);
+      --color-surface: var(--gray-0);
+      --color-surface-secondary: var(--gray-50);
+      --color-surface-elevated: light-dark(#f5f5f5, #1a1a1a);
+      --color-border: light-dark(rgba(13,13,13,0.1), rgba(255,255,255,0.1));
+      --color-border-subtle: light-dark(rgba(13,13,13,0.06), rgba(255,255,255,0.08));
+      --color-bar-bg: light-dark(#ededed, #252525);
+
+      /* Muted positive/negative */
+      --color-positive: light-dark(#2d8a4e, #6db88a);
+      --color-negative: light-dark(#9a6458, #c4897c);
+      --color-link: light-dark(#0285ff, #60a5fa);
+
+      /* Account colors */
+      --color-account-cash: light-dark(#8f8f8f, #606060);
+      --color-account-taxable: light-dark(#0285ff, #60a5fa);
+      --color-account-tax-deferred: light-dark(#7c3aed, #a78bfa);
+      --color-account-roth: light-dark(#2d8a4e, #6db88a);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: ui-sans-serif, -apple-system, system-ui, sans-serif;
+      font-size: var(--font-size-sm);
+      background: var(--color-surface);
+      color: var(--color-text);
+      padding: 20px;
+    }
+
+    h1 { font-size: 18px; margin-bottom: 8px; }
+    h2 { font-size: 14px; margin: 24px 0 12px; color: var(--color-text-secondary); }
+    .subtitle { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 20px; }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding: 12px;
+      background: var(--color-surface-secondary);
+      border-radius: var(--radius-sm);
+    }
+
+    button {
+      background: var(--color-link);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: var(--radius-xs);
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .variants {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 16px;
+    }
+
+    .variant {
+      background: var(--color-surface-secondary);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .variant-label {
+      background: var(--gray-700);
+      color: var(--gray-0);
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .variant-content {
+      padding: 12px;
+    }
+
+    /* ========================================
+     * SHARED STYLES
+     * ======================================== */
+    .inspector-title {
+      font-size: var(--font-size-xs);
+      font-weight: 500;
+      color: var(--color-text);
+      margin-bottom: var(--space-2);
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .positive { color: var(--color-positive); }
+    .negative { color: var(--color-negative); }
+
+    .accounts-section {
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .accounts-title {
+      font-size: var(--font-size-2xs);
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: var(--space-2);
+    }
+
+    /* ========================================
+     * VARIANT A: Icons + Bars
+     * ======================================== */
+    .va .summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-surface-elevated);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--space-3);
+    }
+    .va .summary-start, .va .summary-end { text-align: center; min-width: 60px; }
+    .va .summary-label { font-size: var(--font-size-2xs); color: var(--color-text-tertiary); text-transform: uppercase; }
+    .va .summary-value { font-size: var(--font-size-sm); font-weight: 600; }
+    .va .summary-arrow { flex: 1; text-align: center; }
+    .va .summary-delta { font-size: var(--font-size-xs); font-weight: 600; }
+
+    .va .flow-section { margin-bottom: var(--space-2); }
+    .va .flow-header {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-1) 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+      margin-bottom: 2px;
+    }
+    .va .flow-title { font-size: var(--font-size-2xs); font-weight: 600; color: var(--color-text-tertiary); text-transform: uppercase; }
+    .va .flow-total { font-size: var(--font-size-xs); font-weight: 600; }
+    .va .flow-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 2px 0;
+      font-size: var(--font-size-xs);
+    }
+    .va .flow-icon {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 3px;
+      font-size: 10px;
+    }
+    .va .flow-icon.income { background: light-dark(rgba(45,138,78,0.12), rgba(109,184,138,0.15)); }
+    .va .flow-icon.expense { background: light-dark(rgba(154,100,88,0.12), rgba(196,137,124,0.15)); }
+    .va .flow-icon.market { background: light-dark(rgba(2,133,255,0.12), rgba(96,165,250,0.15)); }
+    .va .flow-label { flex: 1; color: var(--color-text-secondary); }
+    .va .flow-value { font-weight: 500; min-width: 45px; text-align: right; }
+    .va .flow-bar { width: 36px; height: 4px; background: var(--color-bar-bg); border-radius: 2px; overflow: hidden; }
+    .va .flow-bar-fill { height: 100%; border-radius: 2px; }
+    .va .flow-bar-fill.income { background: var(--color-positive); }
+    .va .flow-bar-fill.expense { background: var(--color-negative); }
+    .va .flow-bar-fill.market { background: var(--color-link); }
+
+    /* ========================================
+     * VARIANT B: Minimal Ledger
+     * ======================================== */
+    .vb .ledger {
+      background: var(--color-surface-elevated);
+      border-radius: var(--radius-sm);
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--font-size-xs);
+    }
+    .vb .ledger-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      color: var(--color-text-secondary);
+    }
+    .vb .ledger-row.total {
+      border-top: 1px solid var(--color-border);
+      margin-top: var(--space-1);
+      padding-top: var(--space-2);
+      font-weight: 500;
+      color: var(--color-text);
+    }
+    .vb .ledger-indent { padding-left: var(--space-3); }
+    .vb .ledger-accounts {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+      padding-top: var(--space-1);
+      line-height: 1.4;
+    }
+    .vb .ledger-accounts .val {
+      font-weight: 500;
+      color: var(--color-text-secondary);
+    }
+
+    /* ========================================
+     * ACCOUNT STYLES
+     * ======================================== */
+
+    /* Style 1: Stacked bar */
+    .acct-bar .bar {
+      display: flex;
+      height: 10px;
+      border-radius: var(--radius-xs);
+      overflow: hidden;
+      background: var(--color-bar-bg);
+    }
+    .acct-bar .segment { height: 100%; }
+    .acct-bar .segment.cash { background: var(--color-account-cash); }
+    .acct-bar .segment.taxable { background: var(--color-account-taxable); }
+    .acct-bar .segment.tax-deferred { background: var(--color-account-tax-deferred); }
+    .acct-bar .segment.roth { background: var(--color-account-roth); }
+    .acct-bar .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px var(--space-3);
+      margin-top: var(--space-1);
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-secondary);
+    }
+    .acct-bar .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .acct-bar .swatch {
+      width: 6px;
+      height: 6px;
+      border-radius: 1px;
+    }
+    .acct-bar .swatch.cash { background: var(--color-account-cash); }
+    .acct-bar .swatch.taxable { background: var(--color-account-taxable); }
+    .acct-bar .swatch.tax-deferred { background: var(--color-account-tax-deferred); }
+    .acct-bar .swatch.roth { background: var(--color-account-roth); }
+    .acct-bar .val { font-weight: 500; color: var(--color-text); }
+
+    /* Style 2: Simple list */
+    .acct-list {
+      font-size: var(--font-size-xs);
+    }
+    .acct-list .row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+    }
+    .acct-list .label { color: var(--color-text-secondary); }
+    .acct-list .value { font-weight: 500; }
+
+    /* Style 3: Inline text */
+    .acct-inline {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+    .acct-inline .val { font-weight: 500; color: var(--color-text); }
+
+    /* Style 4: Compact grid */
+    .acct-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-2);
+      font-size: var(--font-size-2xs);
+    }
+    .acct-grid .item { text-align: center; }
+    .acct-grid .label { color: var(--color-text-tertiary); }
+    .acct-grid .value { font-size: var(--font-size-xs); font-weight: 500; }
+
+    /* Style 5: Dots (percentage visualization) */
+    .acct-dots .row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: 2px 0;
+      font-size: var(--font-size-xs);
+    }
+    .acct-dots .label {
+      min-width: 70px;
+      color: var(--color-text-secondary);
+    }
+    .acct-dots .dots {
+      display: flex;
+      gap: 2px;
+    }
+    .acct-dots .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-bar-bg);
+    }
+    .acct-dots .dot.filled.cash { background: var(--color-account-cash); }
+    .acct-dots .dot.filled.taxable { background: var(--color-account-taxable); }
+    .acct-dots .dot.filled.tax-deferred { background: var(--color-account-tax-deferred); }
+    .acct-dots .dot.filled.roth { background: var(--color-account-roth); }
+    .acct-dots .value {
+      font-weight: 500;
+      min-width: 45px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <h1>Year Inspector Variants</h1>
+  <p class="subtitle">A vs B layout, plus different account display options</p>
+
+  <div class="controls">
+    <button onclick="toggleTheme()">Toggle Dark Mode</button>
+    <span style="font-size:11px;color:var(--color-text-secondary)">Accounts: Cash $60K (5%) · Taxable $240K (20%) · Tax-def $750K (62%) · Roth $150K (13%)</span>
+  </div>
+
+  <h2>Layout A: Icons + Bars</h2>
+  <div class="variants">
+    <!-- A + Stacked Bar -->
+    <div class="variant">
+      <div class="variant-label">A + Stacked Bar</div>
+      <div class="variant-content va">
+        <div class="inspector-title">Year 2024 (Age 50)</div>
+        <div class="summary">
+          <div class="summary-start">
+            <div class="summary-label">Start</div>
+            <div class="summary-value">$1.2M</div>
+          </div>
+          <div class="summary-arrow">
+            <div class="summary-delta positive">+$204K</div>
+          </div>
+          <div class="summary-end">
+            <div class="summary-label">End</div>
+            <div class="summary-value">$1.4M</div>
+          </div>
+        </div>
+        <div class="flow-section">
+          <div class="flow-header"><span class="flow-title">Income</span><span class="flow-total positive">+$186K</span></div>
+          <div class="flow-row"><div class="flow-icon income">💼</div><span class="flow-label">Salary</span><span class="flow-value positive">+$180K</span><div class="flow-bar"><div class="flow-bar-fill income" style="width:100%"></div></div></div>
+          <div class="flow-row"><div class="flow-icon income">📊</div><span class="flow-label">Investment</span><span class="flow-value positive">+$6K</span><div class="flow-bar"><div class="flow-bar-fill income" style="width:3%"></div></div></div>
+        </div>
+        <div class="flow-section">
+          <div class="flow-header"><span class="flow-title">Expenses</span><span class="flow-total negative">−$125K</span></div>
+          <div class="flow-row"><div class="flow-icon expense">🏠</div><span class="flow-label">Living</span><span class="flow-value negative">−$80K</span><div class="flow-bar"><div class="flow-bar-fill expense" style="width:64%"></div></div></div>
+          <div class="flow-row"><div class="flow-icon expense">💰</div><span class="flow-label">Taxes</span><span class="flow-value negative">−$45K</span><div class="flow-bar"><div class="flow-bar-fill expense" style="width:36%"></div></div></div>
+        </div>
+        <div class="flow-section">
+          <div class="flow-header"><span class="flow-title">Market</span><span class="flow-total positive">+$104K</span></div>
+          <div class="flow-row"><div class="flow-icon market">📈</div><span class="flow-label">Return (+8%)</span><span class="flow-value positive">+$104K</span><div class="flow-bar"><div class="flow-bar-fill market" style="width:56%"></div></div></div>
+        </div>
+        <div class="accounts-section acct-bar">
+          <div class="accounts-title">Accounts</div>
+          <div class="bar">
+            <div class="segment cash" style="width:5%"></div>
+            <div class="segment taxable" style="width:20%"></div>
+            <div class="segment tax-deferred" style="width:62%"></div>
+            <div class="segment roth" style="width:13%"></div>
+          </div>
+          <div class="legend">
+            <div class="legend-item"><span class="swatch cash"></span>Cash <span class="val">$60K</span></div>
+            <div class="legend-item"><span class="swatch taxable"></span>Taxable <span class="val">$240K</span></div>
+            <div class="legend-item"><span class="swatch tax-deferred"></span>Tax-def <span class="val">$750K</span></div>
+            <div class="legend-item"><span class="swatch roth"></span>Roth <span class="val">$150K</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A + Simple List -->
+    <div class="variant">
+      <div class="variant-label">A + Simple List</div>
+      <div class="variant-content va">
+        <div class="inspector-title">Year 2024 (Age 50)</div>
+        <div class="summary">
+          <div class="summary-start"><div class="summary-label">Start</div><div class="summary-value">$1.2M</div></div>
+          <div class="summary-arrow"><div class="summary-delta positive">+$204K</div></div>
+          <div class="summary-end"><div class="summary-label">End</div><div class="summary-value">$1.4M</div></div>
+        </div>
+        <div class="flow-section">
+          <div class="flow-header"><span class="flow-title">Income</span><span class="flow-total positive">+$186K</span></div>
+          <div class="flow-row"><div class="flow-icon income">💼</div><span class="flow-label">Salary</span><span class="flow-value positive">+$180K</span><div class="flow-bar"><div class="flow-bar-fill income" style="width:100%"></div></div></div>
+          <div class="flow-row"><div class="flow-icon income">📊</div><span class="flow-label">Investment</span><span class="flow-value positive">+$6K</span><div class="flow-bar"><div class="flow-bar-fill income" style="width:3%"></div></div></div>
+        </div>
+        <div class="flow-section">
+          <div class="flow-header"><span class="flow-title">Expenses</span><span class="flow-total negative">−$125K</span></div>
+          <div class="flow-row"><div class="flow-icon expense">🏠</div><span class="flow-label">Living</span><span class="flow-value negative">−$80K</span><div class="flow-bar"><div class="flow-bar-fill expense" style="width:64%"></div></div></div>
+          <div class="flow-row"><div class="flow-icon expense">💰</div><span class="flow-label">Taxes</span><span class="flow-value negative">−$45K</span><div class="flow-bar"><div class="flow-bar-fill expense" style="width:36%"></div></div></div>
+        </div>
+        <div class="flow-section">
+          <div class="flow-header"><span class="flow-title">Market</span><span class="flow-total positive">+$104K</span></div>
+          <div class="flow-row"><div class="flow-icon market">📈</div><span class="flow-label">Return (+8%)</span><span class="flow-value positive">+$104K</span><div class="flow-bar"><div class="flow-bar-fill market" style="width:56%"></div></div></div>
+        </div>
+        <div class="accounts-section acct-list">
+          <div class="accounts-title">Accounts</div>
+          <div class="row"><span class="label">Cash</span><span class="value">$60K</span></div>
+          <div class="row"><span class="label">Taxable</span><span class="value">$240K</span></div>
+          <div class="row"><span class="label">Tax-deferred</span><span class="value">$750K</span></div>
+          <div class="row"><span class="label">Roth</span><span class="value">$150K</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A + Inline -->
+    <div class="variant">
+      <div class="variant-label">A + Inline Text</div>
+      <div class="variant-content va">
+        <div class="inspector-title">Year 2024 (Age 50)</div>
+        <div class="summary">
+          <div class="summary-start"><div class="summary-label">Start</div><div class="summary-value">$1.2M</div></div>
+          <div class="summary-arrow"><div class="summary-delta positive">+$204K</div></div>
+          <div class="summary-end"><div class="summary-label">End</div><div class="summary-value">$1.4M</div></div>
+        </div>
+        <div class="flow-section">
+          <div class="flow-header"><span class="flow-title">Income</span><span class="flow-total positive">+$186K</span></div>
+          <div class="flow-row"><div class="flow-icon income">💼</div><span class="flow-label">Salary</span><span class="flow-value positive">+$180K</span><div class="flow-bar"><div class="flow-bar-fill income" style="width:100%"></div></div></div>
+          <div class="flow-row"><div class="flow-icon income">📊</div><span class="flow-label">Investment</span><span class="flow-value positive">+$6K</span><div class="flow-bar"><div class="flow-bar-fill income" style="width:3%"></div></div></div>
+        </div>
+        <div class="flow-section">
+          <div class="flow-header"><span class="flow-title">Expenses</span><span class="flow-total negative">−$125K</span></div>
+          <div class="flow-row"><div class="flow-icon expense">🏠</div><span class="flow-label">Living</span><span class="flow-value negative">−$80K</span><div class="flow-bar"><div class="flow-bar-fill expense" style="width:64%"></div></div></div>
+          <div class="flow-row"><div class="flow-icon expense">💰</div><span class="flow-label">Taxes</span><span class="flow-value negative">−$45K</span><div class="flow-bar"><div class="flow-bar-fill expense" style="width:36%"></div></div></div>
+        </div>
+        <div class="flow-section">
+          <div class="flow-header"><span class="flow-title">Market</span><span class="flow-total positive">+$104K</span></div>
+          <div class="flow-row"><div class="flow-icon market">📈</div><span class="flow-label">Return (+8%)</span><span class="flow-value positive">+$104K</span><div class="flow-bar"><div class="flow-bar-fill market" style="width:56%"></div></div></div>
+        </div>
+        <div class="accounts-section acct-inline">
+          <div class="accounts-title">Accounts</div>
+          Cash <span class="val">$60K</span> · Taxable <span class="val">$240K</span> · Tax-def <span class="val">$750K</span> · Roth <span class="val">$150K</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>Layout B: Minimal Ledger</h2>
+  <div class="variants">
+    <!-- B + Stacked Bar -->
+    <div class="variant">
+      <div class="variant-label">B + Stacked Bar</div>
+      <div class="variant-content vb">
+        <div class="inspector-title">Year 2024 (Age 50)</div>
+        <div class="ledger">
+          <div class="ledger-row"><span>Start</span><span>$1,200,000</span></div>
+          <div class="ledger-row ledger-indent"><span>+ Salary</span><span class="positive">+$180,000</span></div>
+          <div class="ledger-row ledger-indent"><span>+ Investment income</span><span class="positive">+$6,000</span></div>
+          <div class="ledger-row ledger-indent"><span>− Living expenses</span><span class="negative">−$80,000</span></div>
+          <div class="ledger-row ledger-indent"><span>− Taxes</span><span class="negative">−$45,000</span></div>
+          <div class="ledger-row ledger-indent"><span>± Market (+8.0%)</span><span class="positive">+$104,000</span></div>
+          <div class="ledger-row total"><span>End</span><span>$1,404,000</span></div>
+        </div>
+        <div class="accounts-section acct-bar">
+          <div class="accounts-title">Accounts</div>
+          <div class="bar">
+            <div class="segment cash" style="width:5%"></div>
+            <div class="segment taxable" style="width:20%"></div>
+            <div class="segment tax-deferred" style="width:62%"></div>
+            <div class="segment roth" style="width:13%"></div>
+          </div>
+          <div class="legend">
+            <div class="legend-item"><span class="swatch cash"></span>Cash <span class="val">$60K</span></div>
+            <div class="legend-item"><span class="swatch taxable"></span>Taxable <span class="val">$240K</span></div>
+            <div class="legend-item"><span class="swatch tax-deferred"></span>Tax-def <span class="val">$750K</span></div>
+            <div class="legend-item"><span class="swatch roth"></span>Roth <span class="val">$150K</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B + Simple List -->
+    <div class="variant">
+      <div class="variant-label">B + Simple List</div>
+      <div class="variant-content vb">
+        <div class="inspector-title">Year 2024 (Age 50)</div>
+        <div class="ledger">
+          <div class="ledger-row"><span>Start</span><span>$1,200,000</span></div>
+          <div class="ledger-row ledger-indent"><span>+ Salary</span><span class="positive">+$180,000</span></div>
+          <div class="ledger-row ledger-indent"><span>+ Investment income</span><span class="positive">+$6,000</span></div>
+          <div class="ledger-row ledger-indent"><span>− Living expenses</span><span class="negative">−$80,000</span></div>
+          <div class="ledger-row ledger-indent"><span>− Taxes</span><span class="negative">−$45,000</span></div>
+          <div class="ledger-row ledger-indent"><span>± Market (+8.0%)</span><span class="positive">+$104,000</span></div>
+          <div class="ledger-row total"><span>End</span><span>$1,404,000</span></div>
+        </div>
+        <div class="accounts-section acct-list">
+          <div class="accounts-title">Accounts</div>
+          <div class="row"><span class="label">Cash</span><span class="value">$60K</span></div>
+          <div class="row"><span class="label">Taxable</span><span class="value">$240K</span></div>
+          <div class="row"><span class="label">Tax-deferred</span><span class="value">$750K</span></div>
+          <div class="row"><span class="label">Roth</span><span class="value">$150K</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B + Inline -->
+    <div class="variant">
+      <div class="variant-label">B + Inline Text</div>
+      <div class="variant-content vb">
+        <div class="inspector-title">Year 2024 (Age 50)</div>
+        <div class="ledger">
+          <div class="ledger-row"><span>Start</span><span>$1,200,000</span></div>
+          <div class="ledger-row ledger-indent"><span>+ Salary</span><span class="positive">+$180,000</span></div>
+          <div class="ledger-row ledger-indent"><span>+ Investment income</span><span class="positive">+$6,000</span></div>
+          <div class="ledger-row ledger-indent"><span>− Living expenses</span><span class="negative">−$80,000</span></div>
+          <div class="ledger-row ledger-indent"><span>− Taxes</span><span class="negative">−$45,000</span></div>
+          <div class="ledger-row ledger-indent"><span>± Market (+8.0%)</span><span class="positive">+$104,000</span></div>
+          <div class="ledger-row total"><span>End</span><span>$1,404,000</span></div>
+        </div>
+        <div class="accounts-section acct-inline">
+          <div class="accounts-title">Accounts</div>
+          Cash <span class="val">$60K</span> · Taxable <span class="val">$240K</span> · Tax-def <span class="val">$750K</span> · Roth <span class="val">$150K</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- B + Inline Under End -->
+    <div class="variant">
+      <div class="variant-label">B + Inline Under End</div>
+      <div class="variant-content vb">
+        <div class="inspector-title">Year 2024 (Age 50)</div>
+        <div class="ledger">
+          <div class="ledger-row"><span>Start</span><span>$1,200,000</span></div>
+          <div class="ledger-row ledger-indent"><span>+ Salary</span><span class="positive">+$180,000</span></div>
+          <div class="ledger-row ledger-indent"><span>+ Investment income</span><span class="positive">+$6,000</span></div>
+          <div class="ledger-row ledger-indent"><span>− Living expenses</span><span class="negative">−$80,000</span></div>
+          <div class="ledger-row ledger-indent"><span>− Taxes</span><span class="negative">−$45,000</span></div>
+          <div class="ledger-row ledger-indent"><span>± Market (+8.0%)</span><span class="positive">+$104,000</span></div>
+          <div class="ledger-row total"><span>End</span><span>$1,404,000</span></div>
+          <div class="ledger-accounts">Cash <span class="val">$60K</span> · Taxable <span class="val">$240K</span> · Tax-def <span class="val">$750K</span> · Roth <span class="val">$150K</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B + Grid -->
+    <div class="variant">
+      <div class="variant-label">B + Compact Grid</div>
+      <div class="variant-content vb">
+        <div class="inspector-title">Year 2024 (Age 50)</div>
+        <div class="ledger">
+          <div class="ledger-row"><span>Start</span><span>$1,200,000</span></div>
+          <div class="ledger-row ledger-indent"><span>+ Salary</span><span class="positive">+$180,000</span></div>
+          <div class="ledger-row ledger-indent"><span>+ Investment income</span><span class="positive">+$6,000</span></div>
+          <div class="ledger-row ledger-indent"><span>− Living expenses</span><span class="negative">−$80,000</span></div>
+          <div class="ledger-row ledger-indent"><span>− Taxes</span><span class="negative">−$45,000</span></div>
+          <div class="ledger-row ledger-indent"><span>± Market (+8.0%)</span><span class="positive">+$104,000</span></div>
+          <div class="ledger-row total"><span>End</span><span>$1,404,000</span></div>
+        </div>
+        <div class="accounts-section acct-grid">
+          <div class="item"><div class="label">Cash</div><div class="value">$60K</div></div>
+          <div class="item"><div class="label">Taxable</div><div class="value">$240K</div></div>
+          <div class="item"><div class="label">Tax-def</div><div class="value">$750K</div></div>
+          <div class="item"><div class="label">Roth</div><div class="value">$150K</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B + Dots -->
+    <div class="variant">
+      <div class="variant-label">B + Dot Indicators</div>
+      <div class="variant-content vb">
+        <div class="inspector-title">Year 2024 (Age 50)</div>
+        <div class="ledger">
+          <div class="ledger-row"><span>Start</span><span>$1,200,000</span></div>
+          <div class="ledger-row ledger-indent"><span>+ Salary</span><span class="positive">+$180,000</span></div>
+          <div class="ledger-row ledger-indent"><span>+ Investment income</span><span class="positive">+$6,000</span></div>
+          <div class="ledger-row ledger-indent"><span>− Living expenses</span><span class="negative">−$80,000</span></div>
+          <div class="ledger-row ledger-indent"><span>− Taxes</span><span class="negative">−$45,000</span></div>
+          <div class="ledger-row ledger-indent"><span>± Market (+8.0%)</span><span class="positive">+$104,000</span></div>
+          <div class="ledger-row total"><span>End</span><span>$1,404,000</span></div>
+        </div>
+        <div class="accounts-section acct-dots">
+          <div class="accounts-title">Accounts</div>
+          <div class="row">
+            <span class="label">Cash</span>
+            <div class="dots"><div class="dot filled cash"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            <span class="value">$60K</span>
+          </div>
+          <div class="row">
+            <span class="label">Taxable</span>
+            <div class="dots"><div class="dot filled taxable"></div><div class="dot filled taxable"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            <span class="value">$240K</span>
+          </div>
+          <div class="row">
+            <span class="label">Tax-def</span>
+            <div class="dots"><div class="dot filled tax-deferred"></div><div class="dot filled tax-deferred"></div><div class="dot filled tax-deferred"></div><div class="dot filled tax-deferred"></div><div class="dot filled tax-deferred"></div><div class="dot filled tax-deferred"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            <span class="value">$750K</span>
+          </div>
+          <div class="row">
+            <span class="label">Roth</span>
+            <div class="dots"><div class="dot filled roth"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            <span class="value">$150K</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.style.colorScheme || 'light';
+      html.style.colorScheme = current === 'light' ? 'dark' : 'light';
+    }
+  </script>
+</body>
+</html>

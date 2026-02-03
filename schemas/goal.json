@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chubby.fyi/schemas/goal.json",
+  "title": "Goal",
+  "description": "A financial goal with a target amount and date.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the goal."
+    },
+    "name": {
+      "type": "string",
+      "description": "User-defined name for the goal."
+    },
+    "description": {
+      "type": "string",
+      "description": "A brief description of the goal."
+    },
+    "targetAmount": {
+      "type": "number",
+      "minimum": 0,
+      "description": "The target monetary amount for the goal."
+    },
+    "targetMonthOffset": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The simulation month by which to achieve the goal."
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3,
+      "description": "Priority of the goal (1=High, 2=Medium, 3=Low)."
+    },
+    "category": {
+      "type": "string",
+      "enum": ["RETIREMENT", "EDUCATION", "MAJOR_PURCHASE", "CUSTOM"],
+      "description": "The category of the goal."
+    }
+  },
+  "required": ["id", "name", "targetAmount", "targetMonthOffset", "priority", "category"],
+  "additionalProperties": false
+}

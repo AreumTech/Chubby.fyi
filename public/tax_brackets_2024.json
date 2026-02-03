@@ -1,0 +1,48 @@
+{
+  "_metadata": {
+    "sourceURL": "https://www.irs.gov/pub/irs-pdf/p15.pdf",
+    "citation": "IRS Publication 15 (2024) - Employer's Tax Guide, Table 5 (Federal Income Tax Brackets), Table 8 (Standard Deduction)",
+    "ltcgSource": "https://www.irs.gov/pub/irs-pdf/p550.pdf",
+    "ltcgCitation": "IRS Publication 550 (2023) - Investment Income and Expenses, Chapter 4 (Capital Gains and Losses)",
+    "taxYear": 2024,
+    "lastUpdated": "2024-01-01"
+  },
+  "federalTaxBracketsSingle2024": [
+    {"incomeMin": 0, "incomeMax": 11000, "rate": 0.10},
+    {"incomeMin": 11000, "incomeMax": 44725, "rate": 0.12},
+    {"incomeMin": 44725, "incomeMax": 95375, "rate": 0.22},
+    {"incomeMin": 95375, "incomeMax": 197050, "rate": 0.24},
+    {"incomeMin": 197050, "incomeMax": 250525, "rate": 0.32},
+    {"incomeMin": 250525, "incomeMax": 626350, "rate": 0.35},
+    {"incomeMin": 626350, "incomeMax": "Infinity", "rate": 0.37}
+  ],
+  "federalTaxBracketsMFJ2024": [
+    {"incomeMin": 0, "incomeMax": 22000, "rate": 0.10},
+    {"incomeMin": 22000, "incomeMax": 89450, "rate": 0.12},
+    {"incomeMin": 89450, "incomeMax": 190750, "rate": 0.22},
+    {"incomeMin": 190750, "incomeMax": 364200, "rate": 0.24},
+    {"incomeMin": 364200, "incomeMax": 462500, "rate": 0.32},
+    {"incomeMin": 462500, "incomeMax": 693750, "rate": 0.35},
+    {"incomeMin": 693750, "incomeMax": "Infinity", "rate": 0.37}
+  ],
+  "ltcgBracketsSingle2024": [
+    {"incomeMin": 0, "incomeMax": 47025, "rate": 0.00},
+    {"incomeMin": 47025, "incomeMax": 518900, "rate": 0.15},
+    {"incomeMin": 518900, "incomeMax": "Infinity", "rate": 0.20}
+  ],
+  "ltcgBracketsMFJ2024": [
+    {"incomeMin": 0, "incomeMax": 94050, "rate": 0.00},
+    {"incomeMin": 94050, "incomeMax": 583750, "rate": 0.15},
+    {"incomeMin": 583750, "incomeMax": "Infinity", "rate": 0.20}
+  ],
+  "standardDeduction": {
+    "single": 14600,
+    "marriedFilingJointly": 29200,
+    "headOfHousehold": 21900
+  },
+  "qualifiedBusinessIncomeDeduction": {
+    "thresholdSingle": 191950,
+    "thresholdMFJ": 383900,
+    "phaseoutRange": 50000
+  }
+}

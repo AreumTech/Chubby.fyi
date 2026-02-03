@@ -1,0 +1,235 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chubby.fyi/schemas/monthly-data.json",
+  "title": "MonthlyData",
+  "description": "Comprehensive monthly simulation snapshot data",
+  "type": "object",
+  "definitions": {
+    "stochasticReturns": {
+      "type": "object",
+      "properties": {
+        "stocks": {
+          "type": "number"
+        },
+        "bonds": {
+          "type": "number"
+        },
+        "international_stocks": {
+          "type": "number"
+        },
+        "emerging_markets": {
+          "type": "number"
+        },
+        "real_estate": {
+          "type": "number"
+        },
+        "commodities": {
+          "type": "number"
+        },
+        "cash": {
+          "type": "number"
+        },
+        "crypto": {
+          "type": "number"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "monthOffset": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Month number in simulation (0-based)"
+    },
+    "netWorth": {
+      "type": "number",
+      "description": "Total net worth at month end"
+    },
+    "cashFlow": {
+      "type": "number",
+      "description": "Net cash flow for the month"
+    },
+    "accounts": {
+      "type": "object",
+      "properties": {
+        "taxable": {
+          "type": "object",
+          "properties": {
+            "holdings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "assetClass": { "type": "string" },
+                  "quantity": { "type": "number" },
+                  "costBasisPerUnit": { "type": "number" },
+                  "costBasisTotal": { "type": "number" },
+                  "currentMarketPricePerUnit": { "type": "number" },
+                  "currentMarketValueTotal": { "type": "number" },
+                  "unrealizedGainLossTotal": { "type": "number" },
+                  "purchaseMonth": { "type": "integer" }
+                },
+                "required": ["id", "assetClass", "quantity", "costBasisPerUnit", "costBasisTotal", "currentMarketPricePerUnit", "currentMarketValueTotal", "unrealizedGainLossTotal", "purchaseMonth"]
+              }
+            },
+            "totalValue": { "type": "number" }
+          },
+          "required": ["holdings", "totalValue"]
+        },
+        "tax_deferred": {
+          "type": "object",
+          "properties": {
+            "holdings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "assetClass": { "type": "string" },
+                  "quantity": { "type": "number" },
+                  "costBasisPerUnit": { "type": "number" },
+                  "costBasisTotal": { "type": "number" },
+                  "currentMarketPricePerUnit": { "type": "number" },
+                  "currentMarketValueTotal": { "type": "number" },
+                  "unrealizedGainLossTotal": { "type": "number" },
+                  "purchaseMonth": { "type": "integer" }
+                },
+                "required": ["id", "assetClass", "quantity", "costBasisPerUnit", "costBasisTotal", "currentMarketPricePerUnit", "currentMarketValueTotal", "unrealizedGainLossTotal", "purchaseMonth"]
+              }
+            },
+            "totalValue": { "type": "number" }
+          },
+          "required": ["holdings", "totalValue"]
+        },
+        "roth": {
+          "type": "object",
+          "properties": {
+            "holdings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "assetClass": { "type": "string" },
+                  "quantity": { "type": "number" },
+                  "costBasisPerUnit": { "type": "number" },
+                  "costBasisTotal": { "type": "number" },
+                  "currentMarketPricePerUnit": { "type": "number" },
+                  "currentMarketValueTotal": { "type": "number" },
+                  "unrealizedGainLossTotal": { "type": "number" },
+                  "purchaseMonth": { "type": "integer" }
+                },
+                "required": ["id", "assetClass", "quantity", "costBasisPerUnit", "costBasisTotal", "currentMarketPricePerUnit", "currentMarketValueTotal", "unrealizedGainLossTotal", "purchaseMonth"]
+              }
+            },
+            "totalValue": { "type": "number" }
+          },
+          "required": ["holdings", "totalValue"]
+        },
+        "cash": { "type": "number" }
+      },
+      "required": ["cash"],
+      "description": "Account holdings at month end"
+    },
+    "returns": {
+      "$ref": "#/definitions/stochasticReturns",
+      "description": "Asset class returns for the month"
+    },
+    "incomeThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Total income received this month"
+    },
+    "employmentIncomeThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Employment income received this month"
+    },
+    "expensesThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Total expenses paid this month"
+    },
+    "contributionsToInvestmentsThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Total contributions to investments this month"
+    },
+    "withdrawalsFromInvestmentsThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Total withdrawals from investments this month"
+    },
+    "taxesOwedThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Taxes owed this month"
+    },
+    "taxesPaidThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Taxes paid this month"
+    },
+    "capitalGainsTaxPaidThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Capital gains tax paid this month"
+    },
+    "capitalGainsRealizedThisMonth": {
+      "type": "number",
+      "description": "Capital gains realized this month"
+    },
+    "capitalLossesRealizedThisMonth": {
+      "type": "number",
+      "description": "Capital losses realized this month"
+    },
+    "dividendsReceivedThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Dividends received this month"
+    },
+    "interestReceivedThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Interest income received this month"
+    },
+    "rebalancingCostsThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Costs associated with rebalancing this month"
+    },
+    "taxLossHarvestingBenefitThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Tax benefits from loss harvesting this month"
+    },
+    "rothConversionAmountThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Amount converted from traditional to Roth this month"
+    },
+    "requiredMinimumDistributionThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Required minimum distribution amount this month"
+    },
+    "divestmentProceedsThisMonth": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Proceeds from forced asset sales (not income) this month"
+    }
+  },
+  "required": [
+    "monthOffset",
+    "netWorth",
+    "cashFlow",
+    "accounts",
+    "returns",
+    "incomeThisMonth",
+    "expensesThisMonth",
+    "contributionsToInvestmentsThisMonth"
+  ],
+  "additionalProperties": false
+}

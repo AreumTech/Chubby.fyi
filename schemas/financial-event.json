@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chubby.fyi/schemas/financial-event.json",
+  "title": "FinancialEvent",
+  "description": "A financial event that occurs during simulation",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the event"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "INITIAL_STATE",
+        "INCOME",
+        "SOCIAL_SECURITY_INCOME", 
+        "PENSION_INCOME",
+        "ANNUITY_PAYMENT",
+        "RECURRING_EXPENSE",
+        "ONE_TIME_EVENT",
+        "HEALTHCARE_COST",
+        "SCHEDULED_CONTRIBUTION",
+        "RSU_VESTING",
+        "RSU_SALE",
+        "GOAL_DEFINE",
+        "ROTH_CONVERSION",
+        "REBALANCE_PORTFOLIO",
+        "STRATEGY_ASSET_ALLOCATION_SET",
+        "STRATEGY_REBALANCING_RULE_SET",
+        "STRATEGY_TAX_LOSS_HARVESTING_SET",
+        "STRATEGY_ROTH_CONVERSION_LADDER_SET",
+        "STRATEGY_GUARDRAILS_SET",
+        "REAL_ESTATE_PURCHASE",
+        "REAL_ESTATE_SALE",
+        "MORTGAGE_ORIGINATION",
+        "MORTGAGE_PAYMENT",
+        "DEBT_PAYOFF",
+        "FINANCIAL_MILESTONE",
+        "STRATEGIC_TRADE"
+      ],
+      "description": "Type of financial event"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the event"
+    },
+    "priority": {
+      "type": "integer",
+      "description": "Event priority for execution order"
+    },
+    "monthOffset": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of months from simulation start when event occurs"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Monetary amount associated with the event"
+    },
+    "startDateOffset": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Month offset when recurring event starts"
+    },
+    "endDateOffset": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Month offset when recurring event ends (optional for indefinite events)"
+    },
+    "frequency": {
+      "type": "string",
+      "enum": ["monthly", "annually", "one-time"],
+      "description": "Legacy frequency property for backwards compatibility"
+    },
+    "annualGrowthRate": {
+      "type": "number",
+      "description": "Annual growth rate for recurring events"
+    },
+    "source": {
+      "type": "string", 
+      "description": "Source of income for income events"
+    },
+    "accountType": {
+      "type": "string",
+      "description": "Target account type for contribution events"
+    },
+    "category": {
+      "type": "string",
+      "description": "Category for expense events"
+    },
+    "isNet": {
+      "type": "boolean",
+      "description": "Whether amount is after-tax for income events"
+    },
+    "taxablePortion": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Percentage of amount that is taxable (0.0-1.0)"
+    },
+    "liabilityDetails": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { 
+          "type": "string", 
+          "enum": ["MORTGAGE", "STUDENT_LOAN", "AUTO_LOAN", "PERSONAL_LOAN"] 
+        },
+        "initialPrincipal": { "type": "number", "minimum": 0 },
+        "interestRate": { "type": "number", "minimum": 0 },
+        "termMonths": { "type": "integer", "minimum": 1 },
+        "isTaxDeductible": { "type": "boolean" }
+      },
+      "required": ["id", "name", "type", "initialPrincipal", "interestRate", "termMonths"],
+      "additionalProperties": false,
+      "description": "Liability details for debt events"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Additional event-specific data"
+    },
+    "property": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { 
+          "type": "string", 
+          "enum": ["primary_residence", "rental_property", "vacation_home", "commercial", "land"] 
+        },
+        "purchasePrice": { "type": "number", "minimum": 0 },
+        "purchaseDate": { "type": "string" },
+        "annualRentalIncome": { "type": "number", "minimum": 0 },
+        "annualExpenses": {
+          "type": "object",
+          "properties": {
+            "propertyTax": { "type": "number", "minimum": 0 },
+            "insurance": { "type": "number", "minimum": 0 },
+            "maintenance": { "type": "number", "minimum": 0 },
+            "management": { "type": "number", "minimum": 0 },
+            "other": { "type": "number", "minimum": 0 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["id", "name", "type", "purchasePrice"],
+      "additionalProperties": false,
+      "description": "Real estate property details"
+    },
+    "financing": {
+      "type": "object",
+      "properties": {
+        "downPaymentAmount": { "type": "number", "minimum": 0 },
+        "downPaymentSource": { "type": "string" },
+        "mortgage": {
+          "type": "object",
+          "properties": {
+            "principalAmount": { "type": "number", "minimum": 0 },
+            "annualInterestRate": { "type": "number", "minimum": 0 },
+            "termInMonths": { "type": "integer", "minimum": 1 },
+            "monthlyPayment": { "type": "number", "minimum": 0 },
+            "mortgageId": { "type": "string" }
+          },
+          "required": ["principalAmount", "annualInterestRate", "termInMonths"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["downPaymentAmount", "downPaymentSource"],
+      "additionalProperties": false,
+      "description": "Financing details for real estate purchase"
+    },
+    "closingCosts": {
+      "type": "object",
+      "properties": {
+        "totalAmount": { "type": "number", "minimum": 0 },
+        "source": { "type": "string" },
+        "breakdown": {
+          "type": "object",
+          "properties": {
+            "lenderFees": { "type": "number", "minimum": 0 },
+            "titleInsurance": { "type": "number", "minimum": 0 },
+            "appraisal": { "type": "number", "minimum": 0 },
+            "inspection": { "type": "number", "minimum": 0 },
+            "other": { "type": "number", "minimum": 0 }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["totalAmount", "source"],
+      "additionalProperties": false,
+      "description": "Closing costs for real estate purchase"
+    }
+  },
+  "required": ["id", "type", "description", "priority", "monthOffset"],
+  "additionalProperties": false
+}

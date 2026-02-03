@@ -1,0 +1,7 @@
+/* PathFinder Pro - Import Design System */
+@import './styles/design-system.css';
+@import './src/styles/quickstart-wizard.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

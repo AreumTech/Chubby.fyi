@@ -1,0 +1,229 @@
+{
+  "description": "Golden dataset for regression testing - A canonical financial plan",
+  "scenario": "Professional couple, ages 35/33, planning for retirement with mortgage and children",
+  "initialAccounts": {
+    "taxable": {
+      "totalValue": 150000,
+      "holdings": [
+        {
+          "id": "taxable-spy",
+          "assetClass": "stocks",
+          "liquidityTier": "LIQUID",
+          "quantity": 300,
+          "costBasisPerUnit": 400,
+          "costBasisTotal": 120000,
+          "currentMarketPricePerUnit": 500,
+          "currentMarketValueTotal": 150000,
+          "unrealizedGainLossTotal": 30000,
+          "purchaseMonth": -24,
+          "lots": []
+        }
+      ]
+    },
+    "taxDeferred": {
+      "totalValue": 80000,
+      "holdings": [
+        {
+          "id": "td-spy",
+          "assetClass": "stocks",
+          "liquidityTier": "LIQUID",
+          "quantity": 160,
+          "costBasisPerUnit": 450,
+          "costBasisTotal": 72000,
+          "currentMarketPricePerUnit": 500,
+          "currentMarketValueTotal": 80000,
+          "unrealizedGainLossTotal": 8000,
+          "purchaseMonth": -12,
+          "lots": []
+        }
+      ]
+    },
+    "roth": {
+      "totalValue": 25000,
+      "holdings": [
+        {
+          "id": "roth-spy",
+          "assetClass": "stocks",
+          "liquidityTier": "LIQUID",
+          "quantity": 50,
+          "costBasisPerUnit": 480,
+          "costBasisTotal": 24000,
+          "currentMarketPricePerUnit": 500,
+          "currentMarketValueTotal": 25000,
+          "unrealizedGainLossTotal": 1000,
+          "purchaseMonth": -6,
+          "lots": []
+        }
+      ]
+    },
+    "cash": 15000
+  },
+  "events": [
+    {
+      "id": "primary-income",
+      "type": "INCOME",
+      "monthOffset": 0,
+      "amount": 8500,
+      "metadata": {
+        "frequency": "monthly",
+        "source": "Primary Employment",
+        "isNet": false,
+        "endDateOffset": 360
+      }
+    },
+    {
+      "id": "spouse-income",
+      "type": "INCOME", 
+      "monthOffset": 0,
+      "amount": 6200,
+      "metadata": {
+        "frequency": "monthly",
+        "source": "Spouse Employment",
+        "isNet": false,
+        "endDateOffset": 360
+      }
+    },
+    {
+      "id": "mortgage-payment",
+      "type": "LIABILITY_PAYMENT",
+      "monthOffset": 0,
+      "amount": 3200,
+      "metadata": {
+        "frequency": "monthly",
+        "liabilityId": "primary-mortgage",
+        "endDateOffset": 360
+      }
+    },
+    {
+      "id": "living-expenses",
+      "type": "RECURRING_EXPENSE",
+      "monthOffset": 0,
+      "amount": 4500,
+      "metadata": {
+        "frequency": "monthly",
+        "category": "Living Expenses",
+        "endDateOffset": 360
+      }
+    },
+    {
+      "id": "401k-contribution",
+      "type": "SCHEDULED_CONTRIBUTION",
+      "monthOffset": 0,
+      "amount": 1500,
+      "metadata": {
+        "frequency": "monthly",
+        "accountType": "tax_deferred",
+        "endDateOffset": 360
+      }
+    },
+    {
+      "id": "roth-ira-contribution",
+      "type": "SCHEDULED_CONTRIBUTION",
+      "monthOffset": 0,
+      "amount": 500,
+      "metadata": {
+        "frequency": "monthly",
+        "accountType": "roth",
+        "endDateOffset": 120
+      }
+    },
+    {
+      "id": "child1-education",
+      "type": "ONE_TIME_EXPENSE",
+      "monthOffset": 216,
+      "amount": 50000,
+      "metadata": {
+        "description": "Child 1 College Tuition",
+        "category": "Education"
+      }
+    },
+    {
+      "id": "child2-education",
+      "type": "ONE_TIME_EXPENSE", 
+      "monthOffset": 240,
+      "amount": 55000,
+      "metadata": {
+        "description": "Child 2 College Tuition",
+        "category": "Education"
+      }
+    },
+    {
+      "id": "retirement-start",
+      "type": "ONE_TIME_EVENT",
+      "monthOffset": 360,
+      "amount": 0,
+      "metadata": {
+        "description": "Retirement - Stop Working Income",
+        "eventType": "retirement"
+      }
+    }
+  ],
+  "monthsToRun": 480,
+  "withdrawalStrategy": "TAX_EFFICIENT",
+  "goals": [
+    {
+      "id": "retirement-goal",
+      "name": "Retirement Security",
+      "targetAmount": 2000000,
+      "targetMonthOffset": 360,
+      "priority": 1,
+      "category": "retirement"
+    },
+    {
+      "id": "education-goal",
+      "name": "Children's Education",
+      "targetAmount": 105000,
+      "targetMonthOffset": 240,
+      "priority": 2,
+      "category": "education"
+    }
+  ],
+  "config": {
+    "meanSpyReturn": 0.10,
+    "meanBondReturn": 0.04,
+    "meanIntlStockReturn": 0.09,
+    "meanInflation": 0.025,
+    "meanHomeValueAppreciation": 0.035,
+    "meanRentalIncomeGrowth": 0.03,
+    "volatilitySpy": 0.16,
+    "volatilityBond": 0.05,
+    "volatilityIntlStock": 0.18,
+    "volatilityInflation": 0.01,
+    "volatilityHomeValue": 0.08,
+    "volatilityRentalIncomeGrowth": 0.05,
+    "garchSpyOmega": 0.00001,
+    "garchSpyAlpha": 0.1,
+    "garchSpyBeta": 0.85,
+    "garchBondOmega": 0.000005,
+    "garchBondAlpha": 0.05,
+    "garchBondBeta": 0.9,
+    "garchIntlStockOmega": 0.000015,
+    "garchIntlStockAlpha": 0.12,
+    "garchIntlStockBeta": 0.8,
+    "ar1InflationConstant": 0.001,
+    "ar1InflationPhi": 0.7,
+    "ar1HomeValueConstant": 0.002,
+    "ar1HomeValuePhi": 0.6,
+    "ar1RentalIncomeGrowthConstant": 0.0015,
+    "ar1RentalIncomeGrowthPhi": 0.65,
+    "fatTailParameter": 5.0,
+    "correlationMatrix": [
+      [1.0, -0.1, 0.0, 0.7, 0.3, 0.2],
+      [-0.1, 1.0, 0.2, -0.2, 0.1, 0.1],
+      [0.0, 0.2, 1.0, 0.1, 0.0, 0.0],
+      [0.7, -0.2, 0.1, 1.0, 0.4, 0.3],
+      [0.3, 0.1, 0.0, 0.4, 1.0, 0.6],
+      [0.2, 0.1, 0.0, 0.3, 0.6, 1.0]
+    ],
+    "costLeveragedEtf": 0.01,
+    "transactionCostPercentage": 0.0005,
+    "transactionCostMinimum": 1.0,
+    "transactionCostMaximum": 25.0,
+    "guardrails": {
+      "upperGuardrail": 1.20,
+      "lowerGuardrail": 0.80,
+      "spendingCutPct": 0.10,
+      "spendingBonusPct": 0.05
+    }
+  }
+}

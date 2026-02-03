@@ -1,0 +1,193 @@
+{
+  "_metadata": {
+    "description": "Default assumptions and fallback values for PathFinder Pro simulation engine",
+    "purpose": "Centralizes all default financial and behavioral assumptions previously hardcoded in Go source",
+    "philosophy": "All simulation assumptions should be explicit, configurable, and documented",
+    "status": "production",
+    "lastUpdated": "2025-09-24"
+  },
+  "description": "Centralized default assumptions for PathFinder Pro simulation engine",
+  "version": "1.0",
+
+  "assetAllocation": {
+    "defaultStrategy": {
+      "name": "Balanced Growth",
+      "description": "Default balanced asset allocation suitable for most scenarios",
+      "allocations": {
+        "stocks": 0.50,
+        "internationalStocks": 0.20,
+        "bonds": 0.30,
+        "realEstate": 0.0,
+        "otherAssets": 0.0,
+        "cash": 0.0
+      },
+      "rebalanceThreshold": 0.05,
+      "rebalanceMethod": "threshold"
+    },
+    "conservativeStrategy": {
+      "name": "Conservative",
+      "description": "Conservative asset allocation for risk-averse investors",
+      "allocations": {
+        "stocks": 0.30,
+        "internationalStocks": 0.10,
+        "bonds": 0.50,
+        "realEstate": 0.05,
+        "otherAssets": 0.0,
+        "cash": 0.05
+      },
+      "rebalanceThreshold": 0.03,
+      "rebalanceMethod": "threshold"
+    },
+    "aggressiveStrategy": {
+      "name": "Aggressive Growth",
+      "description": "Aggressive asset allocation for growth-focused investors",
+      "allocations": {
+        "stocks": 0.70,
+        "internationalStocks": 0.20,
+        "bonds": 0.05,
+        "realEstate": 0.05,
+        "otherAssets": 0.0,
+        "cash": 0.0
+      },
+      "rebalanceThreshold": 0.07,
+      "rebalanceMethod": "threshold"
+    }
+  },
+
+  "backtesting": {
+    "initialPrices": {
+      "description": "Default initial market prices for backtesting scenarios",
+      "stocks": 100.0,
+      "bonds": 100.0,
+      "realEstate": 100.0,
+      "otherAssets": 100.0,
+      "cash": 1.0
+    },
+    "defaultStartDate": "2000-01-01",
+    "defaultEndDate": "2024-12-31",
+    "monthlyContributionRate": 0.10,
+    "defaultAcquisitionDate": -18,
+    "defaultAcquisitionDateDescription": "Default acquisition date for initial holdings when not specified - set to 18 months for realistic mixed short/long-term treatment"
+  },
+
+  "strategies": {
+    "ageBasedStrategy": {
+      "description": "Parameters for age-based asset allocation (e.g., '110 - age' rule)",
+      "ageRuleConstant": 110,
+      "maxStockAllocation": 0.90,
+      "minStockAllocation": 0.20,
+      "domesticStockProportion": 0.70,
+      "internationalStockProportion": 0.30
+    },
+    "glidePathStrategy": {
+      "description": "Target-date fund style glide path allocation brackets",
+      "brackets": [
+        {
+          "yearsToRetirementMin": 30,
+          "stockPercentage": 0.90,
+          "domesticStockProportion": 0.65,
+          "internationalStockProportion": 0.35
+        },
+        {
+          "yearsToRetirementMin": 20,
+          "stockPercentage": 0.80,
+          "domesticStockProportion": 0.65,
+          "internationalStockProportion": 0.35
+        },
+        {
+          "yearsToRetirementMin": 10,
+          "stockPercentage": 0.65,
+          "domesticStockProportion": 0.65,
+          "internationalStockProportion": 0.35
+        },
+        {
+          "yearsToRetirementMin": 5,
+          "stockPercentage": 0.50,
+          "domesticStockProportion": 0.65,
+          "internationalStockProportion": 0.35
+        },
+        {
+          "yearsToRetirementMin": 0,
+          "stockPercentage": 0.30,
+          "domesticStockProportion": 0.65,
+          "internationalStockProportion": 0.35
+        }
+      ]
+    }
+  },
+
+  "expenses": {
+    "defaultMonthlyExpenses": {
+      "description": "Default monthly expense assumption when no specific data provided",
+      "baseAmount": 6000.0,
+      "justification": "Median US household expenses circa 2024, reduced from previous $10k assumption",
+      "inflationAdjusted": true
+    },
+    "emergencyFund": {
+      "monthsOfExpenses": 3,
+      "description": "Default emergency fund target (months of expenses)"
+    },
+    "safeWithdrawalRate": {
+      "annual": 0.04,
+      "monthly": 0.00333,
+      "description": "Default safe withdrawal rate for retirement (4% rule)"
+    }
+  },
+
+  "taxes": {
+    "defaultStateNoTax": {
+      "description": "Fallback for states without income tax",
+      "rate": 0.0,
+      "type": "none"
+    },
+    "defaultFederalEffectiveRate": 0.22,
+    "defaultStateTaxRate": 0.05,
+    "saltCap": 10000.0
+  },
+
+  "behavioral": {
+    "riskTolerance": {
+      "default": "moderate",
+      "options": ["conservative", "moderate", "aggressive"],
+      "description": "Default risk tolerance assumption"
+    },
+    "rebalancingFrequency": {
+      "default": "quarterly",
+      "options": ["monthly", "quarterly", "annually", "threshold"],
+      "description": "Default rebalancing frequency"
+    },
+    "contributionIncrease": {
+      "annualPercentage": 0.03,
+      "description": "Default annual contribution increase (salary growth assumption)"
+    }
+  },
+
+  "inflation": {
+    "defaultAnnualRate": 0.03,
+    "historicalAverage": 0.026,
+    "targetRate": 0.02,
+    "description": "Default inflation assumptions for forward projections"
+  },
+
+  "cashManagement": {
+    "minimumCashBalance": 1000.0,
+    "cashAllocationThreshold": 0.05,
+    "description": "Default cash management parameters"
+  },
+
+  "validation": {
+    "maxSimulationYears": 100,
+    "minAccountBalance": -1000000.0,
+    "maxAccountBalance": 1000000000.0,
+    "description": "Default validation thresholds and limits"
+  },
+
+  "metadata": {
+    "configVersion": "1.0",
+    "compatibleEngineVersions": ["1.0.0", "1.1.0"],
+    "source": "PathFinder Pro Engineering Team",
+    "reviewedBy": "Financial Modeling Team",
+    "approvedDate": "2025-09-24",
+    "nextReviewDate": "2026-03-24"
+  }
+}

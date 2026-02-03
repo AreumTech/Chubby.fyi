@@ -1,0 +1,17 @@
+{
+  "_metadata": {
+    "description": "Real estate market data for housing calculations",
+    "sourceURL": "https://www.fhfa.gov/DataTools/Downloads/Pages/House-Price-Index.aspx",
+    "citation": "Federal Housing Finance Agency (FHFA) - House Price Index Datasets",
+    "regionalSource": "https://www.bea.gov/data/prices-inflation/regional-price-parities-state-and-metro-area",
+    "regionalCitation": "Bureau of Economic Analysis Regional Price Parities",
+    "status": "placeholder",
+    "lastUpdated": "2024-09-18"
+  },
+  "note": "Placeholder for real estate market data. Housing calculations use simplified assumptions pending implementation.",
+  "nationalHPI": {
+    "baseYear": 2024,
+    "averageAppreciation": 0.03
+  },
+  "regionalAdjustments": {}
+}

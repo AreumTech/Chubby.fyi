@@ -1,0 +1,84 @@
+{
+  "id": "basic-plan-fixture",
+  "name": "Basic Income & Expense Plan",
+  "description": "Simple scenario with income and recurring expenses for testing core functionality",
+  "initialEvent": {
+    "id": "init-basic",
+    "type": "INITIAL_STATE",
+    "name": "Basic Starting Point",
+    "priority": "USER_ACTION",
+    "currentAge": 30,
+    "startYear": 2025,
+    "initialMonth": 1,
+    "filingStatus": "SINGLE",
+    "numberOfDependents": 0,
+    "initialCash": 25000,
+    "initialAccounts": {
+      "taxable": [],
+      "401k": [],
+      "rothIra": []
+    },
+    "initialLiabilities": [],
+    "monthOffset": 0
+  },
+  "events": [
+    {
+      "id": "basic-income",
+      "name": "Software Engineer Salary",
+      "type": "INCOME",
+      "source": "Full-time Employment",
+      "company": "Tech Corp",
+      "amount": 120000,
+      "monthOffset": 0,
+      "frequency": "annually",
+      "startDateOffset": 0,
+      "endDateOffset": 420,
+      "annualGrowthRate": 0.03,
+      "priority": "INCOME",
+      "description": "$120,000/year with 3% annual growth"
+    },
+    {
+      "id": "basic-living-expenses",
+      "name": "Monthly Living Expenses",
+      "type": "RECURRING_EXPENSE",
+      "amount": 4000,
+      "monthOffset": 0,
+      "startDateOffset": 0,
+      "frequency": "monthly",
+      "annualGrowthRate": 0.025,
+      "priority": "RECURRING_EXPENSE",
+      "description": "$4,000/month with 2.5% annual growth"
+    },
+    {
+      "id": "basic-401k",
+      "name": "401k Contribution",
+      "type": "SCHEDULED_CONTRIBUTION",
+      "amount": 12000,
+      "monthOffset": 0,
+      "frequency": "annually",
+      "startDateOffset": 0,
+      "endDateOffset": 420,
+      "accountType": "401k",
+      "assetClass": "US_STOCKS_TOTAL_MARKET",
+      "priority": "SCHEDULED_CONTRIBUTION",
+      "description": "$12,000/year 401k contribution"
+    }
+  ],
+  "goals": [
+    {
+      "id": "basic-retirement-goal",
+      "type": "GOAL_DEFINE",
+      "name": "Retirement Savings",
+      "priority": "GOAL_DEFINE",
+      "goalType": "RETIREMENT",
+      "targetAmount": 1500000,
+      "goalPriority": "HIGH",
+      "sourceAccountCategory": "investment",
+      "isFlexible": false,
+      "monthOffset": 0,
+      "targetDateOffset": 420,
+      "inflationAdjustment": 1,
+      "description": "$1.5M retirement target"
+    }
+  ]
+}

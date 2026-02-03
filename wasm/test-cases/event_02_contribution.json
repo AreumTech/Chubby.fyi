@@ -1,0 +1,42 @@
+{
+  "simulationInput": {
+    "initialAccounts": {
+      "cash": 2000,
+      "tax_deferred": 0
+    },
+    "events": [
+      {
+        "id": "test-contribution",
+        "type": "CONTRIBUTION",
+        "monthOffset": 0,
+        "amount": 1000,
+        "metadata": {
+          "name": "Test 401k Contribution",
+          "frequency": "one-time",
+          "category": "retirement",
+          "targetAccountType": "tax_deferred"
+        }
+      }
+    ],
+    "config": {
+      "expectedReturns": {
+        "CASH": 0.02,
+        "TAX_DEFERRED": 0.07
+      },
+      "volatilities": {
+        "CASH": 0.01,
+        "TAX_DEFERRED": 0.15
+      }
+    },
+    "monthsToRun": 2,
+    "withdrawalStrategy": {
+      "strategy": "taxable_first"
+    }
+  },
+  "expectedOutputs": {
+    "contribution_amount": 1000,
+    "final_cash": 1000,
+    "final_tax_deferred": 1000,
+    "simulation_success": true
+  }
+}

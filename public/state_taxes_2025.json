@@ -1,0 +1,124 @@
+{
+  "_metadata": {
+    "note": "State income tax rates for 2025 tax year",
+    "sources": [
+      "Tax Foundation 2025 State Income Tax Rates",
+      "Individual state revenue department websites",
+      "IMPORTANT: Progressive bracket thresholds are representative samples",
+      "Production use requires verification against official state sources"
+    ],
+    "taxYear": 2025,
+    "lastUpdated": "2025-11-03"
+  },
+  "states": {
+    "CA": {
+      "name": "California",
+      "type": "progressive",
+      "note": "Representative brackets - verify against FTB for production",
+      "single": [
+        {"min": 0, "max": 10000, "rate": 0.01},
+        {"min": 10000, "max": 25000, "rate": 0.02},
+        {"min": 25000, "max": 42000, "rate": 0.04},
+        {"min": 42000, "max": 60000, "rate": 0.06},
+        {"min": 60000, "max": 77000, "rate": 0.08},
+        {"min": 77000, "max": 100000, "rate": 0.093},
+        {"min": 100000, "max": 650000, "rate": 0.103},
+        {"min": 650000, "max": 1000000, "rate": 0.113},
+        {"min": 1000000, "max": 99999999, "rate": 0.123}
+      ],
+      "married": [
+        {"min": 0, "max": 20000, "rate": 0.01},
+        {"min": 20000, "max": 50000, "rate": 0.02},
+        {"min": 50000, "max": 84000, "rate": 0.04},
+        {"min": 84000, "max": 120000, "rate": 0.06},
+        {"min": 120000, "max": 154000, "rate": 0.08},
+        {"min": 154000, "max": 200000, "rate": 0.093},
+        {"min": 200000, "max": 1300000, "rate": 0.103},
+        {"min": 1300000, "max": 2000000, "rate": 0.113},
+        {"min": 2000000, "max": 99999999, "rate": 0.123}
+      ]
+    },
+    "NY": {
+      "name": "New York",
+      "type": "progressive",
+      "note": "Representative brackets - verify against NY DOR for production",
+      "single": [
+        {"min": 0, "max": 8500, "rate": 0.04},
+        {"min": 8500, "max": 11700, "rate": 0.045},
+        {"min": 11700, "max": 13900, "rate": 0.0525},
+        {"min": 13900, "max": 80650, "rate": 0.055},
+        {"min": 80650, "max": 215400, "rate": 0.06},
+        {"min": 215400, "max": 1077550, "rate": 0.0685},
+        {"min": 1077550, "max": 5000000, "rate": 0.0965},
+        {"min": 5000000, "max": 25000000, "rate": 0.103},
+        {"min": 25000000, "max": 99999999, "rate": 0.109}
+      ],
+      "married": [
+        {"min": 0, "max": 17150, "rate": 0.04},
+        {"min": 17150, "max": 23600, "rate": 0.045},
+        {"min": 23600, "max": 27900, "rate": 0.0525},
+        {"min": 27900, "max": 161550, "rate": 0.055},
+        {"min": 161550, "max": 323200, "rate": 0.06},
+        {"min": 323200, "max": 2155350, "rate": 0.0685},
+        {"min": 2155350, "max": 5000000, "rate": 0.0965},
+        {"min": 5000000, "max": 25000000, "rate": 0.103},
+        {"min": 25000000, "max": 99999999, "rate": 0.109}
+      ]
+    },
+    "TX": {
+      "name": "Texas",
+      "type": "none",
+      "rate": 0.0
+    },
+    "FL": {
+      "name": "Florida",
+      "type": "none",
+      "rate": 0.0
+    },
+    "PA": {
+      "name": "Pennsylvania",
+      "type": "flat",
+      "rate": 0.0307,
+      "source": "PA DOR - 3.07% flat rate for 2025"
+    },
+    "IL": {
+      "name": "Illinois",
+      "type": "flat",
+      "rate": 0.0495,
+      "source": "IL DOR - 4.95% flat rate for 2025"
+    },
+    "OH": {
+      "name": "Ohio",
+      "type": "progressive",
+      "note": "Official 2025 Ohio brackets",
+      "single": [
+        {"min": 0, "max": 26050, "rate": 0.0},
+        {"min": 26050, "max": 100000, "rate": 0.0275},
+        {"min": 100000, "max": 99999999, "rate": 0.035}
+      ],
+      "married": [
+        {"min": 0, "max": 26050, "rate": 0.0},
+        {"min": 26050, "max": 100000, "rate": 0.0275},
+        {"min": 100000, "max": 99999999, "rate": 0.035}
+      ]
+    },
+    "GA": {
+      "name": "Georgia",
+      "type": "flat",
+      "rate": 0.0519,
+      "source": "GA DOR - 5.19% flat rate for 2025 (reduced from 5.39%)"
+    },
+    "NC": {
+      "name": "North Carolina",
+      "type": "flat",
+      "rate": 0.0425,
+      "source": "NC DOR - 4.25% flat rate for 2025 (reduced from 4.5%)"
+    },
+    "MI": {
+      "name": "Michigan",
+      "type": "flat",
+      "rate": 0.0425,
+      "source": "MI Treasury - 4.25% flat rate for 2025"
+    }
+  }
+}

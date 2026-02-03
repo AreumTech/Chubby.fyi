@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chubby.fyi/schemas/account-holdings.json",
+  "title": "AccountHoldingsMonthEnd",
+  "description": "Complete account holdings snapshot at month end",
+  "type": "object",
+  "definitions": {
+    "assetClass": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "stocks",
+        "bonds",
+        "international_stocks",
+        "emerging_markets",
+        "real_estate",
+        "commodities",
+        "crypto"
+      ]
+    },
+    "taxLot": {
+      "type": "object",
+      "properties": {
+        "quantity": {
+          "type": "number",
+          "minimum": 0
+        },
+        "costBasisPerUnit": {
+          "type": "number",
+          "minimum": 0
+        },
+        "purchaseMonth": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": ["quantity", "costBasisPerUnit", "purchaseMonth"],
+      "additionalProperties": false
+    },
+    "holding": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "assetClass": {
+          "$ref": "#/definitions/assetClass"
+        },
+        "quantity": {
+          "type": "number",
+          "minimum": 0
+        },
+        "costBasisPerUnit": {
+          "type": "number",
+          "minimum": 0
+        },
+        "costBasisTotal": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currentMarketPricePerUnit": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currentMarketValueTotal": {
+          "type": "number",
+          "minimum": 0
+        },
+        "unrealizedGainLossTotal": {
+          "type": "number"
+        },
+        "purchaseMonth": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "lots": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/taxLot"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "assetClass",
+        "quantity",
+        "costBasisPerUnit",
+        "costBasisTotal",
+        "currentMarketPricePerUnit",
+        "currentMarketValueTotal",
+        "unrealizedGainLossTotal",
+        "purchaseMonth"
+      ],
+      "additionalProperties": false
+    },
+    "account": {
+      "type": "object",
+      "properties": {
+        "holdings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/holding"
+          }
+        },
+        "totalValue": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": ["holdings", "totalValue"],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "taxable": {
+      "$ref": "#/definitions/account"
+    },
+    "tax_deferred": {
+      "$ref": "#/definitions/account"
+    },
+    "roth": {
+      "$ref": "#/definitions/account"
+    },
+    "cash": {
+      "type": "number",
+      "minimum": 0
+    }
+  },
+  "required": ["cash"],
+  "additionalProperties": false
+}

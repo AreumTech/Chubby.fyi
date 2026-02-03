@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chubby.fyi/schemas/simulation-result.json",
+  "title": "SimulationResult",
+  "description": "Result of a single simulation run",
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "Whether the simulation completed successfully"
+    },
+    "monthlyData": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "monthOffset": { "type": "integer" },
+          "netWorth": { "type": "number" },
+          "cashFlow": { "type": "number" },
+          "accounts": { "type": "object" },
+          "returns": { "type": "object" }
+        },
+        "required": ["monthOffset", "netWorth", "cashFlow", "accounts", "returns"]
+      },
+      "description": "Monthly data for each month of the simulation"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if simulation failed"
+    }
+  },
+  "required": ["success"],
+  "additionalProperties": false,
+  "if": {
+    "properties": {
+      "success": {
+        "const": true
+      }
+    }
+  },
+  "then": {
+    "required": ["monthlyData"]
+  },
+  "else": {
+    "required": ["error"]
+  }
+}

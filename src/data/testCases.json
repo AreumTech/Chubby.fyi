@@ -1,0 +1,666 @@
+{
+  "_metadata": {
+    "description": "Test cases for the simulation engine harness",
+    "version": "1.0.0",
+    "lastUpdated": "2025-01-23"
+  },
+  "testCases": {
+    "youngAccumulator": {
+      "name": "Young Accumulator",
+      "description": "27-year-old tech professional starting career with high income and savings rate",
+      "tags": ["high-income", "young", "accumulation"],
+      "input": {
+        "initialAccounts": {
+          "cash": 15000,
+          "taxable": {
+            "totalValue": 25000,
+            "holdings": [
+              {
+                "id": "young-stocks",
+                "assetClass": "US_STOCKS_TOTAL_MARKET",
+                "quantity": 250,
+                "costBasisPerUnit": 90,
+                "costBasisTotal": 22500,
+                "currentMarketValueTotal": 25000
+              }
+            ]
+          },
+          "tax_deferred": {
+            "totalValue": 8000,
+            "holdings": [
+              {
+                "id": "young-401k",
+                "assetClass": "US_STOCKS_TOTAL_MARKET", 
+                "quantity": 80,
+                "costBasisPerUnit": 100,
+                "costBasisTotal": 8000,
+                "currentMarketValueTotal": 8000
+              }
+            ]
+          }
+        },
+        "events": [
+          {
+            "id": "tech-salary",
+            "type": "INCOME",
+            "monthOffset": 0,
+            "amount": 400000,
+            "metadata": {
+              "name": "Tech Professional Salary",
+              "source": "Base Salary + Bonus",
+              "taxable": true
+            }
+          },
+          {
+            "id": "living-expenses", 
+            "type": "EXPENSE",
+            "monthOffset": 0,
+            "amount": 120000,
+            "metadata": {
+              "name": "Living Expenses",
+              "category": "Essential",
+              "recurring": true
+            }
+          },
+          {
+            "id": "401k-contrib",
+            "type": "CONTRIBUTION",
+            "monthOffset": 0,
+            "amount": 30000,
+            "metadata": {
+              "name": "401(k) Contribution",
+              "targetAccountType": "tax_deferred",
+              "employerMatch": true
+            }
+          },
+          {
+            "id": "roth-contrib",
+            "type": "CONTRIBUTION", 
+            "monthOffset": 0,
+            "amount": 7000,
+            "metadata": {
+              "name": "Roth IRA Contribution",
+              "targetAccountType": "roth"
+            }
+          }
+        ],
+        "config": {
+          "expectedReturns": {
+            "US_STOCKS_TOTAL_MARKET": 0.10,
+            "US_BONDS_TOTAL_MARKET": 0.04,
+            "CASH": 0.02
+          },
+          "volatilities": {
+            "US_STOCKS_TOTAL_MARKET": 0.16,
+            "US_BONDS_TOTAL_MARKET": 0.05,
+            "CASH": 0.01
+          }
+        },
+        "monthsToRun": 600,
+        "withdrawalStrategy": {
+          "strategy": "taxable_first"
+        },
+        "goals": [
+          {
+            "id": "financial-independence",
+            "name": "Financial Independence",
+            "targetAmount": 3000000,
+            "targetMonthOffset": 480,
+            "priority": 1,
+            "category": "RETIREMENT"
+          }
+        ]
+      },
+      "expectedOutcomes": {
+        "netWorthGrowth": "positive",
+        "finalNetWorth": "> 2000000", 
+        "cashFlowPositive": "first-20-years",
+        "goalAchievement": "high-probability"
+      }
+    },
+    "retireeDrawdown": {
+      "name": "Retiree Drawdown",
+      "description": "65-year-old retiree beginning withdrawal phase with substantial assets",
+      "tags": ["retirement", "withdrawal", "mature"],
+      "input": {
+        "initialAccounts": {
+          "cash": 100000,
+          "taxable": {
+            "totalValue": 800000,
+            "holdings": [
+              {
+                "id": "retiree-stocks",
+                "assetClass": "US_STOCKS_TOTAL_MARKET",
+                "quantity": 4000,
+                "costBasisPerUnit": 150,
+                "costBasisTotal": 600000,
+                "currentMarketValueTotal": 480000
+              },
+              {
+                "id": "retiree-bonds", 
+                "assetClass": "US_BONDS_TOTAL_MARKET",
+                "quantity": 3200,
+                "costBasisPerUnit": 100,
+                "costBasisTotal": 320000,
+                "currentMarketValueTotal": 320000
+              }
+            ]
+          },
+          "tax_deferred": {
+            "totalValue": 1500000,
+            "holdings": [
+              {
+                "id": "retiree-401k",
+                "assetClass": "US_STOCKS_TOTAL_MARKET",
+                "quantity": 10000,
+                "costBasisPerUnit": 120,
+                "costBasisTotal": 1200000,
+                "currentMarketValueTotal": 1200000
+              },
+              {
+                "id": "retiree-401k-bonds",
+                "assetClass": "US_BONDS_TOTAL_MARKET", 
+                "quantity": 3000,
+                "costBasisPerUnit": 100,
+                "costBasisTotal": 300000,
+                "currentMarketValueTotal": 300000
+              }
+            ]
+          },
+          "roth": {
+            "totalValue": 400000,
+            "holdings": [
+              {
+                "id": "retiree-roth",
+                "assetClass": "US_STOCKS_TOTAL_MARKET",
+                "quantity": 4000,
+                "costBasisPerUnit": 100,
+                "costBasisTotal": 400000, 
+                "currentMarketValueTotal": 400000
+              }
+            ]
+          }
+        },
+        "events": [
+          {
+            "id": "social-security",
+            "type": "INCOME",
+            "monthOffset": 0,
+            "amount": 36000,
+            "metadata": {
+              "name": "Social Security Benefits",
+              "source": "Government",
+              "taxable": true
+            }
+          },
+          {
+            "id": "retirement-expenses",
+            "type": "EXPENSE", 
+            "monthOffset": 0,
+            "amount": 80000,
+            "metadata": {
+              "name": "Retirement Living Expenses",
+              "category": "Essential",
+              "recurring": true
+            }
+          },
+          {
+            "id": "required-min-distribution",
+            "type": "WITHDRAWAL",
+            "monthOffset": 84,
+            "amount": 60000,
+            "metadata": {
+              "name": "Required Minimum Distribution",
+              "targetAccountType": "tax_deferred",
+              "required": true
+            }
+          }
+        ],
+        "config": {
+          "expectedReturns": {
+            "US_STOCKS_TOTAL_MARKET": 0.08,
+            "US_BONDS_TOTAL_MARKET": 0.04,
+            "CASH": 0.02
+          },
+          "volatilities": {
+            "US_STOCKS_TOTAL_MARKET": 0.16,
+            "US_BONDS_TOTAL_MARKET": 0.05,
+            "CASH": 0.01
+          }
+        },
+        "monthsToRun": 360,
+        "withdrawalStrategy": {
+          "strategy": "bucket_strategy",
+          "buckets": [
+            {
+              "accountType": "taxable",
+              "priority": 1,
+              "percentage": 40
+            },
+            {
+              "accountType": "tax_deferred", 
+              "priority": 2,
+              "percentage": 40
+            },
+            {
+              "accountType": "roth",
+              "priority": 3,
+              "percentage": 20
+            }
+          ]
+        }
+      },
+      "expectedOutcomes": {
+        "netWorthGrowth": "declining",
+        "sustainabilityYears": "> 25",
+        "cashFlowNegative": "post-retirement",
+        "taxEfficiency": "optimized-withdrawals"
+      }
+    },
+    "liquidityCrisis": {
+      "name": "Liquidity Crisis",
+      "description": "Middle-aged professional facing job loss with limited liquid assets",
+      "tags": ["crisis", "cash-flow-negative", "stress-test"],
+      "input": {
+        "initialAccounts": {
+          "cash": 5000,
+          "taxable": {
+            "totalValue": 50000,
+            "holdings": [
+              {
+                "id": "crisis-stocks",
+                "assetClass": "US_STOCKS_TOTAL_MARKET",
+                "quantity": 500,
+                "costBasisPerUnit": 80,
+                "costBasisTotal": 40000,
+                "currentMarketValueTotal": 50000
+              }
+            ]
+          },
+          "tax_deferred": {
+            "totalValue": 350000,
+            "holdings": [
+              {
+                "id": "crisis-401k",
+                "assetClass": "US_STOCKS_TOTAL_MARKET",
+                "quantity": 2800,
+                "costBasisPerUnit": 100,
+                "costBasisTotal": 280000,
+                "currentMarketValueTotal": 280000
+              },
+              {
+                "id": "crisis-401k-bonds",
+                "assetClass": "US_BONDS_TOTAL_MARKET",
+                "quantity": 700,
+                "costBasisPerUnit": 100,
+                "costBasisTotal": 70000,
+                "currentMarketValueTotal": 70000
+              }
+            ]
+          }
+        },
+        "events": [
+          {
+            "id": "unemployment-income",
+            "type": "INCOME",
+            "monthOffset": 0,
+            "amount": 30000,
+            "metadata": {
+              "name": "Unemployment Benefits",
+              "source": "Government",
+              "temporary": true,
+              "duration": 6
+            }
+          },
+          {
+            "id": "reduced-expenses",
+            "type": "EXPENSE",
+            "monthOffset": 0, 
+            "amount": 65000,
+            "metadata": {
+              "name": "Reduced Living Expenses",
+              "category": "Essential",
+              "note": "Cut discretionary spending"
+            }
+          },
+          {
+            "id": "emergency-withdrawal",
+            "type": "WITHDRAWAL",
+            "monthOffset": 6,
+            "amount": 25000,
+            "metadata": {
+              "name": "Emergency 401k Withdrawal", 
+              "targetAccountType": "tax_deferred",
+              "penalty": true,
+              "reason": "Hardship"
+            }
+          },
+          {
+            "id": "job-recovery",
+            "type": "INCOME",
+            "monthOffset": 18,
+            "amount": 180000,
+            "metadata": {
+              "name": "New Job Income",
+              "source": "Salary",
+              "note": "Recovery after 18 months"
+            }
+          }
+        ],
+        "config": {
+          "expectedReturns": {
+            "US_STOCKS_TOTAL_MARKET": 0.10,
+            "US_BONDS_TOTAL_MARKET": 0.04,
+            "CASH": 0.02
+          },
+          "volatilities": {
+            "US_STOCKS_TOTAL_MARKET": 0.16,
+            "US_BONDS_TOTAL_MARKET": 0.05,
+            "CASH": 0.01
+          }
+        },
+        "monthsToRun": 240,
+        "withdrawalStrategy": {
+          "strategy": "taxable_first"
+        },
+        "goals": [
+          {
+            "id": "survive-crisis",
+            "name": "Financial Recovery", 
+            "targetAmount": 400000,
+            "targetMonthOffset": 120,
+            "priority": 1,
+            "category": "CUSTOM"
+          }
+        ]
+      },
+      "expectedOutcomes": {
+        "netWorthGrowth": "recovery-pattern",
+        "cashFlowNegative": "first-18-months", 
+        "goalAchievement": "moderate-probability",
+        "liquidityStress": "severe-then-recovery"
+      }
+    },
+    "debtBankruptcy": {
+      "name": "High-Debt Bankruptcy Risk",
+      "description": "Professional struggling with multiple debts that exceed income capacity",
+      "tags": ["debt", "bankruptcy", "high-risk", "stress-test"],
+      "input": {
+        "initialAccounts": {
+          "cash": 2000,
+          "taxable": {
+            "totalValue": 15000,
+            "holdings": [
+              {
+                "id": "debt-stocks",
+                "assetClass": "US_STOCKS_TOTAL_MARKET",
+                "quantity": 150,
+                "costBasisPerUnit": 100,
+                "costBasisTotal": 15000,
+                "currentMarketValueTotal": 15000
+              }
+            ]
+          },
+          "tax_deferred": {
+            "totalValue": 45000,
+            "holdings": [
+              {
+                "id": "debt-401k",
+                "assetClass": "US_STOCKS_TOTAL_MARKET",
+                "quantity": 450,
+                "costBasisPerUnit": 100,
+                "costBasisTotal": 45000,
+                "currentMarketValueTotal": 45000
+              }
+            ]
+          }
+        },
+        "events": [
+          {
+            "id": "low-income",
+            "type": "INCOME",
+            "monthOffset": 0,
+            "amount": 55000,
+            "name": "Struggling Professional Salary",
+            "description": "Part-time work and gig economy income",
+            "metadata": {
+              "source": "Part-time + Gig Work",
+              "taxable": true
+            }
+          },
+          {
+            "id": "add-credit-card-1",
+            "type": "LIABILITY_ADD",
+            "monthOffset": 0,
+            "name": "Credit Card #1 Debt",
+            "description": "High-interest credit card debt",
+            "liability": {
+              "id": "credit-card-1-debt",
+              "name": "Credit Card #1",
+              "type": "credit_card",
+              "originalPrincipalAmount": 28000,
+              "currentPrincipalBalance": 28000,
+              "annualInterestRate": 0.24,
+              "remainingTermInMonths": 360,
+              "monthlyPayment": 700
+            }
+          },
+          {
+            "id": "add-credit-card-2",
+            "type": "LIABILITY_ADD",
+            "monthOffset": 0,
+            "name": "Credit Card #2 Debt",
+            "description": "Second credit card with moderate balance",
+            "liability": {
+              "id": "credit-card-2-debt",
+              "name": "Credit Card #2",
+              "type": "credit_card",
+              "originalPrincipalAmount": 15000,
+              "currentPrincipalBalance": 15000,
+              "annualInterestRate": 0.21,
+              "remainingTermInMonths": 360,
+              "monthlyPayment": 500
+            }
+          },
+          {
+            "id": "add-student-loan",
+            "type": "LIABILITY_ADD",
+            "monthOffset": 0,
+            "name": "Student Loan Debt",
+            "description": "Federal student loan debt",
+            "liability": {
+              "id": "student-loan-debt",
+              "name": "Student Loan",
+              "type": "student",
+              "originalPrincipalAmount": 85000,
+              "currentPrincipalBalance": 85000,
+              "annualInterestRate": 0.065,
+              "remainingTermInMonths": 180,
+              "monthlyPayment": 600
+            }
+          },
+          {
+            "id": "add-car-loan",
+            "type": "LIABILITY_ADD",
+            "monthOffset": 0,
+            "name": "Auto Loan Debt",
+            "description": "Car loan debt",
+            "liability": {
+              "id": "car-loan-debt",
+              "name": "Auto Loan",
+              "type": "auto",
+              "originalPrincipalAmount": 22000,
+              "currentPrincipalBalance": 22000,
+              "annualInterestRate": 0.08,
+              "remainingTermInMonths": 60,
+              "monthlyPayment": 400
+            }
+          },
+          {
+            "id": "add-personal-loan",
+            "type": "LIABILITY_ADD",
+            "monthOffset": 0,
+            "name": "Personal Loan Debt",
+            "description": "Personal loan debt",
+            "liability": {
+              "id": "personal-loan-debt",
+              "name": "Personal Loan",
+              "type": "personal",
+              "originalPrincipalAmount": 12000,
+              "currentPrincipalBalance": 12000,
+              "annualInterestRate": 0.14,
+              "remainingTermInMonths": 48,
+              "monthlyPayment": 300
+            }
+          },
+          {
+            "id": "basic-expenses",
+            "type": "EXPENSE",
+            "monthOffset": 0,
+            "amount": 36000,
+            "name": "Basic Living Expenses",
+            "description": "Essential monthly living expenses",
+            "metadata": {
+              "category": "Essential",
+              "recurring": true
+            }
+          },
+          {
+            "id": "credit-card-1",
+            "type": "DEBT_PAYMENT",
+            "monthOffset": 0,
+            "amount": 8400,
+            "targetLiabilityId": "credit-card-1-debt",
+            "paymentType": "minimum",
+            "name": "Credit Card #1 Payments",
+            "description": "Monthly payments on high-interest credit card debt",
+            "metadata": {
+              "debtType": "credit_card",
+              "principalBalance": 28000,
+              "interestRate": 0.24,
+              "minimumPayment": 700,
+              "required": true
+            }
+          },
+          {
+            "id": "credit-card-2", 
+            "type": "DEBT_PAYMENT",
+            "monthOffset": 0,
+            "amount": 6000,
+            "targetLiabilityId": "credit-card-2-debt",
+            "paymentType": "minimum",
+            "name": "Credit Card #2 Payments",
+            "description": "Monthly payments on second credit card",
+            "metadata": {
+              "debtType": "credit_card", 
+              "principalBalance": 15000,
+              "interestRate": 0.21,
+              "minimumPayment": 500,
+              "required": true
+            }
+          },
+          {
+            "id": "student-loan",
+            "type": "DEBT_PAYMENT",
+            "monthOffset": 0,
+            "amount": 7200,
+            "targetLiabilityId": "student-loan-debt",
+            "paymentType": "minimum",
+            "name": "Student Loan Payments",
+            "description": "Federal student loan repayment",
+            "metadata": {
+              "debtType": "student",
+              "principalBalance": 85000,
+              "interestRate": 0.065,
+              "minimumPayment": 600,
+              "termRemainingMonths": 180,
+              "required": true
+            }
+          },
+          {
+            "id": "car-loan",
+            "type": "DEBT_PAYMENT",
+            "monthOffset": 0, 
+            "amount": 4800,
+            "targetLiabilityId": "car-loan-debt",
+            "paymentType": "minimum",
+            "name": "Auto Loan Payments",
+            "description": "Car loan monthly payments",
+            "metadata": {
+              "debtType": "auto",
+              "principalBalance": 22000,
+              "interestRate": 0.08,
+              "minimumPayment": 400,
+              "termRemainingMonths": 60,
+              "required": true
+            }
+          },
+          {
+            "id": "personal-loan",
+            "type": "DEBT_PAYMENT",
+            "monthOffset": 0,
+            "amount": 3600,
+            "targetLiabilityId": "personal-loan-debt",
+            "paymentType": "minimum",
+            "name": "Personal Loan Payments", 
+            "description": "Personal loan repayment",
+            "metadata": {
+              "debtType": "personal",
+              "principalBalance": 12000,
+              "interestRate": 0.14,
+              "minimumPayment": 300,
+              "termRemainingMonths": 48,
+              "required": true
+            }
+          }
+        ],
+        "config": {
+          "expectedReturns": {
+            "US_STOCKS_TOTAL_MARKET": 0.10,
+            "US_BONDS_TOTAL_MARKET": 0.04,
+            "CASH": 0.02
+          },
+          "volatilities": {
+            "US_STOCKS_TOTAL_MARKET": 0.16,
+            "US_BONDS_TOTAL_MARKET": 0.05,
+            "CASH": 0.01
+          }
+        },
+        "monthsToRun": 120,
+        "withdrawalStrategy": {
+          "strategy": "taxable_first"
+        },
+        "goals": [
+          {
+            "id": "debt-freedom",
+            "name": "Eliminate All Debt",
+            "targetAmount": 0,
+            "targetMonthOffset": 60,
+            "priority": 1,
+            "category": "DEBT_PAYOFF",
+            "metadata": {
+              "bankruptcyRisk": "high",
+              "debtServiceRatio": 0.85
+            }
+          },
+          {
+            "id": "emergency-fund",
+            "name": "Emergency Fund",
+            "targetAmount": 15000,
+            "targetMonthOffset": 36,
+            "priority": 2,
+            "category": "EMERGENCY"
+          }
+        ]
+      },
+      "expectedOutcomes": {
+        "netWorthGrowth": "severely-negative",
+        "bankruptcyProbability": "> 75%",
+        "debtServiceRatio": "> 80%",
+        "cashFlowNegative": "immediate",
+        "goalAchievement": "bankruptcy-before-success",
+        "bankruptcyTriggers": ["debt_service_failure", "extreme_debt_service_ratio"]
+      }
+    }
+  }
+}

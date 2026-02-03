@@ -1,0 +1,157 @@
+package main
+
+import (
+	"fmt"
+	"math"
+)
+
+// processMonthlyTaxPayments handles all tax payment timing for a given month
+func (se *SimulationEngine) processMonthlyTaxPayments(accounts *AccountHoldingsMonthEnd, monthOffset int) {
+	// Process quarterly estimated tax payments
+	estimatedPayment := se.taxPaymentManager.ProcessEstimatedPayment(accounts, monthOffset)
+	if estimatedPayment > 0 {
+		se.currentMonthFlows.TaxWithheldThisMonth += estimatedPayment
+		if err := se.ledger.RecordExpense(estimatedPayment, "estimated_tax_payment"); err != nil {
+			fmt.Printf("Warning: Failed to record estimated tax payment in ledger: %v\n", err)
+		}
+	}
+
+	// Process final tax settlement in April
+	finalPayment := se.taxPaymentManager.ProcessFinalTaxSettlement(accounts, monthOffset)
+	if finalPayment != 0 {
+		if finalPayment > 0 {
+			// Additional tax owed
+			se.currentMonthFlows.TaxWithheldThisMonth += finalPayment
+			if err := se.ledger.RecordExpense(finalPayment, "final_tax_settlement"); err != nil {
+				fmt.Printf("Warning: Failed to record final tax payment in ledger: %v\n", err)
+			}
+		} else {
+			// Refund received (negative payment)
+			refundAmount := math.Abs(finalPayment)
+			se.currentMonthFlows.IncomeThisMonth += refundAmount
+			if err := se.ledger.RecordIncome(refundAmount, "tax_refund"); err != nil {
+				fmt.Printf("Warning: Failed to record tax refund in ledger: %v\n", err)
+			}
+		}
+	}
+}
+
+// processWithholding handles withholding for income events
+func (se *SimulationEngine) processWithholding(monthOffset int, salaryWithholding, dividendWithholding, pensionWithholding float64) {
+	se.taxPaymentManager.ProcessMonthlyWithholding(monthOffset, salaryWithholding, dividendWithholding, pensionWithholding)
+
+	totalWithholding := salaryWithholding + dividendWithholding + pensionWithholding
+	se.currentMonthFlows.TaxWithheldThisMonth += totalWithholding
+
+	// Record in ledger
+	if err := se.ledger.RecordExpense(totalWithholding, "tax_withholding"); err != nil {
+		fmt.Printf("Warning: Failed to record tax withholding in ledger: %v\n", err)
+	}
+}
+
+// scheduleEstimatedTaxPayments schedules estimated payments for business income or large capital gains
+func (se *SimulationEngine) scheduleEstimatedTaxPayments(projectedIncome float64, paymentType string) {
+	// Estimate tax rate based on current year's income
+	estimatedTaxRate := se.estimateEffectiveTaxRate()
+
+	// Schedule quarterly payments if projected tax is significant
+	projectedTax := projectedIncome * estimatedTaxRate
+	if projectedTax > 1000 { // Only schedule if > $1000 tax liability
+		for quarter := 1; quarter <= 4; quarter++ {
+			se.taxPaymentManager.ScheduleEstimatedPayment(quarter, projectedIncome, estimatedTaxRate, paymentType)
+		}
+	}
+}
+
+// estimateEffectiveTaxRate estimates current effective tax rate based on YTD income
+func (se *SimulationEngine) estimateEffectiveTaxRate() float64 {
+	totalIncome := se.ordinaryIncomeYTD + se.qualifiedDividendsYTD + se.capitalGainsYTD
+	if totalIncome <= 0 {
+		return 0.22 // Default 22% marginal rate assumption
+	}
+
+	// Simple effective rate estimation based on income level
+	if totalIncome < 50000 {
+		return 0.12
+	} else if totalIncome < 100000 {
+		return 0.18
+	} else if totalIncome < 200000 {
+		return 0.24
+	} else {
+		return 0.32
+	}
+}
+
+// getMonthlyTaxPaymentSummary returns a summary of tax payments for the current month
+func (se *SimulationEngine) getMonthlyTaxPaymentSummary(monthOffset int) string {
+	summary := fmt.Sprintf("Month %d Tax Payment Summary:\n", monthOffset)
+	summary += fmt.Sprintf("  Withholding this month: $%.2f\n", se.currentMonthFlows.TaxWithheldThisMonth)
+
+	// Check for estimated payments due this month
+	for _, payment := range se.taxPaymentManager.schedule.EstimatedPayments {
+		if payment.MonthOffset == monthOffset && payment.IsPaid {
+			summary += fmt.Sprintf("  Estimated payment (Q%d): $%.2f\n", payment.Quarter, payment.PaymentAmount)
+		}
+	}
+
+	// Check for final settlement
+	if se.taxPaymentManager.schedule.FinalSettlement != nil &&
+		se.taxPaymentManager.schedule.FinalSettlement.MonthOffset == monthOffset &&
+		se.taxPaymentManager.schedule.FinalSettlement.IsSettled {
+		settlement := se.taxPaymentManager.schedule.FinalSettlement
+		if settlement.BalanceDue > 0 {
+			summary += fmt.Sprintf("  Final tax settlement: $%.2f owed\n", settlement.BalanceDue)
+		} else if settlement.RefundDue > 0 {
+			summary += fmt.Sprintf("  Tax refund received: $%.2f\n", settlement.RefundDue)
+		}
+	}
+
+	summary += se.taxPaymentManager.GetTaxPaymentSummary()
+	return summary
+}
+
+// detectUnderWithholding checks if current withholding is sufficient and schedules estimated payments
+func (se *SimulationEngine) detectUnderWithholding(monthOffset int) {
+	// Project annual income based on YTD (simple extrapolation)
+	monthsElapsed := float64((monthOffset % 12) + 1)
+	projectedAnnualIncome := (se.ordinaryIncomeYTD + se.capitalGainsYTD + se.qualifiedDividendsYTD) * (12 / monthsElapsed)
+
+	// Estimate projected tax liability
+	projectedTaxLiability := projectedAnnualIncome * se.estimateEffectiveTaxRate()
+
+	// Check if we're significantly under-withheld
+	underWithholding := se.taxPaymentManager.EstimateUnderWithholding(projectedTaxLiability)
+
+	if underWithholding > 500 { // More than $500 under-withheld
+		// Schedule estimated payments for remainder of year
+		remainingQuarters := 4 - ((monthOffset % 12) / 3)
+		if remainingQuarters > 0 {
+			quarterlyPayment := underWithholding / float64(remainingQuarters)
+
+			for quarter := (((monthOffset % 12) / 3) + 1); quarter <= 4; quarter++ {
+				payment := EstimatedPayment{
+					Quarter:       quarter,
+					MonthOffset:   getQuarterDueMonth(quarter, monthOffset),
+					PaymentAmount: quarterlyPayment,
+					PaymentType:   "under_withholding_correction",
+					IsPaid:        false,
+				}
+				se.taxPaymentManager.schedule.EstimatedPayments = append(se.taxPaymentManager.schedule.EstimatedPayments, payment)
+			}
+		}
+	}
+}
+
+// getQuarterDueMonth returns the month when a quarterly payment is due
+func getQuarterDueMonth(quarter int, currentMonth int) int {
+	// Quarterly due dates: Jan 15 (Q4 previous year), Apr 15 (Q1), Jun 15 (Q2), Sep 15 (Q3)
+	currentYear := currentMonth / 12
+	baseDueDates := map[int]int{
+		1: currentYear*12 + 3,     // April 15
+		2: currentYear*12 + 5,     // June 15
+		3: currentYear*12 + 8,     // September 15
+		4: (currentYear+1)*12 + 0, // January 15 of next year
+	}
+
+	return baseDueDates[quarter]
+}

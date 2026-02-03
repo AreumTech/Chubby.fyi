@@ -1,0 +1,108 @@
+{
+  "_metadata": {
+    "sourceURL": "https://www.cms.gov/medicare/enrollment-and-renewal/medicare-premium-rates",
+    "citation": "Centers for Medicare & Medicaid Services - Medicare Part B and Part D Premium Rates for 2024",
+    "legalAuthority": "Social Security Act Section 1839(i)",
+    "effectiveDate": "2024-01-01",
+    "lastUpdated": "2024-01-01"
+  },
+  "partBPremiums": {
+    "standardMonthlyPremium": 174.70,
+    "irmaaAdjustments": [
+      {
+        "incomeRange": {
+          "single": {"min": 0, "max": 103000},
+          "marriedFilingJointly": {"min": 0, "max": 206000}
+        },
+        "monthlyPremiumAmount": 174.70,
+        "irmaaAmount": 0
+      },
+      {
+        "incomeRange": {
+          "single": {"min": 103000, "max": 129000},
+          "marriedFilingJointly": {"min": 206000, "max": 258000}
+        },
+        "monthlyPremiumAmount": 244.60,
+        "irmaaAmount": 69.90
+      },
+      {
+        "incomeRange": {
+          "single": {"min": 129000, "max": 161000},
+          "marriedFilingJointly": {"min": 258000, "max": 322000}
+        },
+        "monthlyPremiumAmount": 349.40,
+        "irmaaAmount": 174.70
+      },
+      {
+        "incomeRange": {
+          "single": {"min": 161000, "max": 193000},
+          "marriedFilingJointly": {"min": 322000, "max": 386000}
+        },
+        "monthlyPremiumAmount": 454.20,
+        "irmaaAmount": 279.50
+      },
+      {
+        "incomeRange": {
+          "single": {"min": 193000, "max": 500000},
+          "marriedFilingJointly": {"min": 386000, "max": 750000}
+        },
+        "monthlyPremiumAmount": 559.00,
+        "irmaaAmount": 384.30
+      },
+      {
+        "incomeRange": {
+          "single": {"min": 500000, "max": "Infinity"},
+          "marriedFilingJointly": {"min": 750000, "max": "Infinity"}
+        },
+        "monthlyPremiumAmount": 594.00,
+        "irmaaAmount": 419.30
+      }
+    ]
+  },
+  "partDPremiums": {
+    "irmaaAdjustments": [
+      {
+        "incomeRange": {
+          "single": {"min": 0, "max": 103000},
+          "marriedFilingJointly": {"min": 0, "max": 206000}
+        },
+        "monthlyIrmaaAmount": 0
+      },
+      {
+        "incomeRange": {
+          "single": {"min": 103000, "max": 129000},
+          "marriedFilingJointly": {"min": 206000, "max": 258000}
+        },
+        "monthlyIrmaaAmount": 12.90
+      },
+      {
+        "incomeRange": {
+          "single": {"min": 129000, "max": 161000},
+          "marriedFilingJointly": {"min": 258000, "max": 322000}
+        },
+        "monthlyIrmaaAmount": 33.30
+      },
+      {
+        "incomeRange": {
+          "single": {"min": 161000, "max": 193000},
+          "marriedFilingJointly": {"min": 322000, "max": 386000}
+        },
+        "monthlyIrmaaAmount": 53.80
+      },
+      {
+        "incomeRange": {
+          "single": {"min": 193000, "max": 500000},
+          "marriedFilingJointly": {"min": 386000, "max": 750000}
+        },
+        "monthlyIrmaaAmount": 74.20
+      },
+      {
+        "incomeRange": {
+          "single": {"min": 500000, "max": "Infinity"},
+          "marriedFilingJointly": {"min": 750000, "max": "Infinity"}
+        },
+        "monthlyIrmaaAmount": 81.00
+      }
+    ]
+  }
+}

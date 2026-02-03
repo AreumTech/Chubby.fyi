@@ -1,0 +1,1267 @@
+/**
+ * API Payload Types - UI-optimized data structures
+ * 
+ * This module contains the SimulationPayload structure and related types
+ * designed specifically for efficient UI consumption. These types represent
+ * the boundary between the simulation engine and the frontend.
+ * 
+ * CRITICAL BOUNDARY: Simulation Engine → API Payload → UI Components
+ * - Simulation uses internal state types (state/*)
+ * - API transforms internal state to UI-optimized payload
+ * - UI components only consume payload types
+ */
+
+import { AssetClass, AccountCategory, StrategyCategory, InsightType } from '../common';
+import { AccountType } from '../accountTypes';
+import { EnhancedGoal } from '../enhanced-goal';
+
+// =============================================================================
+// ROOT PAYLOAD STRUCTURE
+// =============================================================================
+
+/**
+ * SimulationPayload: Main data structure delivered to UI components
+ * 
+ * Clean separation of inputs (what the user configured) vs outputs (simulation results).
+ * Optimized for modern UI patterns with pre-computed aggregations and denormalized views.
+ */
+export interface SimulationPayload {
+  /** User's plan configuration (normalized reference data) */
+  planInputs: PlanInputs;
+  
+  /** Simulation results and projections */
+  planProjection: PlanProjection;
+}
+
+// =============================================================================
+// PLAN INPUTS - Normalized reference data
+// =============================================================================
+
+/**
+ * PlanInputs: Clean, normalized view of the user's financial plan configuration
+ * 
+ * This is the "source of truth" for what the user has set up, presented in
+ * a UI-friendly format with proper normalization and relationships.
+ */
+export interface PlanInputs {
+  /** Financial goals defined by the user */
+  goals: EnhancedGoal[];
+  
+  /** Timeline events (income, expenses, life events) */
+  events: TimelineEvent[];
+  
+  /** Active strategies with their configurations */
+  strategies: Strategy[];
+  
+  /** Account structure */
+  accounts: AccountNew[];
+}
+
+/**
+ * Goal: A financial objective with target and timeline
+ */
+
+/**
+ * TimelineEvent: A event on the financial timeline (UI representation)
+ */
+export interface TimelineEvent {
+  id: string;
+  name: string;
+  icon: string;
+  startYear: number;
+  endYear?: number;
+  description: string;
+  category: 'income' | 'expense' | 'contribution' | 'strategy' | 'life_event';
+  amount?: number;
+  frequency?: 'monthly' | 'annually' | 'one-time';
+}
+
+/**
+ * Strategy: A financial strategy with its configuration (UI representation)
+ */
+export interface Strategy {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: StrategyCategory;
+  status: 'active' | 'planned' | 'disabled';
+  parameters?: Record<string, any>; // Strategy-specific configuration
+  effectiveness?: {
+    estimatedImpact: string;
+    confidence: 'high' | 'medium' | 'low';
+  };
+}
+
+/**
+ * AccountNew: Enhanced account model for UI display
+ */
+export interface AccountNew {
+  id: string;
+  name: string;
+  category: AccountCategory;
+  type: AccountType;
+  currentValue?: number;
+  institution?: string;
+  isVisible?: boolean;
+}
+
+// =============================================================================
+// PLAN PROJECTION - Simulation outputs
+// =============================================================================
+
+/**
+ * PlanProjection: All simulation results organized for UI consumption
+ */
+export interface PlanProjection {
+  /** High-level success metrics and summary */
+  summary: PlanSummary;
+
+  /** Chart-ready data for visualizations */
+  charts: ProjectionCharts;
+
+  /** Detailed analysis and deep-dive data */
+  analysis: DetailedAnalysis;
+
+  /** Spreadsheet export data with yearly percentiles */
+  spreadsheet: SpreadsheetData;
+}
+
+// =============================================================================
+// SPREADSHEET DATA - Yearly data with percentiles for export
+// =============================================================================
+
+/**
+ * SpreadsheetData: Contains yearly data with percentile ranges for spreadsheet export
+ */
+export interface SpreadsheetData {
+  years: SpreadsheetYearData[];
+}
+
+/**
+ * SpreadsheetYearData: A single year's data with percentile ranges
+ */
+export interface SpreadsheetYearData {
+  year: number;
+  age: number;
+  income: SpreadsheetPercentiles;
+  expenses: SpreadsheetPercentiles;
+  taxes: SpreadsheetPercentiles;
+  savings: SpreadsheetPercentiles;
+  netWorth: SpreadsheetPercentiles;
+}
+
+/**
+ * SpreadsheetPercentiles: p10, p50, p90 values for a metric
+ */
+export interface SpreadsheetPercentiles {
+  p10: number;
+  p50: number;
+  p90: number;
+}
+
+// =============================================================================
+// PLAN SUMMARY - High-level outcomes
+// =============================================================================
+
+/**
+ * Alert: Financial planning alerts generated by backend analysis
+ */
+export interface Alert {
+  id: string;
+  type: 'warning' | 'info' | 'success' | 'error';
+  title: string;
+  message: string;
+  year?: number; // The year the alert pertains to
+  severity: 'high' | 'medium' | 'low';
+}
+
+/**
+ * PlanSummary: Key metrics and success indicators
+ */
+export interface PlanSummary {
+  /** Goal achievement probabilities */
+  goalOutcomes: Array<{
+    goalId: string;
+    goalName: string;
+    probability: number; // 0.0 to 1.0 (NOT 0-100%)
+    achievementProbability?: number; // Alias for probability (for backward compatibility)
+    statusTag: 'excellent' | 'good' | 'concerning' | 'critical';
+    shortDescription: string;
+    targetAccount: string; // Account type this goal tracks (e.g., 'taxable', 'roth', 'tax_deferred')
+    targetAmount: number; // The goal's target amount
+    currentProgress: number; // Current value in the target account (DEPRECATED)
+    progressPercentage: number; // Progress as percentage (DEPRECATED)
+    status: string; // UI-friendly status (e.g., 'On Track', 'At Risk')
+    // Amount distribution data (at target date) - for Mode 2 and Mode 3
+    p10Amount: number; // 10th percentile outcome
+    p25Amount: number; // 25th percentile outcome
+    p50Amount: number; // Median (50th percentile) outcome
+    p75Amount: number; // 75th percentile outcome
+    p90Amount: number; // 90th percentile outcome
+    // Time distribution data (when target is achieved) - for Mode 1
+    achievementMonthP10?: number; // 10th percentile - earliest achievements
+    achievementMonthP25?: number; // 25th percentile
+    achievementMonthP50?: number; // Median achievement month
+    achievementMonthP75?: number; // 75th percentile
+    achievementMonthP90?: number; // 90th percentile - latest achievements
+    achievementRate?: number; // Percentage of paths that achieved target (0.0 to 1.0)
+  }>;
+
+  /** Portfolio statistics at end of simulation */
+  portfolioStats: {
+    p10FinalValue: number;
+    p25FinalValue: number;
+    p50FinalValue: number;
+    p75FinalValue: number;
+    p90FinalValue: number;
+    successRate: number; // Percentage achieving primary goal
+
+    // Extended percentiles (MC enhancement)
+    p5FinalValue?: number;
+    p95FinalValue?: number;
+
+    // Min cash KPIs (across all successful paths)
+    minCashP5?: number;
+    minCashP50?: number;
+    minCashP95?: number;
+
+    // Runway KPIs (ONLY for paths that breached - omitted if no breaches)
+    runwayP5?: number;
+    runwayP50?: number;
+    runwayP95?: number;
+    breachedPathCount?: number; // Denominator for runway percentiles
+
+    // Breach probability time series (cumulative first-breach)
+    breachProbabilityByMonth?: Array<{
+      monthOffset: number;
+      cumulativeBreachProb: number;
+      newBreachesThisMonth: number;
+    }>;
+
+    // Ever-breach probability (cash floor breach at any point)
+    everBreachProbability?: number;
+
+    // Exemplar path reference (trace fetched separately via seed)
+    exemplarPath?: {
+      pathIndex: number;
+      pathSeed: number;
+      terminalWealth: number;
+      selectionCriterion: string;
+    };
+
+    // Audit fields
+    baseSeed?: number;
+    successfulPaths?: number; // Paths with valid data (denominator for percentiles)
+    failedPaths?: number; // Paths that errored/produced no data
+  };
+
+  /** Overall plan health indicators */
+  planHealth: {
+    overallScore: number; // 0-100
+    riskLevel: 'low' | 'moderate' | 'high';
+    confidenceLevel: 'high' | 'medium' | 'low';
+    keyRisks: string[];
+    keyStrengths: string[];
+  };
+
+  /** Important financial alerts pre-computed by backend */
+  alerts: Alert[];
+
+  /** Quick action recommendations */
+  quickActions?: Array<{
+    type: 'opportunity' | 'warning' | 'optimization';
+    title: string;
+    description: string;
+    priority: 'high' | 'medium' | 'low';
+    estimatedImpact: string;
+  }>;
+
+  /** Bankruptcy risk metrics */
+  probabilityOfBankruptcy?: number; // 0.0 to 1.0
+  bankruptcyCount?: number; // Number of simulation paths that went bankrupt
+  numberOfRuns?: number; // Total Monte Carlo runs
+
+  /** Bankruptcy timing distribution (when does bankruptcy happen across failed paths) */
+  bankruptcyMonthP10?: number; // 10th percentile - earliest bankruptcies
+  bankruptcyMonthP25?: number; // 25th percentile
+  bankruptcyMonthP50?: number; // Median bankruptcy month
+  bankruptcyMonthP75?: number; // 75th percentile
+  bankruptcyMonthP90?: number; // 90th percentile - latest bankruptcies
+}
+
+// =============================================================================
+// PROJECTION CHARTS - Optimized chart data
+// =============================================================================
+
+/**
+ * GoalProgressTimeline: Complete goal analysis pre-computed by backend
+ */
+export interface GoalProgressTimeline {
+  goalId: string;
+  goalName: string;
+
+  /** Time series data showing progress toward goal */
+  timeSeries: Array<{
+    year: number;
+    currentAmount: number;
+    targetAmount: number;
+    progressPercentage: number; // 0.0 to 1.0
+    onTrack: boolean;
+  }>;
+
+  /** Projection lines for visualization */
+  projectionLines: {
+    currentTrend: Array<{ year: number; projectedAmount: number }>;
+    requiredTrend: Array<{ year: number; requiredAmount: number }>;
+  };
+
+  /** Important milestones */
+  milestones: Array<{
+    year: number;
+    label: string;
+    type: 'target' | 'checkpoint' | 'risk' | 'opportunity';
+  }>;
+
+  /** Achievement probability analysis */
+  achievementAnalysis: {
+    probabilityOfSuccess: number; // 0.0 to 1.0
+    medianAchievementYear: number | null;
+    status: 'on_track' | 'at_risk' | 'off_track' | 'achieved';
+    confidenceInterval: {
+      p10AchievementYear: number | null;
+      p90AchievementYear: number | null;
+    };
+  };
+
+  /** Progress trend analysis */
+  trendAnalysis: {
+    averageMonthlyProgress: number;
+    consistency: 'excellent' | 'good' | 'variable' | 'poor';
+    progressAcceleration: number; // Positive = accelerating, negative = decelerating
+    recentTrendDirection: 'up' | 'down' | 'stable';
+  };
+
+  /** Backend-generated recommendations */
+  recommendations: Array<{
+    title: string;
+    description: string;
+    priority: 'high' | 'medium' | 'low';
+    actionType: 'increase_contributions' | 'adjust_allocation' | 'extend_timeline' | 'reduce_target';
+  }>;
+}
+
+/**
+ * StrategyTimelineBand: Visualization data for strategy overlay on charts
+ */
+export interface StrategyTimelineBand {
+  /** Strategy identifier */
+  strategyId: string;
+  /** Strategy display name */
+  strategyName: string;
+  /** Year when strategy starts */
+  startYear: number;
+  /** Year when strategy ends (undefined = ongoing) */
+  endYear?: number;
+  /** Current phase of strategy */
+  phase: 'accumulation' | 'conversion' | 'withdrawal' | 'rebalancing' | 'maintenance';
+  /** CSS color for the band */
+  color: string;
+  /** Short label for legend */
+  label: string;
+  /** Whether currently in this phase */
+  isActive: boolean;
+}
+
+/**
+ * ProjectionCharts: Pre-computed data optimized for chart rendering
+ */
+export interface ProjectionCharts {
+  /** Net worth projection over time */
+  netWorth: NetWorthChart;
+
+  /** Cash flow analysis */
+  cashFlow: CashFlowChart;
+
+  /** Asset allocation evolution */
+  assetAllocation: AssetAllocationChart;
+
+  /** Goal progress analysis (replaces client-side goal tracking service) */
+  goalProgress: GoalProgressTimeline[];
+
+  /** Important events marked on timeline */
+  eventMarkers: Array<{
+    year: number;
+    netWorthAtEvent: number;
+    label: string;
+    icon: string;
+    type: 'goal' | 'milestone' | 'risk' | 'opportunity';
+    /** Category for density filtering: 'essential' (life events) or 'detailed' (financial events) */
+    category: 'essential' | 'detailed';
+    /** Original event type for client-side filtering */
+    eventType: string;
+    id?: string;
+  }>;
+
+  /** Strategy timeline bands for overlay visualization */
+  strategyTimeline?: StrategyTimelineBand[];
+}
+
+// =============================================================================
+// NET WORTH CHART
+// =============================================================================
+
+export interface NetWorthTimeSeriesPoint {
+  year: number;
+  p10: number;
+  p25: number;
+  p50: number; // Median path
+  p75: number;
+  p90: number;
+  mean?: number;
+}
+
+export interface NetWorthChart {
+  /** Time series data with percentiles */
+  timeSeries: NetWorthTimeSeriesPoint[];
+  
+  /** Sample Monte Carlo paths for display */
+  samplePaths: number[][]; // Array of paths, each path is array of values
+  
+  /** Chart optimization hints */
+  summary: {
+    recommendedYAxisMax: number;
+    recommendedYAxisMin: number;
+    volatilityPeriods: Array<{
+      startYear: number;
+      endYear: number;
+      reason: string;
+    }>;
+  };
+}
+
+// =============================================================================
+// CASH FLOW CHART
+// =============================================================================
+
+export interface CashFlowTimeSeriesPoint {
+  year: number;
+  income: number;
+  expenses: number;
+  netSavings: number;
+  savingsRate: number; // 0.0 to 1.0
+  taxes: number;
+  taxBreakdown: {
+    total: number;
+    federal: number;
+    state: number;
+    fica: number;
+  };
+}
+
+export interface CashFlowChart {
+  /** Annual cash flow data */
+  timeSeries: CashFlowTimeSeriesPoint[];
+  
+  /** Summary statistics */
+  summary: {
+    averageAnnualSavings: number;
+    averageSavingsRate: number; // 0.0 to 1.0
+    peakSavingsYear: number;
+    lowestSavingsYear: number;
+    retirementCashFlowTransition?: {
+      year: number;
+      incomeChange: number;
+      expenseChange: number;
+    };
+  };
+}
+
+// =============================================================================
+// ASSET ALLOCATION CHART
+// =============================================================================
+
+export interface AssetClassTaxBreakdown {
+  taxable: number;
+  taxAdvantaged: number; // Combined tax-deferred + Roth
+  taxDeferred?: number;
+  roth?: number;
+}
+
+export interface AssetAllocationDetail {
+  assetClass: AssetClass;
+  value: number;
+  percentage: number; // 0 to 1
+  taxBreakdown: AssetClassTaxBreakdown;
+}
+
+export interface AssetAllocationPoint {
+  year: number;
+  totalValue: number;
+  breakdown: {
+    [key in AssetClass]?: AssetAllocationDetail;
+  };
+}
+
+export interface AllocationTargetBand {
+  assetClass: AssetClass;
+  label: string;
+  minPercentage: number; // 0 to 1
+  maxPercentage: number; // 0 to 1
+  targetPercentage: number; // 0 to 1
+}
+
+export interface AssetAllocationChart {
+  /** Asset allocation over time */
+  timeSeries: AssetAllocationPoint[];
+  
+  /** Target allocation bands for comparison */
+  targetBands: AllocationTargetBand[];
+  
+  /** Summary and insights */
+  summary: {
+    currentAllocation: AssetAllocationDetail[];
+    targetAllocation: AssetAllocationDetail[];
+    driftFromTarget: Array<{
+      assetClass: AssetClass;
+      currentPercentage: number;
+      targetPercentage: number;
+      driftPercentage: number;
+    }>;
+  };
+}
+
+// =============================================================================
+// DETAILED ANALYSIS - Comprehensive insights
+// =============================================================================
+
+/**
+ * DetailedAnalysis: Deep-dive analysis and goal-specific insights
+ */
+export interface DetailedAnalysis {
+  /** Detailed breakdown for each goal */
+  goalBreakdowns: GoalBreakdown[];
+  
+  /** Year-by-year P50 (median) path analysis */
+  annualSnapshots: { [year: number]: AnnualDeepDiveSnapshot };
+  
+  /** Advanced analysis panels */
+  advancedAnalysisPanels: AdvancedAnalysisPanel[];
+  
+  /** Risk analysis */
+  riskAnalysis?: {
+    sequenceOfReturnsRisk: number;
+    inflationRisk: number;
+    longevityRisk: number;
+    concentrationRisk: number;
+    keyRiskFactors: Array<{
+      factor: string;
+      impact: 'high' | 'medium' | 'low';
+      description: string;
+      mitigation?: string;
+    }>;
+  };
+}
+
+/**
+ * GoalBreakdown: Comprehensive analysis for a specific goal
+ */
+export interface GoalBreakdown {
+  goalId: string;
+  name: string;
+  icon: string;
+  description: string;
+  
+  /** Key success metrics */
+  summaryMetrics: Array<{
+    label: string;
+    value: string;
+    trend?: 'positive' | 'negative' | 'neutral';
+  }>;
+  
+  /** Insights and recommendations */
+  insights: Array<{
+    type: InsightType;
+    title: string;
+    text: string;
+    priority: 'high' | 'medium' | 'low';
+    actionable?: boolean;
+  }>;
+  
+  /** Alternative scenarios for this goal */
+  subScenarios?: Array<{
+    name: string;
+    description: string;
+    probability: number;
+    metrics: Array<{ label: string; value: string }>;
+  }>;
+  
+  /** Sensitivity analysis */
+  sensitivity?: {
+    keyFactors: Array<{
+      factor: string;
+      impact: number; // -1 to 1, impact on goal success
+      description: string;
+    }>;
+  };
+}
+
+/**
+ * AdvancedAnalysisPanel: Flexible panel for specialized analysis
+ */
+export interface AdvancedAnalysisPanel {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  category: 'tax' | 'investment' | 'risk' | 'strategy' | 'scenario';
+  
+  /** Metrics with optional display hints */
+  metrics: Array<{
+    label: string;
+    value: string;
+    subtext?: string;
+    displayHint?: {
+      type: 'progress_bar' | 'comparison' | 'trend' | 'default';
+      currentValue?: number;
+      targetValue?: number;
+      maxValue?: number;
+      trend?: 'up' | 'down' | 'stable';
+    };
+  }>;
+  
+  /** Optional chart data */
+  chartData?: {
+    type: 'line' | 'bar' | 'pie' | 'table';
+    data: any;
+  };
+}
+
+// =============================================================================
+// ANNUAL DEEP DIVE - Denormalized year-by-year analysis
+// =============================================================================
+
+/**
+ * AnnualDeepDiveSnapshot: Complete financial picture for a specific year (P50 path)
+ * 
+ * This is denormalized data optimized for the "deep dive" UI component.
+ * All data is pre-computed and ready for display without additional processing.
+ */
+export interface AnnualDeepDiveSnapshot {
+  /** Personal information */
+  age: number;
+  year: number;
+  
+  /** High-level metrics */
+  netWorth: number;
+  netWorthChangeYoY: { amount: number; percent: number };
+  
+  /** Complete balance sheet - grounded in simulation engine data */
+  balanceSheet: {
+    totalAssets: number;
+    totalLiabilities: number;
+
+    /** Investment accounts breakdown - direct from WASM MonthSnapshot.accounts */
+    investmentAccounts: {
+      total: number;
+      taxableBrokerage: number;
+      account401k: number;  // tax_deferred from WASM
+      rothIRA: number;      // roth from WASM
+      // Note: HSA and other fabricated accounts removed - not in WASM output
+    };
+
+    /** Cash balance - direct from WASM MonthSnapshot.accounts.cash */
+    cash: number;
+
+    /** Investment allocation - computed from WASM account holdings */
+    investmentAllocation: Array<{
+      assetClass: AssetClass;
+      percentage: number;
+      value: number;
+      targetPercentage?: number;
+    }>;
+  };
+  
+  /** Cash flow analysis - grounded in WASM MonthSnapshot data */
+  cashFlow: {
+    grossIncome: number;        // From WASM incomeThisMonth
+    totalExpenses: number;      // From WASM expensesThisMonth
+    netCashFlow: number;        // Computed from income - expenses - taxes
+
+    /** Income sources - simplified and grounded in WASM data */
+    incomeSources: {
+      employment: number;       // From WASM employmentIncomeThisMonth
+      investment: number;       // From WASM dividendsReceivedThisMonth + interestIncomeThisMonth
+      other: number;           // Additional income sources
+    };
+
+    /** Tax breakdown - direct from WASM annual tax calculations */
+    taxes: {
+      total: number;          // Sum of all tax components
+      federal: number;        // From WASM federalIncomeTaxAnnual
+      state: number;          // From WASM stateIncomeTaxAnnual
+      fica: number;           // From WASM totalFicaTaxAnnual
+      capitalGains: number;   // From WASM capital gains tax fields
+    };
+
+    /** Living expenses - single total from WASM */
+    expenses: number;         // From WASM expensesThisMonth
+
+    /** Investment contributions - computed from WASM contribution tracking */
+    contributions: number;    // From WASM contributionsToInvestmentsThisMonth
+
+    /** Savings metrics */
+    savingsRate: number;      // (income - expenses) / income
+    freeCashFlow: number;     // income - expenses - taxes - contributions
+  };
+
+  /** Divestment proceeds from forced asset sales (calculated by simulation engine) */
+  divestmentProceeds: number;
+  
+  /** Strategy execution and analysis */
+  strategyAnalysis: {
+    /** Currently active strategies */
+    active: Array<{
+      strategyId: string;
+      name: string;
+      details: string;
+      metrics: Array<{ label: string; value: string }>;
+    }>;
+    
+    /** Planned future strategies */
+    planned: Array<{
+      strategyId: string;
+      name: string;
+      status: string;
+      details: string;
+      expectedActivation: string;
+    }>;
+    
+    /** Key milestones and events */
+    keyMilestones: Array<{
+      timeframe: string;
+      event: string;
+      detail: string;
+      impact: 'positive' | 'negative' | 'neutral';
+    }>;
+  };
+}
+
+// =============================================================================
+// DETERMINISTIC SIMULATION TYPES
+// =============================================================================
+
+/**
+ * DeterministicAssumptions: Constant growth rates used in deterministic mode
+ */
+export interface DeterministicAssumptions {
+  stockReturnAnnual: number;      // e.g., 0.098 for 9.8%
+  bondReturnAnnual: number;       // e.g., 0.042 for 4.2%
+  inflationAnnual: number;        // e.g., 0.026 for 2.6%
+  intlStockReturnAnnual: number;
+  homeAppreciationAnnual: number;
+}
+
+/**
+ * DeterministicMonthSnapshot: Complete financial state for a single month
+ */
+export interface DeterministicMonthSnapshot {
+  monthOffset: number;
+  calendarYear: number;
+  calendarMonth: number;  // 1-12
+  age: number;            // Fractional age
+
+  // End-of-month balances
+  netWorth: number;
+  cashBalance: number;
+  taxableBalance: number;
+  taxDeferredBalance: number;
+  rothBalance: number;
+  hsaBalance?: number;
+  fiveTwoNineBalance?: number;
+
+  // Flows this month
+  incomeThisMonth: number;
+  expensesThisMonth: number;
+  taxesThisMonth: number;
+  contributionsThisMonth: number;
+  withdrawalsThisMonth: number;
+  investmentGrowth: number;
+  divestmentProceeds?: number;
+
+  // Event IDs that occurred this month
+  eventIds?: string[];
+}
+
+/**
+ * EventTraceEntry: Before/after impact of a single event during simulation
+ */
+export interface EventTraceEntry {
+  monthOffset: number;
+  eventId: string;
+  eventName: string;
+  eventType: string;
+  priority: number;
+  amount: number;
+
+  // State BEFORE event
+  netWorthBefore: number;
+  cashBefore: number;
+  taxableBefore: number;
+  taxDeferredBefore: number;
+  rothBefore: number;
+
+  // State AFTER event
+  netWorthAfter: number;
+  cashAfter: number;
+  taxableAfter: number;
+  taxDeferredAfter: number;
+  rothAfter: number;
+
+  // Human-readable description
+  description: string;
+
+  // Strategy-specific trace details (when eventType is strategy-related)
+  strategyTrace?: {
+    strategyId: string;
+    strategyName: string;
+    phase: 'accumulation' | 'conversion' | 'withdrawal' | 'rebalancing' | 'maintenance';
+    transactions: Array<{
+      description: string;
+      sourceAccount?: string;
+      targetAccount?: string;
+      amount: number;
+      taxImpact?: number;
+    }>;
+    executionReason: string;
+  };
+}
+
+/**
+ * DeterministicYearData: Aggregated yearly summary with monthly detail
+ */
+export interface DeterministicYearData {
+  year: number;
+  age: number;
+  startNetWorth: number;
+  endNetWorth: number;
+  netWorthChange: number;
+  totalIncome: number;
+  totalExpenses: number;
+  totalTaxes: number;
+  totalContributions: number;
+  totalWithdrawals: number;
+  investmentGrowth: number;
+
+  // Detailed monthly data for expansion
+  months: DeterministicMonthSnapshot[];
+}
+
+/**
+ * DeterministicPayload: Complete output from deterministic simulation
+ */
+export interface DeterministicPayload {
+  success: boolean;
+  error?: string;
+  assumptions: DeterministicAssumptions;
+
+  // Complete simulation data
+  monthlySnapshots: DeterministicMonthSnapshot[];
+  eventTrace: EventTraceEntry[];
+
+  // Pre-computed yearly aggregates for UI
+  yearlyData: DeterministicYearData[];
+
+  // Final state
+  finalNetWorth: number;
+  isBankrupt: boolean;
+  bankruptcyMonth?: number;
+
+  // Comprehensive monthly state for enhanced spreadsheet view
+  comprehensiveMonthlyStates?: DeterministicMonthState[];
+
+  // Seeded stochastic simulation metadata
+  /** Simulation mode: 'deterministic' uses mean returns, 'stochastic' uses seeded random returns */
+  simulationMode?: 'deterministic' | 'stochastic';
+  /** Random seed used for reproducible stochastic simulation */
+  seed?: number;
+  /** Model description for stochastic mode (e.g., "PCG32 seeded GARCH(1,1) with Student-t(5)") */
+  modelDescription?: string;
+  /** Realized path variables for stochastic mode - per-month market realizations with "show the math" linkage */
+  realizedPathVariables?: RealizedMonthVariables[];
+}
+
+// =============================================================================
+// COMPREHENSIVE STATE TYPES FOR ENHANCED SPREADSHEET VIEW
+// =============================================================================
+
+/**
+ * Value origin for distinguishing user inputs from calculated values
+ */
+export type ValueOrigin = 'input' | 'derived' | 'system';
+
+/**
+ * Formula reference for derived values (enables Google Sheets export)
+ */
+export interface FormulaReference {
+  description: string;
+  formula: string; // Excel-style formula template
+  dependencies: string[];
+}
+
+/**
+ * MetaValue wraps any value with origin metadata and optional formula
+ */
+export interface MetaValue<T> {
+  value: T;
+  origin: ValueOrigin;
+  formula?: FormulaReference;
+}
+
+/**
+ * ComprehensiveTaxLotDetail: Full tax lot information for spreadsheet display
+ */
+export interface ComprehensiveTaxLotDetail {
+  lotId: string;
+  assetClass: string;
+  quantity: number;
+  costBasisPerUnit: number;
+  costBasisTotal: number;
+  currentValue: number;
+  unrealizedGain: number;
+  acquisitionMonth: number;
+  isLongTerm: boolean;
+}
+
+/**
+ * ComprehensiveHoldingDetail: A holding with its tax lots
+ */
+export interface ComprehensiveHoldingDetail {
+  holdingId: string;
+  assetClass: string;
+  totalQuantity: number;
+  totalValue: number;
+  totalCostBasis: number;
+  unrealizedGain: number;
+  weightedAvgCostBasis: number;
+  lots: ComprehensiveTaxLotDetail[];
+}
+
+/**
+ * ComprehensiveAccountState: Full account state with all holdings and lots
+ */
+export interface ComprehensiveAccountState {
+  totalValue: number;
+  totalCostBasis: number;
+  unrealizedGain: number;
+  longTermGain: number;
+  shortTermGain: number;
+  holdings: ComprehensiveHoldingDetail[];
+}
+
+/**
+ * ComprehensiveTaxState: All YTD tax tracking from SimulationEngine
+ */
+export interface ComprehensiveTaxState {
+  // YTD Income tracking
+  ordinaryIncomeYTD: number;
+  qualifiedDividendsYTD: number;
+  ordinaryDividendsYTD: number;
+  interestIncomeYTD: number;
+  socialSecurityBenefitsYTD: number;
+
+  // YTD Capital gains
+  shortTermCapGainsYTD: number;
+  longTermCapGainsYTD: number;
+  capitalLossesYTD: number;
+  capitalLossCarryover: number;
+
+  // YTD Deductions
+  itemizedDeductibleInterestYTD: number;
+  preTaxContributionsYTD: number;
+  charitableDistributionsYTD: number;
+
+  // YTD Payments
+  taxWithholdingYTD: number;
+  estimatedPaymentsYTD: number;
+
+  // Accrual tracking
+  unpaidTaxLiability: number;
+
+  // Bracket information
+  currentMarginalBracket: number;
+  currentLTCGBracket: number;
+  estimatedEffectiveRate: number;
+}
+
+/**
+ * ComprehensiveLiabilityState: Debt/liability state
+ */
+export interface ComprehensiveLiabilityState {
+  liabilityId: string;
+  name: string;
+  type: string; // "MORTGAGE", "AUTO_LOAN", etc.
+  originalPrincipal: number;
+  currentPrincipal: number;
+  interestRate: number;
+  monthlyPayment: number;
+  termRemainingMonths: number;
+  originalTermMonths: number;
+
+  // YTD tracking
+  interestPaidYTD: number;
+  principalPaidYTD: number;
+  totalPaidYTD: number;
+
+  // This month
+  interestPaidThisMonth: number;
+  principalPaidThisMonth: number;
+
+  // Projections
+  totalInterestRemaining: number; // Sum of remaining interest over life of loan
+  payoffDate: string; // Estimated payoff date YYYY-MM
+
+  // Flags
+  isTaxDeductible: boolean;
+  isActive: boolean;
+}
+
+/**
+ * StrategyExecution: A strategy action taken during simulation
+ */
+export interface StrategyExecution {
+  strategyType: string; // "WITHDRAWAL", "REBALANCE", "ROTH_CONVERSION", etc.
+  description: string;
+  amount: number;
+  sourceAccount?: string;
+  targetAccount?: string;
+  taxImpact?: number;
+  executionReason?: string;
+}
+
+/**
+ * MonthlyFlowsDetail: All cash flows for the month (serializable version)
+ */
+export interface MonthlyFlowsDetail {
+  // Income
+  totalIncome: number;
+  employmentIncome: number;
+  salaryIncome: number;
+  bonusIncome: number;
+  rsuIncome: number;
+  socialSecurityIncome: number;
+  pensionIncome: number;
+  dividendIncome: number;
+  interestIncome: number;
+
+  // Expenses
+  totalExpenses: number;
+  housingExpenses: number;
+  transportationExpenses: number;
+  foodExpenses: number;
+  otherExpenses: number;
+
+  // Debt payments
+  debtPaymentsPrincipal: number;
+  debtPaymentsInterest: number;
+
+  // Contributions
+  totalContributions: number;
+  contributionsTaxable: number;
+  contributionsTaxDeferred: number;
+  contributionsRoth: number;
+  contributionsHSA: number;
+
+  // Withdrawals
+  totalWithdrawals: number;
+  divestmentProceeds: number;
+  rmdAmount: number;
+
+  // Taxes
+  taxWithheld: number;
+  taxesPaid: number;
+
+  // Other
+  rothConversionAmount: number;
+  investmentGrowth: number;
+
+  // Auto-shortfall cover (portion of withdrawals triggered by cash shortfall)
+  autoShortfallCover: number;
+}
+
+/**
+ * StochasticReturns: Market returns for the month
+ * All returns are monthly decimal values (e.g., -0.041 for -4.1%)
+ */
+export interface StochasticReturns {
+  SPY: number;
+  BND: number;
+  Inflation: number;
+  // Extended asset classes (optional, populated in stochastic mode)
+  Intl?: number;
+  Other?: number;
+  IndividualStock?: number;
+  Home?: number;
+  Rent?: number;
+  // Legacy names for backwards compatibility
+  IntlStocks?: number;
+  HomeValue?: number;
+}
+
+/**
+ * RealizedMonthVariables: Captures all stochastic realizations for a single month
+ * This enables "show the math" traceability in stochastic mode
+ */
+export interface RealizedMonthVariables {
+  monthOffset: number;
+  month: string; // YYYY-MM format
+
+  // Asset class returns (monthly, decimal)
+  spyReturn: number;
+  bndReturn: number;
+  intlReturn: number;
+  otherReturn: number;
+  individualStockReturn: number;
+  inflation: number;
+  homeValueGrowth: number;
+  rentalIncomeGrowth: number;
+
+  // Volatility states (GARCH transparency)
+  spyVolatility?: number;
+  bndVolatility?: number;
+  intlVolatility?: number;
+
+  // "Show the math" linkage - how returns became growth dollars
+  investedBaseForReturn: number;
+  assetWeights: Record<string, number>; // e.g., { SPY: 0.6, BND: 0.4 }
+  weightedReturn: number;
+  computedGrowthDollars: number;
+}
+
+/**
+ * DeterministicMonthState: Comprehensive monthly state for enhanced spreadsheet view
+ */
+export interface DeterministicMonthState {
+  // Time identifiers
+  monthOffset: number;
+  calendarYear: number;
+  calendarMonth: number; // 1-12
+  age: number;
+
+  // Accounts with full lot detail
+  cash: number;
+  taxable: ComprehensiveAccountState | null;
+  taxDeferred: ComprehensiveAccountState | null;
+  roth: ComprehensiveAccountState | null;
+  hsa?: ComprehensiveAccountState | null;
+  fiveTwoNine?: ComprehensiveAccountState | null;
+
+  // Aggregates (derived)
+  netWorth: number;
+  totalAssets: number;
+  totalLiabilities: number;
+
+  // State snapshots
+  taxState: ComprehensiveTaxState;
+  liabilities: ComprehensiveLiabilityState[] | null;
+  strategyExecutions: StrategyExecution[] | null;
+
+  // Monthly flows
+  flows: MonthlyFlowsDetail;
+
+  // Market state
+  marketReturns: StochasticReturns;
+
+  // Events processed this month
+  eventIds?: string[];
+}
+
+// =============================================================================
+// MONTE CARLO ENHANCED TYPES
+// =============================================================================
+
+/**
+ * MCBreachProbability: Tracks cumulative first-breach probability over time
+ */
+export interface MCBreachProbability {
+  monthOffset: number;
+  /** P(first breach <= this month) */
+  cumulativeBreachProb: number;
+  /** Count of paths first breaching this month */
+  newBreachesThisMonth: number;
+}
+
+/**
+ * ExemplarPath: Reference to median path (trace fetched separately)
+ * NOTE: No embedded DeterministicResults - UI calls RunDeterministicSimulation(seed=PathSeed)
+ */
+export interface ExemplarPath {
+  pathIndex: number;
+  /** Use this seed to fetch full trace via RunDeterministicSimulation */
+  pathSeed: number;
+  terminalWealth: number;
+  /** Currently always "median_terminal_wealth" */
+  selectionCriterion: string;
+}
+
+/**
+ * MonteCarloResults: Enhanced Monte Carlo simulation results
+ * Extends standard SimulationResults with PFOS-E compliant metrics
+ */
+export interface MonteCarloResults {
+  success: boolean;
+  error?: string;
+
+  // Standard percentiles (P10-P90)
+  // PFOS-E: P25/P75 are optional - only present if engine computes them
+  numberOfRuns: number;
+  finalNetWorthP10: number;
+  finalNetWorthP25?: number; // Optional - engine may not compute
+  finalNetWorthP50: number;
+  finalNetWorthP75?: number; // Optional - engine may not compute
+  finalNetWorthP90: number;
+
+  // Extended percentiles (P5/P95)
+  finalNetWorthP5?: number;
+  finalNetWorthP95?: number;
+
+  // Success and bankruptcy metrics
+  probabilityOfSuccess: number;
+  probabilityOfBankruptcy: number;
+  bankruptcyCount: number;
+
+  // Bankruptcy timing distribution
+  bankruptcyMonthP10?: number;
+  bankruptcyMonthP25?: number;
+  bankruptcyMonthP50?: number;
+  bankruptcyMonthP75?: number;
+  bankruptcyMonthP90?: number;
+
+  // Min cash KPIs (across all successful paths)
+  minCashP5?: number;
+  minCashP50?: number;
+  minCashP95?: number;
+
+  // Runway KPIs (ONLY for paths that breached cash floor)
+  runwayP5?: number;
+  runwayP50?: number;
+  runwayP95?: number;
+  /** Denominator for runway percentiles */
+  breachedPathCount?: number;
+
+  // Breach probability time series (cumulative first-breach)
+  breachProbabilityByMonth?: MCBreachProbability[];
+
+  // Ever-breach probability (cash floor breach at any point)
+  everBreachProbability?: number;
+
+  // Exemplar path reference (trace fetched separately via seed)
+  exemplarPath?: ExemplarPath;
+
+  // Audit fields
+  baseSeed?: number;
+  /** Paths with valid data (denominator for percentiles) */
+  successfulPaths?: number;
+  /** Paths that errored/produced no data */
+  failedPaths?: number;
+}

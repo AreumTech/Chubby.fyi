@@ -1,0 +1,159 @@
+{
+  "id": "mortgage-plan-fixture",
+  "name": "Home Purchase with Mortgage Plan",
+  "description": "Scenario with income, expenses, and a home purchase with mortgage for testing liability calculations",
+  "initialEvent": {
+    "id": "init-mortgage",
+    "type": "INITIAL_STATE",
+    "name": "Pre-Home Purchase Starting Point",
+    "priority": "USER_ACTION",
+    "currentAge": 32,
+    "startYear": 2025,
+    "initialMonth": 1,
+    "filingStatus": "MARRIED_FILING_JOINTLY",
+    "numberOfDependents": 0,
+    "initialCash": 100000,
+    "initialAccounts": {
+      "taxable": [
+        {
+          "id": "savings-for-home",
+          "assetClass": "stocks",
+          "assetSymbolOrIdentifier": "VTI",
+          "quantity": 500,
+          "purchasePricePerUnit": 200,
+          "costBasisTotal": 100000,
+          "currentMarketPricePerUnit": 220,
+          "currentMarketValueTotal": 110000,
+          "unrealizedGainLossTotal": 10000,
+          "openTransactionDate": "2023-01-01",
+          "isQualifiedDividendSource": true
+        }
+      ],
+      "401k": [],
+      "rothIra": []
+    },
+    "initialLiabilities": [],
+    "monthOffset": 0
+  },
+  "events": [
+    {
+      "id": "mortgage-income",
+      "name": "Combined Household Income",
+      "type": "INCOME",
+      "source": "Dual Income Household",
+      "company": "Various",
+      "amount": 180000,
+      "monthOffset": 0,
+      "frequency": "annually",
+      "startDateOffset": 0,
+      "endDateOffset": 420,
+      "annualGrowthRate": 0.03,
+      "priority": "INCOME",
+      "description": "$180,000/year combined household income"
+    },
+    {
+      "id": "mortgage-living-expenses",
+      "name": "Pre-Purchase Living Expenses",
+      "type": "RECURRING_EXPENSE",
+      "amount": 5000,
+      "monthOffset": 0,
+      "startDateOffset": 0,
+      "endDateOffset": 60,
+      "frequency": "monthly",
+      "annualGrowthRate": 0.025,
+      "priority": "RECURRING_EXPENSE",
+      "description": "$5,000/month before home purchase"
+    },
+    {
+      "id": "home-down-payment",
+      "name": "Home Down Payment",
+      "type": "ONE_TIME_EVENT",
+      "amount": 200000,
+      "monthOffset": 60,
+      "priority": "USER_ACTION",
+      "description": "$200,000 down payment on home"
+    },
+    {
+      "id": "mortgage-payment",
+      "name": "Monthly Mortgage Payment",
+      "type": "RECURRING_EXPENSE",
+      "amount": 3200,
+      "monthOffset": 60,
+      "startDateOffset": 60,
+      "endDateOffset": 420,
+      "frequency": "monthly",
+      "annualGrowthRate": 0.0,
+      "priority": "RECURRING_EXPENSE",
+      "description": "$3,200/month mortgage payment (30-year loan)"
+    },
+    {
+      "id": "post-purchase-expenses",
+      "name": "Post-Purchase Living Expenses",
+      "type": "RECURRING_EXPENSE",
+      "amount": 3000,
+      "monthOffset": 60,
+      "startDateOffset": 60,
+      "frequency": "monthly",
+      "annualGrowthRate": 0.025,
+      "priority": "RECURRING_EXPENSE",
+      "description": "$3,000/month other expenses after mortgage"
+    },
+    {
+      "id": "property-taxes",
+      "name": "Annual Property Taxes",
+      "type": "RECURRING_EXPENSE",
+      "amount": 12000,
+      "monthOffset": 72,
+      "startDateOffset": 72,
+      "frequency": "annually",
+      "annualGrowthRate": 0.02,
+      "priority": "RECURRING_EXPENSE",
+      "description": "$12,000/year property taxes"
+    }
+  ],
+  "goals": [
+    {
+      "id": "mortgage-home-goal",
+      "type": "GOAL_DEFINE",
+      "name": "Home Purchase",
+      "priority": "GOAL_DEFINE",
+      "goalType": "MAJOR_PURCHASE",
+      "targetAmount": 200000,
+      "goalPriority": "HIGH",
+      "sourceAccountCategory": "investment",
+      "isFlexible": false,
+      "monthOffset": 0,
+      "targetDateOffset": 60,
+      "inflationAdjustment": 1,
+      "description": "$200K down payment for home"
+    },
+    {
+      "id": "mortgage-retirement-goal",
+      "type": "GOAL_DEFINE",
+      "name": "Retirement with Mortgage",
+      "priority": "GOAL_DEFINE",
+      "goalType": "RETIREMENT",
+      "targetAmount": 2000000,
+      "goalPriority": "HIGH",
+      "sourceAccountCategory": "investment",
+      "isFlexible": false,
+      "monthOffset": 0,
+      "targetDateOffset": 420,
+      "inflationAdjustment": 1,
+      "description": "$2M retirement target with home ownership"
+    }
+  ],
+  "liabilities": [
+    {
+      "id": "home-mortgage",
+      "name": "30-Year Fixed Mortgage",
+      "type": "MORTGAGE",
+      "principalAmount": 800000,
+      "interestRate": 0.065,
+      "termMonths": 360,
+      "monthlyPayment": 3200,
+      "startMonth": 60,
+      "description": "$800K mortgage at 6.5% for 30 years"
+    }
+  ]
+}

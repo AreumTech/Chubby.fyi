@@ -1,0 +1,169 @@
+{
+  "description": "Comprehensive Dividend Model for Realistic Dividend Generation and Taxation",
+  "dataSource": "Multiple sources: S&P 500 dividend data, bond yield data, REIT indices, sector analysis",
+  "lastUpdated": "2025-09-16",
+  "methodology": "Replace simple dividend yields with realistic sector-based, growth-adjusted dividend modeling",
+  "notes": {
+    "dividendYields": "Current dividend yields by asset class and sector",
+    "dividendGrowth": "Historical dividend growth rates for realistic appreciation",
+    "taxTreatment": "Qualified vs ordinary dividend classification",
+    "seasonality": "Quarterly dividend payment patterns",
+    "witholdingRates": "Realistic tax withholding for different dividend types"
+  },
+  "assetClassDividends": {
+    "spyTotalMarket": {
+      "currentYield": 0.0147,
+      "growthRate": 0.065,
+      "qualifiedPercentage": 0.98,
+      "paymentFrequency": "quarterly",
+      "averageWithholdingRate": 0.15,
+      "sectorBreakdown": {
+        "technology": {"yield": 0.007, "growth": 0.085, "weight": 0.29},
+        "healthcare": {"yield": 0.015, "growth": 0.070, "weight": 0.13},
+        "financials": {"yield": 0.025, "growth": 0.055, "weight": 0.13},
+        "consumerDiscretionary": {"yield": 0.012, "growth": 0.075, "weight": 0.10},
+        "communication": {"yield": 0.018, "growth": 0.045, "weight": 0.08},
+        "industrials": {"yield": 0.019, "growth": 0.060, "weight": 0.08},
+        "consumerStaples": {"yield": 0.026, "growth": 0.040, "weight": 0.06},
+        "energy": {"yield": 0.045, "growth": 0.020, "weight": 0.04},
+        "utilities": {"yield": 0.032, "growth": 0.035, "weight": 0.03},
+        "realEstate": {"yield": 0.028, "growth": 0.050, "weight": 0.03},
+        "materials": {"yield": 0.022, "growth": 0.055, "weight": 0.02}
+      }
+    },
+    "internationalStocks": {
+      "currentYield": 0.0245,
+      "growthRate": 0.045,
+      "qualifiedPercentage": 0.85,
+      "paymentFrequency": "semiannual",
+      "averageWithholdingRate": 0.25,
+      "foreignTaxCredit": 0.15,
+      "emergingMarketsYield": 0.035,
+      "developedMarketsYield": 0.022
+    },
+    "bondsTotalMarket": {
+      "currentYield": 0.0425,
+      "growthRate": 0.015,
+      "qualifiedPercentage": 0.0,
+      "paymentFrequency": "monthly",
+      "averageWithholdingRate": 0.22,
+      "creditSpreads": {
+        "treasury": {"yield": 0.038, "weight": 0.40},
+        "corporate": {"yield": 0.045, "weight": 0.45},
+        "municipal": {"yield": 0.032, "weight": 0.10, "taxFree": true},
+        "international": {"yield": 0.041, "weight": 0.05}
+      }
+    },
+    "realEstate": {
+      "currentYield": 0.0385,
+      "growthRate": 0.055,
+      "qualifiedPercentage": 1.0,
+      "paymentFrequency": "quarterly",
+      "averageWithholdingRate": 0.20,
+      "reitTypes": {
+        "residential": {"yield": 0.042, "growth": 0.060, "weight": 0.25},
+        "commercial": {"yield": 0.038, "growth": 0.055, "weight": 0.30},
+        "industrial": {"yield": 0.035, "growth": 0.065, "weight": 0.20},
+        "retail": {"yield": 0.045, "growth": 0.035, "weight": 0.15},
+        "healthcare": {"yield": 0.040, "growth": 0.050, "weight": 0.10}
+      }
+    },
+    "otherAssets": {
+      "currentYield": 0.0285,
+      "growthRate": 0.050,
+      "qualifiedPercentage": 0.75,
+      "paymentFrequency": "quarterly",
+      "averageWithholdingRate": 0.18,
+      "assetMix": {
+        "commodityFunds": {"yield": 0.015, "qualified": 0.0},
+        "preferredStocks": {"yield": 0.055, "qualified": 1.0},
+        "convertibleBonds": {"yield": 0.035, "qualified": 0.5},
+        "masterLimitedPartnerships": {"yield": 0.065, "qualified": 0.0}
+      }
+    },
+    "individualStocks": {
+      "currentYield": 0.0165,
+      "growthRate": 0.070,
+      "qualifiedPercentage": 0.95,
+      "paymentFrequency": "quarterly",
+      "averageWithholdingRate": 0.15,
+      "volatilityFactor": 2.5,
+      "concentrationRisk": {
+        "dividendCutProbability": 0.15,
+        "dividendGrowthVariance": 0.25
+      }
+    }
+  },
+  "dividendTiming": {
+    "description": "Realistic dividend payment timing throughout the year",
+    "quarterlyMonths": [3, 6, 9, 12],
+    "monthlyAssets": ["bondsTotalMarket"],
+    "semiannualAssets": ["internationalStocks"],
+    "paymentConcentration": {
+      "march": 0.28,
+      "june": 0.32,
+      "september": 0.25,
+      "december": 0.15
+    }
+  },
+  "taxWithholding": {
+    "description": "Realistic tax withholding rates for different dividend types",
+    "qualified": {
+      "standardRate": 0.15,
+      "highIncomeRate": 0.20,
+      "thresholdSingle": 47025,
+      "thresholdMFJ": 94050
+    },
+    "ordinary": {
+      "federalRate": 0.22,
+      "stateRate": 0.05,
+      "ficaRate": 0.0
+    },
+    "international": {
+      "foreignWithholding": 0.15,
+      "treatyReduction": 0.10,
+      "foreignTaxCredit": true
+    },
+    "municipal": {
+      "federalExempt": true,
+      "stateExempt": "varies",
+      "amtPreference": 0.02
+    }
+  },
+  "reinvestmentOptions": {
+    "description": "Dividend Reinvestment Plan (DRIP) modeling",
+    "defaultReinvestmentRate": 0.85,
+    "commissionFree": true,
+    "fractionalShares": true,
+    "reinvestmentDelay": 2,
+    "byAssetClass": {
+      "spyTotalMarket": {"defaultDRIP": true, "reinvestmentRate": 0.90},
+      "internationalStocks": {"defaultDRIP": true, "reinvestmentRate": 0.85},
+      "bondsTotalMarket": {"defaultDRIP": false, "reinvestmentRate": 0.0},
+      "realEstate": {"defaultDRIP": true, "reinvestmentRate": 0.80},
+      "individualStocks": {"defaultDRIP": false, "reinvestmentRate": 0.0}
+    }
+  },
+  "macroeconomicFactors": {
+    "description": "Dividend sensitivity to economic conditions",
+    "interestRateSensitivity": {
+      "utilities": -0.8,
+      "realEstate": -0.6,
+      "financials": 0.4,
+      "technology": -0.2
+    },
+    "inflationSensitivity": {
+      "energy": 0.7,
+      "materials": 0.5,
+      "realEstate": 0.3,
+      "utilities": -0.4
+    },
+    "economicCycleSensitivity": {
+      "financials": 1.2,
+      "industrials": 1.0,
+      "technology": 0.8,
+      "consumerStaples": 0.3,
+      "utilities": 0.2
+    }
+  }
+}

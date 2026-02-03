@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chubby.fyi/schemas/simulation-results.json",
+  "title": "SimulationResults",
+  "description": "Aggregated results from Monte Carlo simulation",
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "Whether the simulation completed successfully"
+    },
+    "numberOfRuns": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Number of simulation runs performed"
+    },
+    "finalNetWorthP10": {
+      "type": "number",
+      "description": "10th percentile of final net worth"
+    },
+    "finalNetWorthP25": {
+      "type": "number",
+      "description": "25th percentile of final net worth"
+    },
+    "finalNetWorthP50": {
+      "type": "number",
+      "description": "50th percentile (median) of final net worth"
+    },
+    "finalNetWorthP75": {
+      "type": "number",
+      "description": "75th percentile of final net worth"
+    },
+    "finalNetWorthP90": {
+      "type": "number",
+      "description": "90th percentile of final net worth"
+    },
+    "probabilityOfSuccess": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Probability of achieving financial goals"
+    },
+    "probabilityOfBankruptcy": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Probability of bankruptcy during simulation"
+    },
+    "bankruptcyCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of simulation runs that resulted in bankruptcy"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if simulation failed"
+    }
+  },
+  "required": ["success"],
+  "additionalProperties": false,
+  "if": {
+    "properties": {
+      "success": {
+        "const": true
+      }
+    }
+  },
+  "then": {
+    "required": [
+      "numberOfRuns",
+      "finalNetWorthP10",
+      "finalNetWorthP25",
+      "finalNetWorthP50",
+      "finalNetWorthP75",
+      "finalNetWorthP90",
+      "probabilityOfSuccess",
+      "probabilityOfBankruptcy",
+      "bankruptcyCount"
+    ]
+  },
+  "else": {
+    "required": ["error"]
+  }
+}

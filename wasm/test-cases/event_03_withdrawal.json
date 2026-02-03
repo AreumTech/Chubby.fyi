@@ -1,0 +1,42 @@
+{
+  "simulationInput": {
+    "initialAccounts": {
+      "cash": 500,
+      "tax_deferred": 2000
+    },
+    "events": [
+      {
+        "id": "test-withdrawal",
+        "type": "WITHDRAWAL",
+        "monthOffset": 0,
+        "amount": 800,
+        "metadata": {
+          "name": "Test 401k Withdrawal",
+          "frequency": "one-time",
+          "category": "retirement",
+          "sourceAccountType": "tax_deferred"
+        }
+      }
+    ],
+    "config": {
+      "expectedReturns": {
+        "CASH": 0.02,
+        "TAX_DEFERRED": 0.07
+      },
+      "volatilities": {
+        "CASH": 0.01,
+        "TAX_DEFERRED": 0.15
+      }
+    },
+    "monthsToRun": 2,
+    "withdrawalStrategy": {
+      "strategy": "taxable_first"
+    }
+  },
+  "expectedOutputs": {
+    "withdrawal_amount": 800,
+    "final_cash": 1300,
+    "final_tax_deferred": 1200,
+    "simulation_success": true
+  }
+}

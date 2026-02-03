@@ -1,0 +1,367 @@
+package main
+
+import (
+	"encoding/json"
+	"testing"
+)
+
+// TestEventDrivenBacktesting validates that our new event-driven scenarios work correctly
+func TestEventDrivenBacktesting(t *testing.T) {
+	// Load historical data with our new event-driven scenarios
+	historicalData, err := loadTestHistoricalData()
+	if err != nil {
+		t.Fatalf("Failed to load historical data: %v", err)
+	}
+
+	// Test scenario 1: DCA Through Dot-Com Crash
+	t.Run("DCA_Through_DotCom_Crash", func(t *testing.T) {
+		scenario, exists := historicalData.Scenarios["dca_through_dotcom_crash"]
+		if !exists {
+			t.Skip("DCA scenario not found in historical data")
+		}
+
+		// Verify scenario has events
+		if len(scenario.Events) == 0 {
+			t.Error("Expected DCA scenario to have events, but got none")
+		}
+
+		// Test that events are properly structured
+		for i, event := range scenario.Events {
+			if event.ID == "" {
+				t.Errorf("Event %d has empty ID", i)
+			}
+			if event.Type == "" {
+				t.Errorf("Event %d has empty Type", i)
+			}
+			if event.Amount <= 0 {
+				t.Errorf("Event %d has invalid amount: %f", i, event.Amount)
+			}
+
+			t.Logf("✓ Event %d: %s (%s) - $%.2f", i, event.ID, event.Type, event.Amount)
+		}
+
+		// Validate expected events
+		expectedEventTypes := map[string]bool{
+			"CONTRIBUTION": false,
+		}
+
+		for _, event := range scenario.Events {
+			if _, exists := expectedEventTypes[event.Type]; exists {
+				expectedEventTypes[event.Type] = true
+			}
+		}
+
+		for eventType, found := range expectedEventTypes {
+			if !found {
+				t.Errorf("Expected to find %s event in DCA scenario", eventType)
+			}
+		}
+
+		t.Logf("✅ DCA scenario validation passed: %d events", len(scenario.Events))
+	})
+
+	// Test scenario 2: Retire Into 2008 Crisis
+	t.Run("Retire_Into_2008_Crisis", func(t *testing.T) {
+		scenario, exists := historicalData.Scenarios["retire_into_2008_crisis"]
+		if !exists {
+			t.Skip("Retirement crisis scenario not found in historical data")
+		}
+
+		// Verify scenario has events
+		if len(scenario.Events) == 0 {
+			t.Error("Expected retirement scenario to have events, but got none")
+		}
+
+		// Look for retirement and expense events
+		hasRetirement := false
+		hasExpense := false
+
+		for _, event := range scenario.Events {
+			if event.Type == "RETIREMENT" {
+				hasRetirement = true
+			}
+			if event.Type == "EXPENSE" {
+				hasExpense = true
+			}
+		}
+
+		if !hasRetirement {
+			t.Error("Expected retirement scenario to have RETIREMENT event")
+		}
+		if !hasExpense {
+			t.Error("Expected retirement scenario to have EXPENSE event")
+		}
+
+		t.Logf("✅ Retirement crisis scenario validation passed: %d events", len(scenario.Events))
+	})
+
+	// Test scenario 3: Home Purchase Before Housing Bubble
+	t.Run("Home_Purchase_2006", func(t *testing.T) {
+		scenario, exists := historicalData.Scenarios["home_purchase_2006"]
+		if !exists {
+			t.Skip("Home purchase scenario not found in historical data")
+		}
+
+		// Verify scenario has events
+		if len(scenario.Events) == 0 {
+			t.Error("Expected home purchase scenario to have events, but got none")
+		}
+
+		// Look for real estate and liability events
+		hasRealEstate := false
+		hasLiability := false
+
+		for _, event := range scenario.Events {
+			if event.Type == "REAL_ESTATE_PURCHASE" {
+				hasRealEstate = true
+
+				// Validate that the event has proper property details metadata
+				if event.Metadata == nil {
+					t.Error("Real estate purchase event missing metadata")
+					continue
+				}
+
+				propertyDetails, ok := event.Metadata["propertyDetails"]
+				if !ok {
+					t.Error("Real estate purchase event missing propertyDetails in metadata")
+					continue
+				}
+
+				// Validate that we can marshal/unmarshal the property details
+				jsonBytes, err := json.Marshal(propertyDetails)
+				if err != nil {
+					t.Errorf("Failed to marshal property details: %v", err)
+					continue
+				}
+
+				var details PropertyDetailsMetadata
+				err = json.Unmarshal(jsonBytes, &details)
+				if err != nil {
+					t.Errorf("Failed to unmarshal property details: %v", err)
+					continue
+				}
+
+				// Validate required fields
+				if details.PurchasePrice <= 0 {
+					t.Error("Property details missing or invalid purchase price")
+				}
+				if details.Address == "" {
+					t.Error("Property details missing address")
+				}
+
+				t.Logf("✓ Property details validated: %s, $%.2f", details.Address, details.PurchasePrice)
+			}
+
+			if event.Type == "LIABILITY_CREATE" {
+				hasLiability = true
+
+				// Validate liability details metadata
+				if event.Metadata == nil {
+					t.Error("Liability create event missing metadata")
+					continue
+				}
+
+				liabilityDetails, ok := event.Metadata["liabilityDetails"]
+				if !ok {
+					t.Error("Liability create event missing liabilityDetails in metadata")
+					continue
+				}
+
+				// Validate that we can marshal/unmarshal the liability details
+				jsonBytes, err := json.Marshal(liabilityDetails)
+				if err != nil {
+					t.Errorf("Failed to marshal liability details: %v", err)
+					continue
+				}
+
+				var details LiabilityDetailsMetadata
+				err = json.Unmarshal(jsonBytes, &details)
+				if err != nil {
+					t.Errorf("Failed to unmarshal liability details: %v", err)
+					continue
+				}
+
+				// Validate required fields
+				if details.InitialPrincipal <= 0 {
+					t.Error("Liability details missing or invalid initial principal")
+				}
+				if details.InterestRate <= 0 {
+					t.Error("Liability details missing or invalid interest rate")
+				}
+				if details.TermMonths <= 0 {
+					t.Error("Liability details missing or invalid term months")
+				}
+
+				t.Logf("✓ Liability details validated: $%.2f @ %.4f%% for %d months",
+					details.InitialPrincipal, details.InterestRate*100, details.TermMonths)
+			}
+		}
+
+		if !hasRealEstate {
+			t.Error("Expected home purchase scenario to have REAL_ESTATE_PURCHASE event")
+		}
+		if !hasLiability {
+			t.Error("Expected home purchase scenario to have LIABILITY_CREATE event")
+		}
+
+		t.Logf("✅ Home purchase scenario validation passed: %d events", len(scenario.Events))
+	})
+}
+
+// TestBacktestEngineIntegration tests that the backtest engine can handle event-driven scenarios
+func TestBacktestEngineIntegration(t *testing.T) {
+	// Initialize configuration
+	err := InitializeFinancialData()
+	if err != nil {
+		t.Fatalf("Failed to initialize financial data: %v", err)
+	}
+
+	// Load historical data
+	historicalData, err := loadTestHistoricalData()
+	if err != nil {
+		t.Fatalf("Failed to load historical data: %v", err)
+	}
+
+	// Create backtest engine using constructor
+	backtestEngine := NewBacktestEngine(historicalData)
+
+	// Test createBacktestSimulationInput with event-driven scenario
+	t.Run("SimulationInputCreation", func(t *testing.T) {
+		scenario, exists := historicalData.Scenarios["dca_through_dotcom_crash"]
+		if !exists {
+			t.Skip("DCA scenario not found")
+		}
+
+		// Create some initial accounts for testing
+		initialAccounts := AccountHoldingsMonthEnd{
+			Taxable: &Account{
+				TotalValue: 50000.0,
+				Holdings:   []Holding{},
+			},
+		}
+
+		// Test simulation input creation
+		simulationInput := backtestEngine.createBacktestSimulationInput(scenario, initialAccounts, 48)
+
+		// Verify that events are properly passed through
+		if len(simulationInput.Events) != len(scenario.Events) {
+			t.Errorf("Expected %d events in simulation input, got %d", len(scenario.Events), len(simulationInput.Events))
+		}
+
+		// Verify events have proper structure
+		for i, event := range simulationInput.Events {
+			if event.ID == "" {
+				t.Errorf("Event %d in simulation input has empty ID", i)
+			}
+			if event.Type == "" {
+				t.Errorf("Event %d in simulation input has empty Type", i)
+			}
+		}
+
+		// Verify initial accounts are preserved by comparing specific account
+		if simulationInput.InitialAccounts.Taxable == nil && initialAccounts.Taxable != nil {
+			t.Error("Expected taxable account to be preserved in simulation input")
+		}
+		if simulationInput.InitialAccounts.Taxable != nil && initialAccounts.Taxable != nil {
+			if simulationInput.InitialAccounts.Taxable.TotalValue != initialAccounts.Taxable.TotalValue {
+				t.Errorf("Expected taxable account value %.2f, got %.2f",
+					initialAccounts.Taxable.TotalValue, simulationInput.InitialAccounts.Taxable.TotalValue)
+			}
+		}
+
+		accountCount := 0
+		if initialAccounts.Taxable != nil { accountCount++ }
+		if initialAccounts.TaxDeferred != nil { accountCount++ }
+		if initialAccounts.Roth != nil { accountCount++ }
+		if initialAccounts.Checking != nil { accountCount++ }
+		if initialAccounts.Savings != nil { accountCount++ }
+
+		t.Logf("✅ Simulation input creation test passed: %d events, %d accounts",
+			len(simulationInput.Events), accountCount)
+	})
+}
+
+// TestTypeMetadataStructs validates that our new type-safe metadata structures work correctly
+func TestTypeSafeMetadataStructs(t *testing.T) {
+	t.Run("LiabilityDetailsMetadata", func(t *testing.T) {
+		// Test JSON marshaling/unmarshaling
+		original := LiabilityDetailsMetadata{
+			ID:               "test_mortgage",
+			Name:             "Test Mortgage",
+			Type:             "MORTGAGE",
+			InitialPrincipal: 400000.0,
+			InterestRate:     0.045,
+			TermMonths:       360,
+			IsTaxDeductible:  true,
+			PropertyTaxAnnual: 5000.0,
+			HomeownersInsuranceAnnual: 1200.0,
+			MortgageInterestDeductible: true,
+			PropertyTaxDeductible: true,
+		}
+
+		// Marshal to JSON
+		jsonBytes, err := json.Marshal(original)
+		if err != nil {
+			t.Fatalf("Failed to marshal LiabilityDetailsMetadata: %v", err)
+		}
+
+		// Unmarshal back
+		var restored LiabilityDetailsMetadata
+		err = json.Unmarshal(jsonBytes, &restored)
+		if err != nil {
+			t.Fatalf("Failed to unmarshal LiabilityDetailsMetadata: %v", err)
+		}
+
+		// Verify fields are preserved
+		if restored.InitialPrincipal != original.InitialPrincipal {
+			t.Errorf("InitialPrincipal not preserved: got %f, want %f", restored.InitialPrincipal, original.InitialPrincipal)
+		}
+		if restored.InterestRate != original.InterestRate {
+			t.Errorf("InterestRate not preserved: got %f, want %f", restored.InterestRate, original.InterestRate)
+		}
+		if restored.TermMonths != original.TermMonths {
+			t.Errorf("TermMonths not preserved: got %d, want %d", restored.TermMonths, original.TermMonths)
+		}
+
+		t.Logf("✅ LiabilityDetailsMetadata JSON serialization test passed")
+	})
+
+	t.Run("PropertyDetailsMetadata", func(t *testing.T) {
+		// Test JSON marshaling/unmarshaling
+		original := PropertyDetailsMetadata{
+			ID:                "test_property",
+			Address:           "123 Test St, Test City",
+			PropertyType:      "PRIMARY_HOME",
+			PurchasePrice:     500000.0,
+			DownPaymentAmount: 100000.0,
+			ClosingCosts:      8000.0,
+			SquareFeet:        2500,
+			YearBuilt:         2010,
+			PropertyTaxRate:   0.012,
+			InsuranceAnnual:   1500.0,
+		}
+
+		// Marshal to JSON
+		jsonBytes, err := json.Marshal(original)
+		if err != nil {
+			t.Fatalf("Failed to marshal PropertyDetailsMetadata: %v", err)
+		}
+
+		// Unmarshal back
+		var restored PropertyDetailsMetadata
+		err = json.Unmarshal(jsonBytes, &restored)
+		if err != nil {
+			t.Fatalf("Failed to unmarshal PropertyDetailsMetadata: %v", err)
+		}
+
+		// Verify fields are preserved
+		if restored.PurchasePrice != original.PurchasePrice {
+			t.Errorf("PurchasePrice not preserved: got %f, want %f", restored.PurchasePrice, original.PurchasePrice)
+		}
+		if restored.Address != original.Address {
+			t.Errorf("Address not preserved: got %s, want %s", restored.Address, original.Address)
+		}
+
+		t.Logf("✅ PropertyDetailsMetadata JSON serialization test passed")
+	})
+}

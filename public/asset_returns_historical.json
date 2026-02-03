@@ -1,0 +1,2138 @@
+{
+  "_metadata": {
+    "description": "Monthly historical market data for PathFinder Pro backtesting",
+    "sources": {
+      "SPY": "Yahoo Finance - S&P 500 ETF Trust",
+      "AGG": "Yahoo Finance - Core U.S. Aggregate Bond ETF",
+      "VXUS": "Yahoo Finance - Total International Stock ETF",
+      "inflation": "Federal Reserve Economic Data (FRED) - CPI-U"
+    },
+    "citations": {
+      "SPY": "SPDR S&P 500 ETF Trust, Yahoo Finance",
+      "AGG": "iShares Core U.S. Aggregate Bond ETF, Yahoo Finance",
+      "VXUS": "Vanguard Total International Stock ETF, Yahoo Finance",
+      "inflation": "Consumer Price Index for All Urban Consumers, Federal Reserve Bank of St. Louis"
+    },
+    "dataIntegrity": "Monthly returns preserve sequence-of-returns risk",
+    "generatedAt": "2025-09-23T20:33:29.262063",
+    "totalMonths": 263
+  },
+  "scenarios": {
+    "historical_1990_2024": {
+      "name": "Historical Market Data",
+      "description": "Actual monthly returns from SPY, AGG, VXUS and CPI-U inflation",
+      "dataSource": {
+        "stocks": "Yahoo Finance (SPY, AGG, VXUS)",
+        "inflation": "Federal Reserve Economic Data (FRED) CPI-U",
+        "frequency": "Monthly",
+        "lastUpdated": "2025-09-23T20:33:29.261808"
+      },
+      "monthlyData": [
+        {
+          "year": 2003,
+          "month": 10,
+          "spyReturn": 0.057572,
+          "bondReturn": -0.009347,
+          "intlReturn": 0.0,
+          "inflation": -0.00108
+        },
+        {
+          "year": 2003,
+          "month": 11,
+          "spyReturn": 0.010921,
+          "bondReturn": -0.000197,
+          "intlReturn": 0.0,
+          "inflation": 0.000541
+        },
+        {
+          "year": 2003,
+          "month": 12,
+          "spyReturn": 0.045373,
+          "bondReturn": 0.007784,
+          "intlReturn": 0.0,
+          "inflation": 0.002703
+        },
+        {
+          "year": 2004,
+          "month": 1,
+          "spyReturn": 0.024589,
+          "bondReturn": 0.009971,
+          "intlReturn": 0.0,
+          "inflation": 0.004313
+        },
+        {
+          "year": 2004,
+          "month": 2,
+          "spyReturn": 0.01357,
+          "bondReturn": 0.008675,
+          "intlReturn": 0.0,
+          "inflation": 0.002147
+        },
+        {
+          "year": 2004,
+          "month": 3,
+          "spyReturn": -0.016693,
+          "bondReturn": 0.007174,
+          "intlReturn": 0.0,
+          "inflation": 0.002142
+        },
+        {
+          "year": 2004,
+          "month": 4,
+          "spyReturn": -0.015482,
+          "bondReturn": -0.028186,
+          "intlReturn": 0.0,
+          "inflation": 0.001603
+        },
+        {
+          "year": 2004,
+          "month": 5,
+          "spyReturn": 0.017123,
+          "bondReturn": -0.003958,
+          "intlReturn": 0.0,
+          "inflation": 0.004269
+        },
+        {
+          "year": 2004,
+          "month": 6,
+          "spyReturn": 0.014797,
+          "bondReturn": 0.006791,
+          "intlReturn": 0.0,
+          "inflation": 0.003719
+        },
+        {
+          "year": 2004,
+          "month": 7,
+          "spyReturn": -0.028686,
+          "bondReturn": 0.009263,
+          "intlReturn": 0.0,
+          "inflation": 0.001059
+        },
+        {
+          "year": 2004,
+          "month": 8,
+          "spyReturn": 0.002436,
+          "bondReturn": 0.016155,
+          "intlReturn": 0.0,
+          "inflation": 0.000529
+        },
+        {
+          "year": 2004,
+          "month": 9,
+          "spyReturn": 0.00585,
+          "bondReturn": 0.005249,
+          "intlReturn": 0.0,
+          "inflation": 0.003171
+        },
+        {
+          "year": 2004,
+          "month": 10,
+          "spyReturn": 0.017101,
+          "bondReturn": 0.008683,
+          "intlReturn": 0.0,
+          "inflation": 0.005269
+        },
+        {
+          "year": 2004,
+          "month": 11,
+          "spyReturn": 0.041431,
+          "bondReturn": -0.007008,
+          "intlReturn": 0.0,
+          "inflation": 0.004717
+        },
+        {
+          "year": 2004,
+          "month": 12,
+          "spyReturn": 0.028316,
+          "bondReturn": 0.004673,
+          "intlReturn": 0.0,
+          "inflation": 0.0
+        },
+        {
+          "year": 2005,
+          "month": 1,
+          "spyReturn": -0.017803,
+          "bondReturn": 0.010916,
+          "intlReturn": 0.0,
+          "inflation": -0.000522
+        },
+        {
+          "year": 2005,
+          "month": 2,
+          "spyReturn": 0.020904,
+          "bondReturn": -0.006704,
+          "intlReturn": 0.0,
+          "inflation": 0.004175
+        },
+        {
+          "year": 2005,
+          "month": 3,
+          "spyReturn": -0.022134,
+          "bondReturn": -0.00955,
+          "intlReturn": 0.0,
+          "inflation": 0.003638
+        },
+        {
+          "year": 2005,
+          "month": 4,
+          "spyReturn": -0.014881,
+          "bondReturn": 0.016626,
+          "intlReturn": 0.0,
+          "inflation": 0.003107
+        },
+        {
+          "year": 2005,
+          "month": 5,
+          "spyReturn": 0.032225,
+          "bondReturn": 0.008411,
+          "intlReturn": 0.0,
+          "inflation": -0.000516
+        },
+        {
+          "year": 2005,
+          "month": 6,
+          "spyReturn": -0.002511,
+          "bondReturn": 0.008641,
+          "intlReturn": 0.0,
+          "inflation": 0.000517
+        },
+        {
+          "year": 2005,
+          "month": 7,
+          "spyReturn": 0.042452,
+          "bondReturn": -0.010193,
+          "intlReturn": 0.0,
+          "inflation": 0.006195
+        },
+        {
+          "year": 2005,
+          "month": 8,
+          "spyReturn": -0.009374,
+          "bondReturn": 0.011789,
+          "intlReturn": 0.0,
+          "inflation": 0.006157
+        },
+        {
+          "year": 2005,
+          "month": 9,
+          "spyReturn": 0.003752,
+          "bondReturn": -0.009424,
+          "intlReturn": 0.0,
+          "inflation": 0.013768
+        },
+        {
+          "year": 2005,
+          "month": 10,
+          "spyReturn": -0.019495,
+          "bondReturn": -0.009922,
+          "intlReturn": 0.0,
+          "inflation": 0.001509
+        },
+        {
+          "year": 2005,
+          "month": 11,
+          "spyReturn": 0.043952,
+          "bondReturn": 0.00343,
+          "intlReturn": 0.0,
+          "inflation": -0.005023
+        },
+        {
+          "year": 2005,
+          "month": 12,
+          "spyReturn": -0.007176,
+          "bondReturn": 0.007351,
+          "intlReturn": 0.0,
+          "inflation": 0.0
+        },
+        {
+          "year": 2006,
+          "month": 1,
+          "spyReturn": 0.029442,
+          "bondReturn": 0.00702,
+          "intlReturn": 0.0,
+          "inflation": 0.006058
+        },
+        {
+          "year": 2006,
+          "month": 2,
+          "spyReturn": 0.005725,
+          "bondReturn": -0.002088,
+          "intlReturn": 0.0,
+          "inflation": 0.000502
+        },
+        {
+          "year": 2006,
+          "month": 3,
+          "spyReturn": 0.012478,
+          "bondReturn": -0.008703,
+          "intlReturn": 0.0,
+          "inflation": 0.001505
+        },
+        {
+          "year": 2006,
+          "month": 4,
+          "spyReturn": 0.016659,
+          "bondReturn": -0.001637,
+          "intlReturn": 0.0,
+          "inflation": 0.005008
+        },
+        {
+          "year": 2006,
+          "month": 5,
+          "spyReturn": -0.03012,
+          "bondReturn": -0.001926,
+          "intlReturn": 0.0,
+          "inflation": 0.00299
+        },
+        {
+          "year": 2006,
+          "month": 6,
+          "spyReturn": -0.001804,
+          "bondReturn": -0.001712,
+          "intlReturn": 0.0,
+          "inflation": 0.002484
+        },
+        {
+          "year": 2006,
+          "month": 7,
+          "spyReturn": 0.008918,
+          "bondReturn": 0.013815,
+          "intlReturn": 0.0,
+          "inflation": 0.005451
+        },
+        {
+          "year": 2006,
+          "month": 8,
+          "spyReturn": 0.021823,
+          "bondReturn": 0.015732,
+          "intlReturn": 0.0,
+          "inflation": 0.004436
+        },
+        {
+          "year": 2006,
+          "month": 9,
+          "spyReturn": 0.022505,
+          "bondReturn": 0.010327,
+          "intlReturn": 0.0,
+          "inflation": -0.004907
+        },
+        {
+          "year": 2006,
+          "month": 10,
+          "spyReturn": 0.036053,
+          "bondReturn": 0.00667,
+          "intlReturn": 0.0,
+          "inflation": -0.004438
+        },
+        {
+          "year": 2006,
+          "month": 11,
+          "spyReturn": 0.019885,
+          "bondReturn": 0.01055,
+          "intlReturn": 0.0,
+          "inflation": 0.000495
+        },
+        {
+          "year": 2006,
+          "month": 12,
+          "spyReturn": 0.007756,
+          "bondReturn": -0.009393,
+          "intlReturn": 0.0,
+          "inflation": 0.005446
+        },
+        {
+          "year": 2007,
+          "month": 1,
+          "spyReturn": 0.020696,
+          "bondReturn": 0.006947,
+          "intlReturn": 0.0,
+          "inflation": 0.001659
+        },
+        {
+          "year": 2007,
+          "month": 2,
+          "spyReturn": -0.019618,
+          "bondReturn": 0.012245,
+          "intlReturn": 0.0,
+          "inflation": 0.003878
+        },
+        {
+          "year": 2007,
+          "month": 3,
+          "spyReturn": 0.007593,
+          "bondReturn": -0.001913,
+          "intlReturn": 0.0,
+          "inflation": 0.0052
+        },
+        {
+          "year": 2007,
+          "month": 4,
+          "spyReturn": 0.048438,
+          "bondReturn": 0.005925,
+          "intlReturn": 0.0,
+          "inflation": 0.003001
+        },
+        {
+          "year": 2007,
+          "month": 5,
+          "spyReturn": 0.03392,
+          "bondReturn": -0.009096,
+          "intlReturn": 0.0,
+          "inflation": 0.004133
+        },
+        {
+          "year": 2007,
+          "month": 6,
+          "spyReturn": -0.018849,
+          "bondReturn": -0.004281,
+          "intlReturn": 0.0,
+          "inflation": 0.002317
+        },
+        {
+          "year": 2007,
+          "month": 7,
+          "spyReturn": -0.027135,
+          "bondReturn": 0.010768,
+          "intlReturn": 0.0,
+          "inflation": 0.001781
+        },
+        {
+          "year": 2007,
+          "month": 8,
+          "spyReturn": 0.012833,
+          "bondReturn": 0.01272,
+          "intlReturn": 0.0,
+          "inflation": 0.000308
+        },
+        {
+          "year": 2007,
+          "month": 9,
+          "spyReturn": 0.03381,
+          "bondReturn": 0.006385,
+          "intlReturn": 0.0,
+          "inflation": 0.004238
+        },
+        {
+          "year": 2007,
+          "month": 10,
+          "spyReturn": 0.018374,
+          "bondReturn": 0.01024,
+          "intlReturn": 0.0,
+          "inflation": 0.003083
+        },
+        {
+          "year": 2007,
+          "month": 11,
+          "spyReturn": -0.038733,
+          "bondReturn": 0.018029,
+          "intlReturn": 0.0,
+          "inflation": 0.007859
+        },
+        {
+          "year": 2007,
+          "month": 12,
+          "spyReturn": -0.01648,
+          "bondReturn": -0.004008,
+          "intlReturn": 0.0,
+          "inflation": 0.002898
+        },
+        {
+          "year": 2008,
+          "month": 1,
+          "spyReturn": -0.055475,
+          "bondReturn": 0.031427,
+          "intlReturn": 0.0,
+          "inflation": 0.003448
+        },
+        {
+          "year": 2008,
+          "month": 2,
+          "spyReturn": -0.025842,
+          "bondReturn": -0.005603,
+          "intlReturn": 0.0,
+          "inflation": 0.002418
+        },
+        {
+          "year": 2008,
+          "month": 3,
+          "spyReturn": -0.013824,
+          "bondReturn": 0.001586,
+          "intlReturn": 0.0,
+          "inflation": 0.003578
+        },
+        {
+          "year": 2008,
+          "month": 4,
+          "spyReturn": 0.052849,
+          "bondReturn": 0.002953,
+          "intlReturn": 0.0,
+          "inflation": 0.002314
+        },
+        {
+          "year": 2008,
+          "month": 5,
+          "spyReturn": 0.015117,
+          "bondReturn": -0.011796,
+          "intlReturn": 0.0,
+          "inflation": 0.005917
+        },
+        {
+          "year": 2008,
+          "month": 6,
+          "spyReturn": -0.088137,
+          "bondReturn": -0.002574,
+          "intlReturn": 0.0,
+          "inflation": 0.010478
+        },
+        {
+          "year": 2008,
+          "month": 7,
+          "spyReturn": -0.004029,
+          "bondReturn": 0.004017,
+          "intlReturn": 0.0,
+          "inflation": 0.007141
+        },
+        {
+          "year": 2008,
+          "month": 8,
+          "spyReturn": 0.015454,
+          "bondReturn": 0.007239,
+          "intlReturn": 0.0,
+          "inflation": -0.001488
+        },
+        {
+          "year": 2008,
+          "month": 9,
+          "spyReturn": -0.099386,
+          "bondReturn": -0.017506,
+          "intlReturn": 0.0,
+          "inflation": 0.000855
+        },
+        {
+          "year": 2008,
+          "month": 10,
+          "spyReturn": -0.160355,
+          "bondReturn": -0.022856,
+          "intlReturn": 0.0,
+          "inflation": -0.008598
+        },
+        {
+          "year": 2008,
+          "month": 11,
+          "spyReturn": -0.069607,
+          "bondReturn": 0.030024,
+          "intlReturn": 0.0,
+          "inflation": -0.017705
+        },
+        {
+          "year": 2008,
+          "month": 12,
+          "spyReturn": 0.001665,
+          "bondReturn": 0.062835,
+          "intlReturn": 0.0,
+          "inflation": -0.008234
+        },
+        {
+          "year": 2009,
+          "month": 1,
+          "spyReturn": -0.074663,
+          "bondReturn": -0.012255,
+          "intlReturn": 0.0,
+          "inflation": 0.002531
+        },
+        {
+          "year": 2009,
+          "month": 2,
+          "spyReturn": -0.107449,
+          "bondReturn": -0.0141,
+          "intlReturn": 0.0,
+          "inflation": 0.003643
+        },
+        {
+          "year": 2009,
+          "month": 3,
+          "spyReturn": 0.075612,
+          "bondReturn": 0.011371,
+          "intlReturn": 0.0,
+          "inflation": -0.000987
+        },
+        {
+          "year": 2009,
+          "month": 4,
+          "spyReturn": 0.107215,
+          "bondReturn": 0.004939,
+          "intlReturn": 0.0,
+          "inflation": 0.001007
+        },
+        {
+          "year": 2009,
+          "month": 5,
+          "spyReturn": 0.058454,
+          "bondReturn": 0.007322,
+          "intlReturn": 0.0,
+          "inflation": 0.001471
+        },
+        {
+          "year": 2009,
+          "month": 6,
+          "spyReturn": -0.006269,
+          "bondReturn": 0.004427,
+          "intlReturn": 0.0,
+          "inflation": 0.0083
+        },
+        {
+          "year": 2009,
+          "month": 7,
+          "spyReturn": 0.080676,
+          "bondReturn": 0.012356,
+          "intlReturn": 0.0,
+          "inflation": -0.000298
+        },
+        {
+          "year": 2009,
+          "month": 8,
+          "spyReturn": 0.036939,
+          "bondReturn": 0.012312,
+          "intlReturn": 0.0,
+          "inflation": 0.003348
+        },
+        {
+          "year": 2009,
+          "month": 9,
+          "spyReturn": 0.030549,
+          "bondReturn": 0.011931,
+          "intlReturn": 0.0,
+          "inflation": 0.001931
+        },
+        {
+          "year": 2009,
+          "month": 10,
+          "spyReturn": -0.014554,
+          "bondReturn": 0.002151,
+          "intlReturn": 0.0,
+          "inflation": 0.003002
+        },
+        {
+          "year": 2009,
+          "month": 11,
+          "spyReturn": 0.061607,
+          "bondReturn": 0.013033,
+          "intlReturn": 0.0,
+          "inflation": 0.003349
+        },
+        {
+          "year": 2009,
+          "month": 12,
+          "spyReturn": 0.013644,
+          "bondReturn": -0.021922,
+          "intlReturn": 0.0,
+          "inflation": 0.00052
+        },
+        {
+          "year": 2010,
+          "month": 1,
+          "spyReturn": -0.031155,
+          "bondReturn": 0.020527,
+          "intlReturn": 0.0,
+          "inflation": 0.000649
+        },
+        {
+          "year": 2010,
+          "month": 2,
+          "spyReturn": 0.031195,
+          "bondReturn": -0.001146,
+          "intlReturn": 0.0,
+          "inflation": -0.000952
+        },
+        {
+          "year": 2010,
+          "month": 3,
+          "spyReturn": 0.056529,
+          "bondReturn": -3.2e-05,
+          "intlReturn": 0.0,
+          "inflation": 0.000331
+        },
+        {
+          "year": 2010,
+          "month": 4,
+          "spyReturn": 0.019651,
+          "bondReturn": 0.009742,
+          "intlReturn": 0.0,
+          "inflation": 0.00023
+        },
+        {
+          "year": 2010,
+          "month": 5,
+          "spyReturn": -0.079454,
+          "bondReturn": 0.010932,
+          "intlReturn": 0.0,
+          "inflation": -0.00052
+        },
+        {
+          "year": 2010,
+          "month": 6,
+          "spyReturn": -0.056231,
+          "bondReturn": 0.017595,
+          "intlReturn": 0.0,
+          "inflation": -0.000419
+        },
+        {
+          "year": 2010,
+          "month": 7,
+          "spyReturn": 0.073383,
+          "bondReturn": 0.008686,
+          "intlReturn": 0.0,
+          "inflation": 0.001869
+        },
+        {
+          "year": 2010,
+          "month": 8,
+          "spyReturn": -0.044981,
+          "bondReturn": 0.013073,
+          "intlReturn": 0.0,
+          "inflation": 0.001461
+        },
+        {
+          "year": 2010,
+          "month": 9,
+          "spyReturn": 0.083753,
+          "bondReturn": 6.3e-05,
+          "intlReturn": 0.0,
+          "inflation": 0.001615
+        },
+        {
+          "year": 2010,
+          "month": 10,
+          "spyReturn": 0.04376,
+          "bondReturn": 0.00182,
+          "intlReturn": 0.0,
+          "inflation": 0.003482
+        },
+        {
+          "year": 2010,
+          "month": 11,
+          "spyReturn": 0.0,
+          "bondReturn": -0.008452,
+          "intlReturn": 0.0,
+          "inflation": 0.002534
+        },
+        {
+          "year": 2010,
+          "month": 12,
+          "spyReturn": 0.061271,
+          "bondReturn": -0.012578,
+          "intlReturn": 0.0,
+          "inflation": 0.004017
+        },
+        {
+          "year": 2011,
+          "month": 1,
+          "spyReturn": 0.028682,
+          "bondReturn": 0.007603,
+          "intlReturn": 0.0,
+          "inflation": 0.003243
+        },
+        {
+          "year": 2011,
+          "month": 2,
+          "spyReturn": 0.034737,
+          "bondReturn": -9.5e-05,
+          "intlReturn": 0.023256,
+          "inflation": 0.003214
+        },
+        {
+          "year": 2011,
+          "month": 3,
+          "spyReturn": -0.004206,
+          "bondReturn": -0.001936,
+          "intlReturn": -0.002547,
+          "inflation": 0.005174
+        },
+        {
+          "year": 2011,
+          "month": 4,
+          "spyReturn": 0.033431,
+          "bondReturn": 0.01539,
+          "intlReturn": 0.051856,
+          "inflation": 0.004694
+        },
+        {
+          "year": 2011,
+          "month": 5,
+          "spyReturn": -0.011214,
+          "bondReturn": 0.012406,
+          "intlReturn": -0.030066,
+          "inflation": 0.003182
+        },
+        {
+          "year": 2011,
+          "month": 6,
+          "spyReturn": -0.02172,
+          "bondReturn": -0.004395,
+          "intlReturn": -0.012129,
+          "inflation": 0.0
+        },
+        {
+          "year": 2011,
+          "month": 7,
+          "spyReturn": -0.015146,
+          "bondReturn": 0.016931,
+          "intlReturn": -0.01754,
+          "inflation": 0.00262
+        },
+        {
+          "year": 2011,
+          "month": 8,
+          "spyReturn": -0.054976,
+          "bondReturn": 0.015282,
+          "intlReturn": -0.084507,
+          "inflation": 0.003154
+        },
+        {
+          "year": 2011,
+          "month": 9,
+          "spyReturn": -0.07421,
+          "bondReturn": 0.008367,
+          "intlReturn": -0.126544,
+          "inflation": 0.002172
+        },
+        {
+          "year": 2011,
+          "month": 10,
+          "spyReturn": 0.114885,
+          "bondReturn": 0.001396,
+          "intlReturn": 0.102455,
+          "inflation": 0.000675
+        },
+        {
+          "year": 2011,
+          "month": 11,
+          "spyReturn": -0.004064,
+          "bondReturn": -0.003927,
+          "intlReturn": -0.021152,
+          "inflation": 0.001848
+        },
+        {
+          "year": 2011,
+          "month": 12,
+          "spyReturn": 0.00408,
+          "bondReturn": 0.01059,
+          "intlReturn": -0.05977,
+          "inflation": 0.000238
+        },
+        {
+          "year": 2012,
+          "month": 1,
+          "spyReturn": 0.053011,
+          "bondReturn": 0.012866,
+          "intlReturn": 0.107599,
+          "inflation": 0.002724
+        },
+        {
+          "year": 2012,
+          "month": 2,
+          "spyReturn": 0.043405,
+          "bondReturn": -0.002612,
+          "intlReturn": 0.045558,
+          "inflation": 0.002137
+        },
+        {
+          "year": 2012,
+          "month": 3,
+          "spyReturn": 0.02766,
+          "bondReturn": -0.005754,
+          "intlReturn": -0.005446,
+          "inflation": 0.002093
+        },
+        {
+          "year": 2012,
+          "month": 4,
+          "spyReturn": -0.002322,
+          "bondReturn": 0.009352,
+          "intlReturn": -0.020811,
+          "inflation": 0.001661
+        },
+        {
+          "year": 2012,
+          "month": 5,
+          "spyReturn": -0.060056,
+          "bondReturn": 0.010916,
+          "intlReturn": -0.108277,
+          "inflation": -0.002068
+        },
+        {
+          "year": 2012,
+          "month": 6,
+          "spyReturn": 0.035218,
+          "bondReturn": -0.000251,
+          "intlReturn": 0.059709,
+          "inflation": -0.000826
+        },
+        {
+          "year": 2012,
+          "month": 7,
+          "spyReturn": 0.017072,
+          "bondReturn": 0.013753,
+          "intlReturn": 0.003078,
+          "inflation": 0.000289
+        },
+        {
+          "year": 2012,
+          "month": 8,
+          "spyReturn": 0.025053,
+          "bondReturn": 5e-05,
+          "intlReturn": 0.025961,
+          "inflation": 0.00581
+        },
+        {
+          "year": 2012,
+          "month": 9,
+          "spyReturn": 0.019906,
+          "bondReturn": 0.002671,
+          "intlReturn": 0.017023,
+          "inflation": 0.004771
+        },
+        {
+          "year": 2012,
+          "month": 10,
+          "spyReturn": -0.012957,
+          "bondReturn": -0.000365,
+          "intlReturn": 0.025056,
+          "inflation": 0.002697
+        },
+        {
+          "year": 2012,
+          "month": 11,
+          "spyReturn": 0.005659,
+          "bondReturn": 0.00238,
+          "intlReturn": 0.020642,
+          "inflation": -0.001679
+        },
+        {
+          "year": 2012,
+          "month": 12,
+          "spyReturn": 0.001829,
+          "bondReturn": -0.008275,
+          "intlReturn": 0.034733,
+          "inflation": -0.000121
+        },
+        {
+          "year": 2013,
+          "month": 1,
+          "spyReturn": 0.058646,
+          "bondReturn": 0.001793,
+          "intlReturn": 0.037996,
+          "inflation": 0.001981
+        },
+        {
+          "year": 2013,
+          "month": 2,
+          "spyReturn": 0.012759,
+          "bondReturn": 0.003986,
+          "intlReturn": -0.011411,
+          "inflation": 0.00543
+        },
+        {
+          "year": 2013,
+          "month": 3,
+          "spyReturn": 0.033375,
+          "bondReturn": 0.001011,
+          "intlReturn": 0.006715,
+          "inflation": -0.002812
+        },
+        {
+          "year": 2013,
+          "month": 4,
+          "spyReturn": 0.023746,
+          "bondReturn": 0.009218,
+          "intlReturn": 0.037737,
+          "inflation": -0.002088
+        },
+        {
+          "year": 2013,
+          "month": 5,
+          "spyReturn": 0.023609,
+          "bondReturn": -0.019484,
+          "intlReturn": -0.033031,
+          "inflation": 0.000414
+        },
+        {
+          "year": 2013,
+          "month": 6,
+          "spyReturn": -0.018538,
+          "bondReturn": -0.01563,
+          "intlReturn": -0.048532,
+          "inflation": 0.00238
+        },
+        {
+          "year": 2013,
+          "month": 7,
+          "spyReturn": 0.057242,
+          "bondReturn": 0.002631,
+          "intlReturn": 0.060043,
+          "inflation": 0.001957
+        },
+        {
+          "year": 2013,
+          "month": 8,
+          "spyReturn": -0.029993,
+          "bondReturn": -0.008327,
+          "intlReturn": -0.01946,
+          "inflation": 0.002387
+        },
+        {
+          "year": 2013,
+          "month": 9,
+          "spyReturn": 0.026643,
+          "bondReturn": 0.011253,
+          "intlReturn": 0.070209,
+          "inflation": 0.000377
+        },
+        {
+          "year": 2013,
+          "month": 10,
+          "spyReturn": 0.051407,
+          "bondReturn": 0.008409,
+          "intlReturn": 0.041404,
+          "inflation": 0.000535
+        },
+        {
+          "year": 2013,
+          "month": 11,
+          "spyReturn": 0.029637,
+          "bondReturn": -0.002485,
+          "intlReturn": 0.001346,
+          "inflation": 0.001844
+        },
+        {
+          "year": 2013,
+          "month": 12,
+          "spyReturn": 0.020387,
+          "bondReturn": -0.007653,
+          "intlReturn": 0.006147,
+          "inflation": 0.002644
+        },
+        {
+          "year": 2014,
+          "month": 1,
+          "spyReturn": -0.03001,
+          "bondReturn": 0.019337,
+          "intlReturn": -0.045485,
+          "inflation": 0.002424
+        },
+        {
+          "year": 2014,
+          "month": 2,
+          "spyReturn": 0.045516,
+          "bondReturn": 0.001851,
+          "intlReturn": 0.055903,
+          "inflation": 0.001101
+        },
+        {
+          "year": 2014,
+          "month": 3,
+          "spyReturn": 0.003865,
+          "bondReturn": -0.001422,
+          "intlReturn": -0.002293,
+          "inflation": 0.002042
+        },
+        {
+          "year": 2014,
+          "month": 4,
+          "spyReturn": 0.011396,
+          "bondReturn": 0.008164,
+          "intlReturn": 0.019975,
+          "inflation": 0.001864
+        },
+        {
+          "year": 2014,
+          "month": 5,
+          "spyReturn": 0.023206,
+          "bondReturn": 0.011867,
+          "intlReturn": 0.019296,
+          "inflation": 0.001903
+        },
+        {
+          "year": 2014,
+          "month": 6,
+          "spyReturn": 0.015778,
+          "bondReturn": -0.000639,
+          "intlReturn": 0.00761,
+          "inflation": 0.001321
+        },
+        {
+          "year": 2014,
+          "month": 7,
+          "spyReturn": -0.00871,
+          "bondReturn": -0.002413,
+          "intlReturn": -0.006389,
+          "inflation": 0.001125
+        },
+        {
+          "year": 2014,
+          "month": 8,
+          "spyReturn": 0.039464,
+          "bondReturn": 0.011451,
+          "intlReturn": 0.011622,
+          "inflation": -0.00016
+        },
+        {
+          "year": 2014,
+          "month": 9,
+          "spyReturn": -0.018385,
+          "bondReturn": -0.006086,
+          "intlReturn": -0.055031,
+          "inflation": 7.2e-05
+        },
+        {
+          "year": 2014,
+          "month": 10,
+          "spyReturn": 0.028335,
+          "bondReturn": 0.010683,
+          "intlReturn": 0.004488,
+          "inflation": -0.000198
+        },
+        {
+          "year": 2014,
+          "month": 11,
+          "spyReturn": 0.027472,
+          "bondReturn": 0.006558,
+          "intlReturn": -0.005102,
+          "inflation": -0.001883
+        },
+        {
+          "year": 2014,
+          "month": 12,
+          "spyReturn": -0.008012,
+          "bondReturn": -0.00269,
+          "intlReturn": -0.046549,
+          "inflation": -0.003085
+        },
+        {
+          "year": 2015,
+          "month": 1,
+          "spyReturn": -0.024273,
+          "bondReturn": 0.026577,
+          "intlReturn": 0.010943,
+          "inflation": -0.00637
+        },
+        {
+          "year": 2015,
+          "month": 2,
+          "spyReturn": 0.056204,
+          "bondReturn": -0.0105,
+          "intlReturn": 0.057768,
+          "inflation": 0.002535
+        },
+        {
+          "year": 2015,
+          "month": 3,
+          "spyReturn": -0.02008,
+          "bondReturn": 0.00364,
+          "intlReturn": -0.017944,
+          "inflation": 0.002694
+        },
+        {
+          "year": 2015,
+          "month": 4,
+          "spyReturn": 0.014342,
+          "bondReturn": -0.003448,
+          "intlReturn": 0.051283,
+          "inflation": 0.001042
+        },
+        {
+          "year": 2015,
+          "month": 5,
+          "spyReturn": 0.012856,
+          "bondReturn": -0.004338,
+          "intlReturn": -0.009096,
+          "inflation": 0.003298
+        },
+        {
+          "year": 2015,
+          "month": 6,
+          "spyReturn": -0.025054,
+          "bondReturn": -0.010779,
+          "intlReturn": -0.037483,
+          "inflation": 0.002768
+        },
+        {
+          "year": 2015,
+          "month": 7,
+          "spyReturn": 0.027563,
+          "bondReturn": 0.008504,
+          "intlReturn": 0.004941,
+          "inflation": 0.001586
+        },
+        {
+          "year": 2015,
+          "month": 8,
+          "spyReturn": -0.06095,
+          "bondReturn": -0.003317,
+          "intlReturn": -0.074326,
+          "inflation": -4e-06
+        },
+        {
+          "year": 2015,
+          "month": 9,
+          "spyReturn": -0.030556,
+          "bondReturn": 0.00802,
+          "intlReturn": -0.043384,
+          "inflation": -0.002248
+        },
+        {
+          "year": 2015,
+          "month": 10,
+          "spyReturn": 0.0907,
+          "bondReturn": 0.000854,
+          "intlReturn": 0.067921,
+          "inflation": 0.000989
+        },
+        {
+          "year": 2015,
+          "month": 11,
+          "spyReturn": 0.003655,
+          "bondReturn": -0.003984,
+          "intlReturn": -0.013166,
+          "inflation": 0.001195
+        },
+        {
+          "year": 2015,
+          "month": 12,
+          "spyReturn": -0.023097,
+          "bondReturn": -0.005399,
+          "intlReturn": -0.029266,
+          "inflation": -0.001076
+        },
+        {
+          "year": 2016,
+          "month": 1,
+          "spyReturn": -0.044132,
+          "bondReturn": 0.01795,
+          "intlReturn": -0.047141,
+          "inflation": -0.000458
+        },
+        {
+          "year": 2016,
+          "month": 2,
+          "spyReturn": -0.000826,
+          "bondReturn": 0.006768,
+          "intlReturn": -0.024619,
+          "inflation": -0.00133
+        },
+        {
+          "year": 2016,
+          "month": 3,
+          "spyReturn": 0.06179,
+          "bondReturn": 0.008825,
+          "intlReturn": 0.079807,
+          "inflation": 0.003135
+        },
+        {
+          "year": 2016,
+          "month": 4,
+          "spyReturn": 0.009119,
+          "bondReturn": 0.002554,
+          "intlReturn": 0.024884,
+          "inflation": 0.003831
+        },
+        {
+          "year": 2016,
+          "month": 5,
+          "spyReturn": 0.017012,
+          "bondReturn": 0.00029,
+          "intlReturn": -0.009806,
+          "inflation": 0.002364
+        },
+        {
+          "year": 2016,
+          "month": 6,
+          "spyReturn": -0.001716,
+          "bondReturn": 0.019228,
+          "intlReturn": -0.021126,
+          "inflation": 0.002776
+        },
+        {
+          "year": 2016,
+          "month": 7,
+          "spyReturn": 0.041862,
+          "bondReturn": 0.005532,
+          "intlReturn": 0.057999,
+          "inflation": -0.000504
+        },
+        {
+          "year": 2016,
+          "month": 8,
+          "spyReturn": 0.001197,
+          "bondReturn": -0.002103,
+          "intlReturn": 0.004517,
+          "inflation": 0.001849
+        },
+        {
+          "year": 2016,
+          "month": 9,
+          "spyReturn": -0.004968,
+          "bondReturn": 0.0005,
+          "intlReturn": 0.010921,
+          "inflation": 0.002623
+        },
+        {
+          "year": 2016,
+          "month": 10,
+          "spyReturn": -0.012374,
+          "bondReturn": -0.00813,
+          "intlReturn": -0.013353,
+          "inflation": 0.002343
+        },
+        {
+          "year": 2016,
+          "month": 11,
+          "spyReturn": 0.036838,
+          "bondReturn": -0.025734,
+          "intlReturn": -0.020082,
+          "inflation": 0.001179
+        },
+        {
+          "year": 2016,
+          "month": 12,
+          "spyReturn": 0.014294,
+          "bondReturn": 0.000224,
+          "intlReturn": 0.011018,
+          "inflation": 0.002525
+        },
+        {
+          "year": 2017,
+          "month": 1,
+          "spyReturn": 0.023894,
+          "bondReturn": 0.006348,
+          "intlReturn": 0.049662,
+          "inflation": 0.004043
+        },
+        {
+          "year": 2017,
+          "month": 2,
+          "spyReturn": 0.039291,
+          "bondReturn": 0.004433,
+          "intlReturn": 0.013403,
+          "inflation": 0.001593
+        },
+        {
+          "year": 2017,
+          "month": 3,
+          "spyReturn": -0.003087,
+          "bondReturn": -0.000562,
+          "intlReturn": 0.026658,
+          "inflation": -0.000467
+        },
+        {
+          "year": 2017,
+          "month": 4,
+          "spyReturn": 0.01432,
+          "bondReturn": 0.009046,
+          "intlReturn": 0.023827,
+          "inflation": 0.001234
+        },
+        {
+          "year": 2017,
+          "month": 5,
+          "spyReturn": 0.014113,
+          "bondReturn": 0.006728,
+          "intlReturn": 0.029586,
+          "inflation": -0.000774
+        },
+        {
+          "year": 2017,
+          "month": 6,
+          "spyReturn": 0.001491,
+          "bondReturn": -9e-05,
+          "intlReturn": -0.004406,
+          "inflation": 0.000652
+        },
+        {
+          "year": 2017,
+          "month": 7,
+          "spyReturn": 0.025531,
+          "bondReturn": 0.003381,
+          "intlReturn": 0.044802,
+          "inflation": 0.000328
+        },
+        {
+          "year": 2017,
+          "month": 8,
+          "spyReturn": 0.002918,
+          "bondReturn": 0.00937,
+          "intlReturn": 0.005398,
+          "inflation": 0.003849
+        },
+        {
+          "year": 2017,
+          "month": 9,
+          "spyReturn": 0.015111,
+          "bondReturn": -0.005701,
+          "intlReturn": 0.013331,
+          "inflation": 0.005106
+        },
+        {
+          "year": 2017,
+          "month": 10,
+          "spyReturn": 0.028644,
+          "bondReturn": 0.00099,
+          "intlReturn": 0.025811,
+          "inflation": 0.000775
+        },
+        {
+          "year": 2017,
+          "month": 11,
+          "spyReturn": 0.030566,
+          "bondReturn": -0.001494,
+          "intlReturn": 0.006268,
+          "inflation": 0.002668
+        },
+        {
+          "year": 2017,
+          "month": 12,
+          "spyReturn": 0.006981,
+          "bondReturn": 0.004384,
+          "intlReturn": 0.011034,
+          "inflation": 0.002107
+        },
+        {
+          "year": 2018,
+          "month": 1,
+          "spyReturn": 0.061759,
+          "bondReturn": -0.008824,
+          "intlReturn": 0.06738,
+          "inflation": 0.004253
+        },
+        {
+          "year": 2018,
+          "month": 2,
+          "spyReturn": -0.036361,
+          "bondReturn": -0.012304,
+          "intlReturn": -0.052448,
+          "inflation": 0.002692
+        },
+        {
+          "year": 2018,
+          "month": 3,
+          "spyReturn": -0.03129,
+          "bondReturn": 0.00675,
+          "intlReturn": -0.006326,
+          "inflation": 0.000192
+        },
+        {
+          "year": 2018,
+          "month": 4,
+          "spyReturn": 0.009194,
+          "bondReturn": -0.009474,
+          "intlReturn": 0.007181,
+          "inflation": 0.002604
+        },
+        {
+          "year": 2018,
+          "month": 5,
+          "spyReturn": 0.024309,
+          "bondReturn": 0.00662,
+          "intlReturn": -0.01637,
+          "inflation": 0.002258
+        },
+        {
+          "year": 2018,
+          "month": 6,
+          "spyReturn": 0.001255,
+          "bondReturn": 0.000951,
+          "intlReturn": -0.031854,
+          "inflation": 0.000901
+        },
+        {
+          "year": 2018,
+          "month": 7,
+          "spyReturn": 0.041703,
+          "bondReturn": -0.000107,
+          "intlReturn": 0.036748,
+          "inflation": 0.000781
+        },
+        {
+          "year": 2018,
+          "month": 8,
+          "spyReturn": 0.03192,
+          "bondReturn": 0.005466,
+          "intlReturn": -0.023972,
+          "inflation": 0.001787
+        },
+        {
+          "year": 2018,
+          "month": 9,
+          "spyReturn": 0.001412,
+          "bondReturn": -0.006012,
+          "intlReturn": -0.00277,
+          "inflation": 0.002062
+        },
+        {
+          "year": 2018,
+          "month": 10,
+          "spyReturn": -0.06489,
+          "bondReturn": -0.006648,
+          "intlReturn": -0.081052,
+          "inflation": 0.00234
+        },
+        {
+          "year": 2018,
+          "month": 11,
+          "spyReturn": 0.018549,
+          "bondReturn": 0.005173,
+          "intlReturn": 0.016808,
+          "inflation": -0.000704
+        },
+        {
+          "year": 2018,
+          "month": 12,
+          "spyReturn": -0.093343,
+          "bondReturn": 0.020356,
+          "intlReturn": -0.05955,
+          "inflation": 0.000685
+        },
+        {
+          "year": 2019,
+          "month": 1,
+          "spyReturn": 0.086373,
+          "bondReturn": 0.013543,
+          "intlReturn": 0.08822,
+          "inflation": -0.000815
+        },
+        {
+          "year": 2019,
+          "month": 2,
+          "spyReturn": 0.032416,
+          "bondReturn": -0.00363,
+          "intlReturn": 0.016326,
+          "inflation": 0.003001
+        },
+        {
+          "year": 2019,
+          "month": 3,
+          "spyReturn": 0.013636,
+          "bondReturn": 0.021227,
+          "intlReturn": 0.004451,
+          "inflation": 0.003782
+        },
+        {
+          "year": 2019,
+          "month": 4,
+          "spyReturn": 0.045437,
+          "bondReturn": -0.001912,
+          "intlReturn": 0.031065,
+          "inflation": 0.00376
+        },
+        {
+          "year": 2019,
+          "month": 5,
+          "spyReturn": -0.063771,
+          "bondReturn": 0.019116,
+          "intlReturn": -0.054181,
+          "inflation": 0.000247
+        },
+        {
+          "year": 2019,
+          "month": 6,
+          "spyReturn": 0.064409,
+          "bondReturn": 0.011026,
+          "intlReturn": 0.04559,
+          "inflation": -0.000325
+        },
+        {
+          "year": 2019,
+          "month": 7,
+          "spyReturn": 0.020056,
+          "bondReturn": 0.001911,
+          "intlReturn": -0.008553,
+          "inflation": 0.002308
+        },
+        {
+          "year": 2019,
+          "month": 8,
+          "spyReturn": -0.016743,
+          "bondReturn": 0.027753,
+          "intlReturn": -0.021663,
+          "inflation": 0.000915
+        },
+        {
+          "year": 2019,
+          "month": 9,
+          "spyReturn": 0.014772,
+          "bondReturn": -0.00609,
+          "intlReturn": 0.021352,
+          "inflation": 0.001539
+        },
+        {
+          "year": 2019,
+          "month": 10,
+          "spyReturn": 0.026825,
+          "bondReturn": 0.002133,
+          "intlReturn": 0.040225,
+          "inflation": 0.002827
+        },
+        {
+          "year": 2019,
+          "month": 11,
+          "spyReturn": 0.036198,
+          "bondReturn": -0.00031,
+          "intlReturn": 0.009919,
+          "inflation": 0.002815
+        },
+        {
+          "year": 2019,
+          "month": 12,
+          "spyReturn": 0.024021,
+          "bondReturn": -0.002128,
+          "intlReturn": 0.032061,
+          "inflation": 0.002912
+        },
+        {
+          "year": 2020,
+          "month": 1,
+          "spyReturn": 0.00451,
+          "bondReturn": 0.02426,
+          "intlReturn": -0.022965,
+          "inflation": 0.001922
+        },
+        {
+          "year": 2020,
+          "month": 2,
+          "spyReturn": -0.079165,
+          "bondReturn": 0.013694,
+          "intlReturn": -0.065985,
+          "inflation": 0.000475
+        },
+        {
+          "year": 2020,
+          "month": 3,
+          "spyReturn": -0.129987,
+          "bondReturn": -0.005205,
+          "intlReturn": -0.164975,
+          "inflation": -0.004528
+        },
+        {
+          "year": 2020,
+          "month": 4,
+          "spyReturn": 0.13361,
+          "bondReturn": 0.017087,
+          "intlReturn": 0.079065,
+          "inflation": -0.00792
+        },
+        {
+          "year": 2020,
+          "month": 5,
+          "spyReturn": 0.047646,
+          "bondReturn": 0.00687,
+          "intlReturn": 0.050055,
+          "inflation": -0.000898
+        },
+        {
+          "year": 2020,
+          "month": 6,
+          "spyReturn": 0.013275,
+          "bondReturn": 0.006789,
+          "intlReturn": 0.037123,
+          "inflation": 0.004847
+        },
+        {
+          "year": 2020,
+          "month": 7,
+          "spyReturn": 0.063552,
+          "bondReturn": 0.013264,
+          "intlReturn": 0.046826,
+          "inflation": 0.005096
+        },
+        {
+          "year": 2020,
+          "month": 8,
+          "spyReturn": 0.069797,
+          "bondReturn": -0.008082,
+          "intlReturn": 0.044327,
+          "inflation": 0.003731
+        },
+        {
+          "year": 2020,
+          "month": 9,
+          "spyReturn": -0.041281,
+          "bondReturn": -0.000889,
+          "intlReturn": -0.024495,
+          "inflation": 0.002626
+        },
+        {
+          "year": 2020,
+          "month": 10,
+          "spyReturn": -0.02103,
+          "bondReturn": -0.005646,
+          "intlReturn": -0.016768,
+          "inflation": 0.001238
+        },
+        {
+          "year": 2020,
+          "month": 11,
+          "spyReturn": 0.108777,
+          "bondReturn": 0.012142,
+          "intlReturn": 0.126153,
+          "inflation": 0.002274
+        },
+        {
+          "year": 2020,
+          "month": 12,
+          "spyReturn": 0.032647,
+          "bondReturn": -0.000304,
+          "intlReturn": 0.048084,
+          "inflation": 0.004346
+        },
+        {
+          "year": 2021,
+          "month": 1,
+          "spyReturn": -0.005971,
+          "bondReturn": -0.004661,
+          "intlReturn": 0.012403,
+          "inflation": 0.002267
+        },
+        {
+          "year": 2021,
+          "month": 2,
+          "spyReturn": 0.027805,
+          "bondReturn": -0.016793,
+          "intlReturn": 0.023048,
+          "inflation": 0.003556
+        },
+        {
+          "year": 2021,
+          "month": 3,
+          "spyReturn": 0.041987,
+          "bondReturn": -0.011474,
+          "intlReturn": 0.016207,
+          "inflation": 0.004834
+        },
+        {
+          "year": 2021,
+          "month": 4,
+          "spyReturn": 0.056359,
+          "bondReturn": 0.007458,
+          "intlReturn": 0.030269,
+          "inflation": 0.006713
+        },
+        {
+          "year": 2021,
+          "month": 5,
+          "spyReturn": 0.006566,
+          "bondReturn": 0.002038,
+          "intlReturn": 0.030726,
+          "inflation": 0.006672
+        },
+        {
+          "year": 2021,
+          "month": 6,
+          "spyReturn": 0.019093,
+          "bondReturn": 0.008333,
+          "intlReturn": -0.011141,
+          "inflation": 0.008592
+        },
+        {
+          "year": 2021,
+          "month": 7,
+          "spyReturn": 0.027764,
+          "bondReturn": 0.011272,
+          "intlReturn": -0.00343,
+          "inflation": 0.004636
+        },
+        {
+          "year": 2021,
+          "month": 8,
+          "spyReturn": 0.02976,
+          "bondReturn": -0.002085,
+          "intlReturn": 0.014629,
+          "inflation": 0.002894
+        },
+        {
+          "year": 2021,
+          "month": 9,
+          "spyReturn": -0.04965,
+          "bondReturn": -0.009177,
+          "intlReturn": -0.039915,
+          "inflation": 0.004363
+        },
+        {
+          "year": 2021,
+          "month": 10,
+          "spyReturn": 0.073592,
+          "bondReturn": -0.000216,
+          "intlReturn": 0.034422,
+          "inflation": 0.00944
+        },
+        {
+          "year": 2021,
+          "month": 11,
+          "spyReturn": -0.008035,
+          "bondReturn": 0.002706,
+          "intlReturn": -0.042563,
+          "inflation": 0.008303
+        },
+        {
+          "year": 2021,
+          "month": 12,
+          "spyReturn": 0.042585,
+          "bondReturn": -0.004448,
+          "intlReturn": 0.020222,
+          "inflation": 0.007108
+        },
+        {
+          "year": 2022,
+          "month": 1,
+          "spyReturn": -0.049413,
+          "bondReturn": -0.017596,
+          "intlReturn": -0.013551,
+          "inflation": 0.006182
+        },
+        {
+          "year": 2022,
+          "month": 2,
+          "spyReturn": -0.029517,
+          "bondReturn": -0.01288,
+          "intlReturn": -0.028493,
+          "inflation": 0.007018
+        },
+        {
+          "year": 2022,
+          "month": 3,
+          "spyReturn": 0.034377,
+          "bondReturn": -0.02814,
+          "intlReturn": -0.004499,
+          "inflation": 0.01034
+        },
+        {
+          "year": 2022,
+          "month": 4,
+          "spyReturn": -0.084935,
+          "bondReturn": -0.038093,
+          "intlReturn": -0.063387,
+          "inflation": 0.003879
+        },
+        {
+          "year": 2022,
+          "month": 5,
+          "spyReturn": 0.002257,
+          "bondReturn": 0.007337,
+          "intlReturn": 0.015217,
+          "inflation": 0.009415
+        },
+        {
+          "year": 2022,
+          "month": 6,
+          "spyReturn": -0.086407,
+          "bondReturn": -0.015567,
+          "intlReturn": -0.089931,
+          "inflation": 0.012952
+        },
+        {
+          "year": 2022,
+          "month": 7,
+          "spyReturn": 0.096805,
+          "bondReturn": 0.025348,
+          "intlReturn": 0.048434,
+          "inflation": -0.000447
+        },
+        {
+          "year": 2022,
+          "month": 8,
+          "spyReturn": -0.040802,
+          "bondReturn": -0.030512,
+          "intlReturn": -0.044868,
+          "inflation": 0.000753
+        },
+        {
+          "year": 2022,
+          "month": 9,
+          "spyReturn": -0.096159,
+          "bondReturn": -0.04155,
+          "intlReturn": -0.10413,
+          "inflation": 0.004265
+        },
+        {
+          "year": 2022,
+          "month": 10,
+          "spyReturn": 0.085717,
+          "bondReturn": -0.012948,
+          "intlReturn": 0.039938,
+          "inflation": 0.005256
+        },
+        {
+          "year": 2022,
+          "month": 11,
+          "spyReturn": 0.055592,
+          "bondReturn": 0.037995,
+          "intlReturn": 0.130361,
+          "inflation": 0.002446
+        },
+        {
+          "year": 2022,
+          "month": 12,
+          "spyReturn": -0.061936,
+          "bondReturn": -0.010975,
+          "intlReturn": -0.033271,
+          "inflation": 0.000335
+        },
+        {
+          "year": 2023,
+          "month": 1,
+          "spyReturn": 0.067768,
+          "bondReturn": 0.038037,
+          "intlReturn": 0.100105,
+          "inflation": 0.005515
+        },
+        {
+          "year": 2023,
+          "month": 2,
+          "spyReturn": -0.025143,
+          "bondReturn": -0.029036,
+          "intlReturn": -0.042697,
+          "inflation": 0.003395
+        },
+        {
+          "year": 2023,
+          "month": 3,
+          "spyReturn": 0.033135,
+          "bondReturn": 0.026453,
+          "intlReturn": 0.026017,
+          "inflation": 0.000554
+        },
+        {
+          "year": 2023,
+          "month": 4,
+          "spyReturn": 0.019852,
+          "bondReturn": 0.00563,
+          "intlReturn": 0.021199,
+          "inflation": 0.004028
+        },
+        {
+          "year": 2023,
+          "month": 5,
+          "spyReturn": 0.004616,
+          "bondReturn": -0.011405,
+          "intlReturn": -0.035022,
+          "inflation": 0.001512
+        },
+        {
+          "year": 2023,
+          "month": 6,
+          "spyReturn": 0.060859,
+          "bondReturn": -0.003808,
+          "intlReturn": 0.033162,
+          "inflation": 0.002581
+        },
+        {
+          "year": 2023,
+          "month": 7,
+          "spyReturn": 0.036569,
+          "bondReturn": -0.00014,
+          "intlReturn": 0.050136,
+          "inflation": 0.001697
+        },
+        {
+          "year": 2023,
+          "month": 8,
+          "spyReturn": -0.016252,
+          "bondReturn": -0.006422,
+          "intlReturn": -0.043941,
+          "inflation": 0.005
+        },
+        {
+          "year": 2023,
+          "month": 9,
+          "spyReturn": -0.050783,
+          "bondReturn": -0.02587,
+          "intlReturn": -0.039138,
+          "inflation": 0.004037
+        },
+        {
+          "year": 2023,
+          "month": 10,
+          "spyReturn": -0.018258,
+          "bondReturn": -0.015753,
+          "intlReturn": -0.028484,
+          "inflation": 0.000908
+        },
+        {
+          "year": 2023,
+          "month": 11,
+          "spyReturn": 0.091344,
+          "bondReturn": 0.045648,
+          "intlReturn": 0.082367,
+          "inflation": 0.001411
+        },
+        {
+          "year": 2023,
+          "month": 12,
+          "spyReturn": 0.041433,
+          "bondReturn": 0.034165,
+          "intlReturn": 0.03537,
+          "inflation": 0.002103
+        },
+        {
+          "year": 2024,
+          "month": 1,
+          "spyReturn": 0.020045,
+          "bondReturn": 0.004216,
+          "intlReturn": -0.002307,
+          "inflation": 0.00343
+        },
+        {
+          "year": 2024,
+          "month": 2,
+          "spyReturn": 0.052187,
+          "bondReturn": -0.017659,
+          "intlReturn": 0.029138,
+          "inflation": 0.003964
+        },
+        {
+          "year": 2024,
+          "month": 3,
+          "spyReturn": 0.029503,
+          "bondReturn": 0.009044,
+          "intlReturn": 0.028484,
+          "inflation": 0.003488
+        },
+        {
+          "year": 2024,
+          "month": 4,
+          "spyReturn": -0.037338,
+          "bondReturn": -0.024805,
+          "intlReturn": -0.01955,
+          "inflation": 0.002912
+        },
+        {
+          "year": 2024,
+          "month": 5,
+          "spyReturn": 0.05058,
+          "bondReturn": 0.016556,
+          "intlReturn": 0.040238,
+          "inflation": 0.000396
+        },
+        {
+          "year": 2024,
+          "month": 6,
+          "spyReturn": 0.031951,
+          "bondReturn": 0.008823,
+          "intlReturn": -0.015832,
+          "inflation": -2.9e-05
+        },
+        {
+          "year": 2024,
+          "month": 7,
+          "spyReturn": 0.015374,
+          "bondReturn": 0.024221,
+          "intlReturn": 0.034423,
+          "inflation": 0.001389
+        },
+        {
+          "year": 2024,
+          "month": 8,
+          "spyReturn": 0.023365,
+          "bondReturn": 0.014648,
+          "intlReturn": 0.024079,
+          "inflation": 0.001802
+        },
+        {
+          "year": 2024,
+          "month": 9,
+          "spyReturn": 0.017882,
+          "bondReturn": 0.013283,
+          "intlReturn": 0.021619,
+          "inflation": 0.002292
+        },
+        {
+          "year": 2024,
+          "month": 10,
+          "spyReturn": -0.005884,
+          "bondReturn": -0.025109,
+          "intlReturn": -0.04055,
+          "inflation": 0.002265
+        },
+        {
+          "year": 2024,
+          "month": 11,
+          "spyReturn": 0.059633,
+          "bondReturn": 0.01099,
+          "intlReturn": -0.002264,
+          "inflation": 0.002805
+        },
+        {
+          "year": 2024,
+          "month": 12,
+          "spyReturn": -0.027334,
+          "bondReturn": -0.020099,
+          "intlReturn": -0.045049,
+          "inflation": 0.003647
+        },
+        {
+          "year": 2025,
+          "month": 1,
+          "spyReturn": 0.030312,
+          "bondReturn": 0.011593,
+          "intlReturn": 0.051436,
+          "inflation": 0.004669
+        },
+        {
+          "year": 2025,
+          "month": 2,
+          "spyReturn": -0.012695,
+          "bondReturn": 0.018994,
+          "intlReturn": 0.018549,
+          "inflation": 0.002159
+        },
+        {
+          "year": 2025,
+          "month": 3,
+          "spyReturn": -0.058551,
+          "bondReturn": -1.9e-05,
+          "intlReturn": 0.000806,
+          "inflation": -0.0005
+        },
+        {
+          "year": 2025,
+          "month": 4,
+          "spyReturn": -0.005688,
+          "bondReturn": 0.004086,
+          "intlReturn": 0.031421,
+          "inflation": 0.002209
+        },
+        {
+          "year": 2025,
+          "month": 5,
+          "spyReturn": 0.062845,
+          "bondReturn": -0.006025,
+          "intlReturn": 0.048231,
+          "inflation": 0.000809
+        },
+        {
+          "year": 2025,
+          "month": 6,
+          "spyReturn": 0.048287,
+          "bondReturn": 0.014502,
+          "intlReturn": 0.032118,
+          "inflation": 0.00287
+        },
+        {
+          "year": 2025,
+          "month": 7,
+          "spyReturn": 0.026056,
+          "bondReturn": -0.002563,
+          "intlReturn": -0.001815,
+          "inflation": 0.001966
+        },
+        {
+          "year": 2025,
+          "month": 8,
+          "spyReturn": 0.02052,
+          "bondReturn": 0.011771,
+          "intlReturn": 0.042354,
+          "inflation": 0.003825
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,46 @@
+# Cloudflare Containers configuration
+# https://developers.cloudflare.com/containers/
+
+name = "areumfire-mcp-server"
+main = "src/worker.js"
+compatibility_date = "2024-01-01"
+
+# Container configuration
+[containers]
+image = "areumfire-mcp-server:latest"
+# Use max_instances = 1 for cost control during development
+max_instances = 3
+# Enable auto-scaling
+min_instances = 0
+
+# Environment variables for the container
+[containers.env]
+PORT = "8080"
+
+# Resources (adjust based on simulation workload)
+[containers.resources]
+memory_mb = 256
+cpu_milli = 500
+
+# Routing - proxy all /mcp requests to the container
+[[containers.routes]]
+pattern = "/mcp"
+to = "http://localhost:8080/mcp"
+
+[[containers.routes]]
+pattern = "/mcp/messages"
+to = "http://localhost:8080/mcp/messages"
+
+[[containers.routes]]
+pattern = "/health"
+to = "http://localhost:8080/health"
+
+[[containers.routes]]
+pattern = "/widget"
+to = "http://localhost:8080/widget"
+
+# Health check configuration
+[containers.health_check]
+path = "/health"
+interval_seconds = 30
+timeout_seconds = 5

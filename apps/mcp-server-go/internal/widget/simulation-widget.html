@@ -1,0 +1,2169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>AreumFire Simulation Summary</title>
+  <style>
+    /* =========================================================================
+     * CSS Custom Properties - Aligned with OpenAI Apps SDK UI
+     * ========================================================================= */
+    :root {
+      color-scheme: light dark;
+
+      /* =====================================================================
+       * Typography Scale (Apps SDK aligned)
+       * lg=18px, md=16px, sm/base=14px, xs=12px, 2xs=10px
+       * ===================================================================== */
+      --font-size-2xs: 10px;
+      --font-size-xs: 12px;
+      --font-size-sm: 14px;
+      --font-size-md: 16px;
+      --font-size-lg: 18px;
+
+      /* =====================================================================
+       * Spacing Scale (4px grid)
+       * ===================================================================== */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+
+      /* =====================================================================
+       * Radius Scale (OpenAI Apps SDK aligned - 16px+ for cards)
+       * ===================================================================== */
+      --radius-xs: 6px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 20px;
+
+      /* =====================================================================
+       * Control Sizes (touch targets)
+       * Minimum mobile touch target: 44px (--control-2xl)
+       * ===================================================================== */
+      --control-sm: 28px;
+      --control-md: 32px;
+      --control-lg: 36px;
+      --control-xl: 40px;
+      --control-2xl: 44px;
+
+      /* Gray scale (from Apps SDK) */
+      --gray-0: light-dark(#ffffff, #0d0d0d);
+      --gray-50: light-dark(#f9f9f9, #131313);
+      --gray-100: light-dark(#ededed, #181818);
+      --gray-200: light-dark(#cdcdcd, #212121);
+      --gray-300: light-dark(#afafaf, #303030);
+      --gray-400: light-dark(#8f8f8f, #414141);
+      --gray-500: #5d5d5d;
+      --gray-600: light-dark(#414141, #8f8f8f);
+      --gray-700: light-dark(#303030, #afafaf);
+      --gray-1000: light-dark(#0d0d0d, #ffffff);
+
+      /* Semantic text colors */
+      --color-text: var(--gray-1000);
+      --color-text-secondary: var(--gray-500);
+      --color-text-tertiary: var(--gray-400);
+
+      /* Surfaces */
+      --color-surface: var(--gray-0);
+      --color-surface-secondary: var(--gray-50);
+      --color-surface-elevated: light-dark(#f5f5f5, #1a1a1a);
+
+      /* Borders - using alpha */
+      --color-border: light-dark(rgba(13,13,13,0.1), rgba(255,255,255,0.1));
+      --color-border-subtle: light-dark(rgba(13,13,13,0.06), rgba(255,255,255,0.08));
+
+      /* Semantic - muted palette */
+      --color-positive: light-dark(#2d8a4e, #6db88a);
+      --color-negative: light-dark(#9a6458, #c4897c);
+      --color-link: light-dark(#0285ff, #60a5fa);
+
+      /* Trajectory bands - distinct visual layers */
+      --color-bar-p50: var(--gray-700);
+      --color-bar-p75: light-dark(#c5c5c5, #4a4a4a);
+      --color-bar-p10: light-dark(#a0a0a0, #656565);
+      --color-bar-bg: light-dark(#ededed, #252525);
+
+      /* Focus ring */
+      --focus-ring: 0 0 0 2px var(--color-link);
+
+      /* Account type colors for stacked bar */
+      --color-account-cash: var(--gray-400);
+      --color-account-taxable: var(--color-link);
+      --color-account-tax-deferred: light-dark(#7c3aed, #a78bfa);
+      --color-account-roth: var(--color-positive);
+    }
+
+    /* Fallback for older browsers */
+    :root:not([data-theme="dark"]) {
+      --gray-0: #ffffff;
+      --gray-50: #f9f9f9;
+      --gray-100: #ededed;
+      --gray-200: #cdcdcd;
+      --gray-300: #afafaf;
+      --gray-400: #8f8f8f;
+      --gray-600: #414141;
+      --gray-700: #303030;
+      --gray-1000: #0d0d0d;
+      --color-text: #0d0d0d;
+      --color-text-secondary: #5d5d5d;
+      --color-text-tertiary: #8f8f8f;
+      --color-surface: #ffffff;
+      --color-surface-secondary: #f9f9f9;
+      --color-surface-elevated: #f5f5f5;
+      --color-border: rgba(13,13,13,0.1);
+      --color-border-subtle: rgba(13,13,13,0.06);
+      --color-positive: #2d8a4e;
+      --color-negative: #9a6458;
+      --color-link: #0285ff;
+      --color-bar-p50: #303030;
+      --color-bar-p75: #c5c5c5;
+      --color-bar-p10: #a0a0a0;
+      --color-bar-bg: #ededed;
+      --focus-ring: 0 0 0 2px #0285ff;
+      --color-account-cash: #8f8f8f;
+      --color-account-taxable: #0285ff;
+      --color-account-tax-deferred: #7c3aed;
+      --color-account-roth: #2d8a4e;
+    }
+
+    :root[data-theme="dark"] {
+      --gray-0: #0d0d0d;
+      --gray-50: #131313;
+      --gray-100: #181818;
+      --gray-200: #212121;
+      --gray-300: #303030;
+      --gray-400: #414141;
+      --gray-600: #8f8f8f;
+      --gray-700: #afafaf;
+      --gray-1000: #ffffff;
+      --color-text: #ffffff;
+      --color-text-secondary: #5d5d5d;
+      --color-text-tertiary: #414141;
+      --color-surface: #0d0d0d;
+      --color-surface-secondary: #131313;
+      --color-surface-elevated: #1a1a1a;
+      --color-border: rgba(255,255,255,0.1);
+      --color-border-subtle: rgba(255,255,255,0.08);
+      --color-positive: #6db88a;
+      --color-negative: #c4897c;
+      --color-link: #60a5fa;
+      --color-bar-p50: #afafaf;
+      --color-bar-p75: #4a4a4a;
+      --color-bar-p10: #656565;
+      --color-bar-bg: #252525;
+      --focus-ring: 0 0 0 2px #60a5fa;
+      --color-account-cash: #414141;
+      --color-account-taxable: #60a5fa;
+      --color-account-tax-deferred: #a78bfa;
+      --color-account-roth: #6db88a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: ui-sans-serif, -apple-system, system-ui, "Segoe UI", sans-serif;
+      font-size: var(--font-size-sm);
+      line-height: 1.5;
+      color: var(--color-text);
+      background: var(--color-surface);
+    }
+
+    .widget {
+      /* OpenAI Apps SDK Card padding: 20px */
+      padding: 20px !important;
+      padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
+      padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+      padding-left: calc(20px + env(safe-area-inset-left, 0px)) !important;
+      padding-right: calc(20px + env(safe-area-inset-right, 0px)) !important;
+      width: 100%;
+      max-width: 100%; /* Fill container width - host handles constraints */
+      box-sizing: border-box;
+    }
+
+    /* Display mode variations */
+    .widget[data-display-mode="inline"] {
+      /* Inline mode: fill available width, ChatGPT container handles constraints */
+      max-width: 100%;
+    }
+
+    .widget[data-display-mode="pip"] {
+      /* PiP: use available space */
+      max-width: 100%;
+    }
+
+    .widget[data-display-mode="fullscreen"] {
+      /* Fullscreen: wider content, more padding */
+      max-width: 800px;
+      padding: var(--space-5);
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* =========================================================================
+     * HEADER - Hidden by default for ChatGPT (OpenAI guideline: no logos)
+     * ChatGPT appends branding automatically
+     * ========================================================================= */
+    .header {
+      display: none; /* Hidden by default in ChatGPT inline mode */
+    }
+
+    /* Show header only in standalone/fullscreen mode */
+    .widget[data-display-mode="fullscreen"] .header,
+    .widget[data-display-mode="pip"] .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-4);
+      padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--color-border-subtle);
+    }
+
+    .header-brand {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+    }
+
+    .header-tag {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+    }
+
+    /* =========================================================================
+     * PLAN DURATION - Primary metric, hero section
+     * ========================================================================= */
+    .duration {
+      margin-bottom: var(--space-4);
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-surface-secondary);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-subtle);
+    }
+
+    .duration-label {
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: var(--space-2);
+    }
+
+    .duration-question {
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--color-text);
+      margin-bottom: var(--space-3);
+    }
+
+    .duration-answer {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Outcome list (constrained case) */
+    .duration-outcomes {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 var(--space-2) 0;
+    }
+
+    .duration-outcomes li {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-2);
+      padding: var(--space-1) 0;
+    }
+
+    .duration-outcomes li::before {
+      content: '•';
+      color: var(--color-text-tertiary);
+    }
+
+    .duration-outcomes .age {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .duration-outcomes .typical {
+      font-weight: 500;
+    }
+
+    /* Saturated message */
+    .duration-saturated {
+      margin-bottom: var(--space-2);
+    }
+
+    .duration-saturated-headline {
+      font-weight: 500;
+      color: var(--color-text);
+      margin-bottom: var(--space-2);
+    }
+
+    .duration-saturated-details {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+
+    .duration-saturated-details li {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-2);
+      padding: var(--space-1) 0;
+    }
+
+    .duration-saturated-details li::before {
+      content: '•';
+      color: var(--color-text-tertiary);
+    }
+
+    .duration-note {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      padding-top: var(--space-2);
+      margin-top: var(--space-2);
+      border-top: 1px solid var(--color-border-subtle);
+      line-height: 1.4;
+    }
+
+    /* =========================================================================
+     * SCENARIO - Starting point + Events
+     * ========================================================================= */
+    .scenario {
+      background: var(--color-surface-secondary);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-4);
+      overflow: hidden;
+    }
+
+    .scenario-section {
+      padding: var(--space-3) var(--space-4);
+    }
+
+    .scenario-section + .scenario-section {
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .scenario-title {
+      font-size: var(--font-size-2xs);
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: var(--space-2);
+    }
+
+    /* Starting point grid */
+    .start-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-2);
+    }
+
+    .start-item-label {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+    }
+
+    .start-item-value {
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    /* Events list */
+    .events {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .event {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--font-size-xs);
+      min-height: var(--control-2xl); /* 44px touch target */
+      padding: var(--space-2) 0;
+    }
+
+    .event-icon {
+      width: var(--space-4);
+      text-align: center;
+      font-size: var(--font-size-xs);
+    }
+
+    .event-age {
+      font-weight: 500;
+      color: var(--color-text);
+      min-width: 52px;
+    }
+
+    .event-label {
+      color: var(--color-text-secondary);
+      flex: 1;
+    }
+
+    .event-change {
+      color: var(--color-text-tertiary);
+      font-weight: 500;
+    }
+
+    /* =========================================================================
+     * TRAJECTORY - Bands showing P10/P50/P75
+     * ========================================================================= */
+    .trajectory {
+      margin-bottom: var(--space-4);
+    }
+
+    .traj-title {
+      font-size: var(--font-size-2xs);
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: var(--space-2);
+    }
+
+    .traj-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-height: var(--control-2xl); /* 44px touch target */
+      padding: var(--space-2) var(--space-2);
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      margin: 0 calc(-1 * var(--space-2));
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .traj-row:hover,
+    .traj-row:active {
+      background: var(--color-surface-secondary);
+    }
+
+    .traj-row:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    /* Even larger touch targets on fullscreen */
+    .widget[data-display-mode="fullscreen"] .traj-row {
+      min-height: 52px;
+    }
+
+    .traj-age {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      min-width: 46px;
+    }
+
+    .traj-bar-container {
+      flex: 1;
+      height: var(--space-4);
+      background: var(--color-bar-bg);
+      border-radius: var(--radius-xs);
+      position: relative;
+      overflow: visible; /* Allow P10 marker to show fully */
+    }
+
+    /* Boxplot style: single bar showing P10→P75 range */
+    .traj-bar-range {
+      position: absolute;
+      height: 100%;
+      background: var(--color-bar-p75);
+      border-radius: var(--radius-xs);
+    }
+
+    /* P50 marker (vertical line showing median within the range) */
+    .traj-bar-p50 {
+      position: absolute;
+      height: 100%;
+      width: 3px;
+      background: var(--color-bar-p50);
+      border-radius: 1px;
+      z-index: 2;
+      transform: translateX(-1.5px);
+    }
+
+    .traj-value {
+      font-size: var(--font-size-xs);
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      min-width: 48px;
+      text-align: right;
+    }
+
+    .traj-inspect {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      margin-left: var(--space-1);
+      width: var(--space-4);
+      text-align: center;
+    }
+
+    .traj-row:hover .traj-inspect,
+    .traj-row:focus .traj-inspect {
+      opacity: 1;
+    }
+
+    /* Always show inspect icon on touch devices */
+    @media (hover: none) {
+      .traj-inspect {
+        opacity: 0.6;
+      }
+    }
+
+    /* Milestone dividers */
+    .traj-milestone {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) 0;
+      margin: var(--space-1) 0;
+    }
+
+    .traj-milestone::before,
+    .traj-milestone::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--color-border);
+    }
+
+    .traj-milestone-text {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+      white-space: nowrap;
+    }
+
+    /* Legend */
+    .traj-legend {
+      display: flex;
+      gap: var(--space-3);
+      margin-top: var(--space-2);
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+    }
+
+    .traj-legend-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+
+    .traj-legend-swatch {
+      width: var(--space-3);
+      height: var(--space-2);
+      border-radius: 2px;
+    }
+
+    .traj-legend-swatch.range { background: var(--color-bar-p75); }
+    .traj-legend-swatch.p50 { background: var(--color-bar-p50); width: 3px; }
+
+    .traj-hint {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+      margin-top: var(--space-1);
+      font-style: italic;
+    }
+
+    /* Hide hint on touch devices (where it's redundant) */
+    @media (hover: none) {
+      .traj-hint {
+        display: none;
+      }
+    }
+
+
+    /* =========================================================================
+     * YEAR INSPECTOR - Shows on click
+     * ========================================================================= */
+    .inspector {
+      background: var(--color-surface-secondary);
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      margin-bottom: var(--space-4);
+      display: none;
+    }
+
+    .inspector.visible {
+      display: block;
+    }
+
+    .inspector-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-3);
+    }
+
+    .inspector-title {
+      font-size: var(--font-size-xs);
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .inspector-close {
+      background: none;
+      border: none;
+      font-size: var(--font-size-md);
+      color: var(--color-text-tertiary);
+      cursor: pointer;
+      /* 44px touch target */
+      width: var(--control-2xl);
+      height: var(--control-2xl);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: calc(-1 * var(--space-2));
+      border-radius: var(--radius-xs);
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .inspector-close:hover,
+    .inspector-close:active {
+      color: var(--color-text);
+      background: var(--color-surface-elevated);
+    }
+
+    .inspector-close:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+    }
+
+    .ledger {
+      font-family: inherit;
+      font-size: var(--font-size-xs);
+    }
+
+    .ledger-row {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-1) 0;
+      color: var(--color-text-secondary);
+    }
+
+    .ledger-row.total {
+      border-top: 1px solid var(--color-border);
+      margin-top: var(--space-1);
+      padding-top: var(--space-2);
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .ledger-row.positive { color: var(--color-positive); }
+    .ledger-row.negative { color: var(--color-negative); }
+
+    .ledger-section {
+      margin: var(--space-2) 0;
+    }
+
+    .ledger-header {
+      font-size: var(--font-size-2xs);
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      letter-spacing: 0.3px;
+      padding-bottom: var(--space-1);
+    }
+
+    .ledger-indent {
+      padding-left: var(--space-2);
+    }
+
+    .ledger-row.muted {
+      color: var(--color-text-tertiary);
+      font-style: italic;
+    }
+
+    .ledger-row span.positive {
+      color: var(--color-positive);
+    }
+
+    .ledger-row span.negative {
+      color: var(--color-negative);
+    }
+
+
+    /* =========================================================================
+     * INSPECTOR SUMMARY HEADER - Quick-scan start→end with delta
+     * ========================================================================= */
+    .inspector-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      margin-bottom: var(--space-2);
+      background: var(--color-surface-elevated);
+      border-radius: var(--radius-sm);
+    }
+
+    .inspector-summary-start,
+    .inspector-summary-end {
+      text-align: center;
+      min-width: 60px;
+    }
+
+    .inspector-summary-label {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .inspector-summary-value {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .inspector-summary-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      flex: 1;
+      min-width: 50px;
+    }
+
+    .inspector-summary-delta {
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+    }
+
+    .inspector-summary-delta.positive { color: var(--color-positive); }
+    .inspector-summary-delta.negative { color: var(--color-negative); }
+
+    .inspector-summary-line {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 4px;
+    }
+
+    .inspector-summary-line::before,
+    .inspector-summary-line::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--color-border);
+    }
+
+    .inspector-summary-line::after {
+      background: linear-gradient(90deg, var(--color-border) 0%, transparent 100%);
+    }
+
+    .inspector-summary-line::before {
+      background: linear-gradient(90deg, transparent 0%, var(--color-border) 100%);
+    }
+
+    .inspector-summary-chevron {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+    }
+
+    /* =========================================================================
+     * MINIMAL LEDGER - Clean ledger format (Layout B)
+     * ========================================================================= */
+    .minimal-ledger {
+      background: var(--color-surface-elevated);
+      border-radius: var(--radius-sm);
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--font-size-xs);
+    }
+
+    .minimal-ledger-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      color: var(--color-text-secondary);
+    }
+
+    .minimal-ledger-row.indent {
+      padding-left: var(--space-3);
+    }
+
+    .minimal-ledger-row.total {
+      border-top: 1px solid var(--color-border);
+      margin-top: var(--space-1);
+      padding-top: var(--space-2);
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .minimal-ledger-row .positive { color: var(--color-positive); }
+    .minimal-ledger-row .negative { color: var(--color-negative); }
+
+    .minimal-ledger-accounts {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+      padding-top: var(--space-1);
+      line-height: 1.4;
+    }
+
+    .minimal-ledger-accounts .val {
+      font-weight: 500;
+      color: var(--color-text-secondary);
+    }
+
+    /* =========================================================================
+     * STACKED ACCOUNTS BAR - Single bar showing allocation
+     * ========================================================================= */
+    .accounts-stack {
+      margin-top: var(--space-2);
+      padding-top: var(--space-2);
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .accounts-stack-title {
+      font-size: var(--font-size-2xs);
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: var(--space-2);
+    }
+
+    .accounts-stack-bar {
+      display: flex;
+      height: 12px;
+      border-radius: var(--radius-xs);
+      overflow: hidden;
+      background: var(--color-bar-bg);
+    }
+
+    .accounts-stack-segment {
+      height: 100%;
+      transition: width 0.2s ease;
+    }
+
+    .accounts-stack-segment.cash { background: var(--color-account-cash); }
+    .accounts-stack-segment.taxable { background: var(--color-account-taxable); }
+    .accounts-stack-segment.tax-deferred { background: var(--color-account-tax-deferred); }
+    .accounts-stack-segment.roth { background: var(--color-account-roth); }
+
+    .accounts-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2) var(--space-3);
+      margin-top: var(--space-2);
+      font-size: var(--font-size-2xs);
+    }
+
+    .accounts-legend-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+      color: var(--color-text-secondary);
+    }
+
+    .accounts-legend-swatch {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .accounts-legend-swatch.cash { background: var(--color-account-cash); }
+    .accounts-legend-swatch.taxable { background: var(--color-account-taxable); }
+    .accounts-legend-swatch.tax-deferred { background: var(--color-account-tax-deferred); }
+    .accounts-legend-swatch.roth { background: var(--color-account-roth); }
+
+    .accounts-legend-value {
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    /* =========================================================================
+     * INSPECTOR SUBSECTIONS - Withdrawals & Account Balances
+     * ========================================================================= */
+    .inspector-subsection {
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .subsection-title {
+      font-size: var(--font-size-2xs);
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: var(--space-2);
+    }
+
+    .account-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-1) 0;
+      font-size: var(--font-size-xs);
+    }
+
+    .account-label {
+      min-width: 85px;
+      color: var(--color-text-secondary);
+    }
+
+    .account-value {
+      min-width: 55px;
+      text-align: right;
+      color: var(--color-text);
+      font-weight: 500;
+    }
+
+    .account-bar-bg {
+      flex: 1;
+      height: var(--space-2);
+      background: var(--color-bar-bg);
+      border-radius: var(--radius-xs);
+      overflow: hidden;
+    }
+
+    .account-bar {
+      height: 100%;
+      background: var(--color-bar-p50);
+      border-radius: var(--radius-xs);
+    }
+
+    .account-pct {
+      min-width: 32px;
+      text-align: right;
+      color: var(--color-text-tertiary);
+      font-size: var(--font-size-2xs);
+    }
+
+    /* =========================================================================
+     * ASSUMPTIONS - Minimal
+     * ========================================================================= */
+    .assumptions {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin-bottom: var(--space-3);
+    }
+
+    .assumptions span {
+      display: inline;
+    }
+
+    .assumptions span + span::before {
+      content: " · ";
+    }
+
+    /* =========================================================================
+     * FOOTER - Provenance
+     * ========================================================================= */
+    .footer {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--color-border-subtle);
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    /* =========================================================================
+     * COLLAPSIBLE SECTIONS (Progressive Enhancement)
+     * ========================================================================= */
+    details.collapsible {
+      margin-bottom: var(--space-4);
+    }
+
+    details.collapsible summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      list-style: none;
+      min-height: var(--control-2xl);
+      padding: var(--space-2) 0;
+      user-select: none;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    details.collapsible summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.collapsible summary::after {
+      content: '▸';
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      transition: transform 0.2s ease;
+    }
+
+    details.collapsible[open] summary::after {
+      transform: rotate(90deg);
+    }
+
+    details.collapsible summary:focus-visible {
+      outline: none;
+      box-shadow: var(--focus-ring);
+      border-radius: var(--radius-xs);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      details.collapsible summary::after {
+        transition: none;
+      }
+    }
+
+    /* =========================================================================
+     * LOADING / SKELETON STATES
+     * ========================================================================= */
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      padding: var(--space-4);
+    }
+
+    /* Loading vs Content toggle */
+    .content-state { display: block; }
+    .loading-state { display: none; }
+    .widget.is-loading .content-state { display: none !important; }
+    .widget.is-loading .loading-state { display: flex !important; }
+
+    .skeleton {
+      background: var(--color-surface-elevated);
+      border-radius: var(--radius-sm);
+      animation: shimmer 1.5s ease-in-out infinite;
+    }
+
+    .skeleton-text {
+      height: 14px;
+      margin-bottom: var(--space-2);
+    }
+
+    .skeleton-text.lg { height: 18px; width: 60%; }
+    .skeleton-text.md { height: 14px; width: 80%; }
+    .skeleton-text.sm { height: 12px; width: 40%; }
+
+    .skeleton-bar {
+      height: var(--space-4);
+      margin-bottom: var(--space-2);
+    }
+
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-3);
+    }
+
+    .skeleton-grid-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+
+    @keyframes shimmer {
+      0% { opacity: 0.6; }
+      50% { opacity: 1; }
+      100% { opacity: 0.6; }
+    }
+
+    .loading-message {
+      text-align: center;
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+      padding: var(--space-4);
+    }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--color-border);
+      border-top-color: var(--color-link);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: var(--space-2);
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* =========================================================================
+     * LANDSCAPE MOBILE HANDLER
+     * Handle edge case of landscape mobile orientation
+     * ========================================================================= */
+    @media (orientation: landscape) and (max-height: 500px) {
+      .widget[data-display-mode="inline"] {
+        max-width: 100%;
+        padding: var(--space-3);
+      }
+
+      /* Reduce vertical spacing in landscape */
+      .duration {
+        padding: var(--space-2) var(--space-3);
+        margin-bottom: var(--space-3);
+      }
+
+      .scenario {
+        margin-bottom: var(--space-3);
+      }
+
+      .trajectory {
+        margin-bottom: var(--space-3);
+      }
+
+      /* Smaller touch targets acceptable in landscape (more horizontal space) */
+      .traj-row {
+        min-height: var(--control-lg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="widget is-loading" id="root">
+    <!-- Loading State -->
+    <div class="loading-state">
+      <div class="header">
+        <span class="header-brand">AreumFire</span>
+        <span class="header-tag">Educational simulation</span>
+      </div>
+      <div class="loading-message" aria-live="polite">
+        <span class="loading-spinner"></span>
+        Running simulation...
+      </div>
+      <div class="skeleton skeleton-text lg"></div>
+      <div class="skeleton skeleton-text md"></div>
+      <div class="skeleton-grid">
+        <div class="skeleton-grid-item">
+          <div class="skeleton skeleton-text sm"></div>
+          <div class="skeleton skeleton-text md"></div>
+        </div>
+        <div class="skeleton-grid-item">
+          <div class="skeleton skeleton-text sm"></div>
+          <div class="skeleton skeleton-text md"></div>
+        </div>
+        <div class="skeleton-grid-item">
+          <div class="skeleton skeleton-text sm"></div>
+          <div class="skeleton skeleton-text md"></div>
+        </div>
+        <div class="skeleton-grid-item">
+          <div class="skeleton skeleton-text sm"></div>
+          <div class="skeleton skeleton-text md"></div>
+        </div>
+      </div>
+      <div class="skeleton skeleton-bar" style="width: 90%"></div>
+      <div class="skeleton skeleton-bar" style="width: 75%"></div>
+      <div class="skeleton skeleton-bar" style="width: 85%"></div>
+      <div class="skeleton skeleton-bar" style="width: 60%"></div>
+    </div>
+
+    <!-- Content State -->
+    <div class="content-state">
+    <!-- Header -->
+    <div class="header">
+      <span class="header-brand">AreumFire</span>
+      <span class="header-tag">Educational simulation</span>
+    </div>
+
+    <!-- Plan Duration -->
+    <div class="duration" id="duration-section">
+      <div class="duration-label">Plan Duration</div>
+      <div class="duration-question">How long does this plan work?</div>
+      <div class="duration-answer" id="duration-answer">
+        <!-- Populated by JS: either outcome list or saturated message -->
+      </div>
+      <div class="duration-note" id="duration-note"></div>
+    </div>
+
+    <!-- Scenario -->
+    <div class="scenario" id="scenario-section">
+      <div class="scenario-section">
+        <div class="scenario-title">Starting Point</div>
+        <div class="start-grid" id="start-grid">
+          <div>
+            <div class="start-item-label">Age</div>
+            <div class="start-item-value" id="start-age">50</div>
+          </div>
+          <div>
+            <div class="start-item-label">Assets</div>
+            <div class="start-item-value" id="start-assets">$1.2M</div>
+          </div>
+          <div>
+            <div class="start-item-label">Income</div>
+            <div class="start-item-value" id="start-income">$180K</div>
+          </div>
+          <div>
+            <div class="start-item-label">Spending</div>
+            <div class="start-item-value" id="start-spending">$80K</div>
+          </div>
+        </div>
+      </div>
+      <div class="scenario-section" id="events-section" style="display: none;">
+        <div class="scenario-title">Scheduled Events</div>
+        <div class="events" id="events"></div>
+      </div>
+    </div>
+
+    <!-- Trajectory -->
+    <div class="trajectory" id="trajectory-section">
+      <div class="traj-title">Net Worth Trajectory</div>
+      <div id="trajectory-bars"></div>
+      <div class="traj-legend">
+        <div class="traj-legend-item"><span class="traj-legend-swatch range"></span> P10–P75 range</div>
+        <div class="traj-legend-item"><span class="traj-legend-swatch p50"></span> P50 median</div>
+      </div>
+      <div class="traj-hint">Click any row to inspect that year</div>
+    </div>
+
+    <!-- Survival - Hidden by default (redundant with Plan Duration header) -->
+    <!-- <div class="survival" id="survival-section" style="display: none;">
+      <div class="survival-title" title="Share of simulated futures where assets remain above $0 while baseline spending continues.">
+        Futures Still Funded <span class="survival-info">ⓘ</span>
+      </div>
+      <div id="survival-bars"></div>
+    </div> -->
+
+    <!-- Year Inspector -->
+    <div class="inspector" id="inspector" role="dialog" aria-labelledby="inspector-title">
+      <div class="inspector-header">
+        <span class="inspector-title" id="inspector-title">Year 2035 (Age 60)</span>
+        <button class="inspector-close" id="inspector-close" aria-label="Close inspector" type="button">×</button>
+      </div>
+      <div class="ledger" id="ledger"></div>
+      <div id="withdrawals-section"></div>
+      <div id="accounts-section"></div>
+    </div>
+
+    <!-- Assumptions -->
+    <div class="assumptions" id="assumptions">
+      <span>~7% returns</span>
+      <span>~2.5% inflation</span>
+      <span>No tax</span>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer" id="footer">
+      <span id="run-id">—</span>
+      <span><span id="paths-run">100</span> paths</span>
+      <span>Seed: <span id="seed">—</span></span>
+    </div>
+    </div><!-- end content-state -->
+  </div>
+
+  <script>
+    // =========================================================================
+    // Theme
+    // =========================================================================
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme || 'light');
+      document.documentElement.style.colorScheme = theme || 'light';
+      console.log('[AreumFire Widget] Theme:', theme);
+    }
+
+    function detectTheme() {
+      if (window.openai?.theme) {
+        applyTheme(window.openai.theme);
+        return;
+      }
+      if (window.matchMedia) {
+        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyTheme(dark ? 'dark' : 'light');
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+          if (!window.openai?.theme) applyTheme(e.matches ? 'dark' : 'light');
+        });
+      }
+    }
+
+    detectTheme();
+
+    window.addEventListener('message', e => {
+      if (e.data?.type === 'themeChange') applyTheme(e.data.theme);
+    });
+
+    window.addEventListener('openai:set_globals', e => {
+      if (e.detail?.globals?.theme) applyTheme(e.detail.globals.theme);
+    }, { passive: true });
+
+    // =========================================================================
+    // Display Mode Detection (OpenAI Apps SDK)
+    // =========================================================================
+
+    function applyDisplayMode(mode) {
+      const widget = document.getElementById('root');
+      if (!widget) return;
+      const validModes = ['inline', 'pip', 'fullscreen'];
+      const m = validModes.includes(mode) ? mode : 'inline';
+      widget.setAttribute('data-display-mode', m);
+      console.log('[AreumFire Widget] Display mode:', m);
+    }
+
+    function detectDisplayMode() {
+      // OpenAI Apps SDK provides displayMode
+      if (window.openai?.displayMode) {
+        applyDisplayMode(window.openai.displayMode);
+        return;
+      }
+      // Default to inline for chat context
+      applyDisplayMode('inline');
+    }
+
+    detectDisplayMode();
+
+    window.addEventListener('openai:set_globals', e => {
+      if (e.detail?.globals?.displayMode) applyDisplayMode(e.detail.globals.displayMode);
+    }, { passive: true });
+
+    window.addEventListener('message', e => {
+      if (e.data?.type === 'displayModeChange') applyDisplayMode(e.data.mode);
+    });
+
+    // =========================================================================
+    // Max Height Support (OpenAI Apps SDK)
+    // Prevents internal scrolling by respecting host container constraints
+    // =========================================================================
+
+    function applyMaxHeight(maxHeight) {
+      const widget = document.getElementById('root');
+      if (!widget || !maxHeight || maxHeight <= 0) return;
+      // Apply max-height to prevent internal scrolling (per OpenAI guidelines)
+      widget.style.maxHeight = maxHeight + 'px';
+      widget.style.overflowY = 'auto';
+      console.log('[AreumFire Widget] Max height:', maxHeight);
+    }
+
+    function detectMaxHeight() {
+      if (window.openai?.maxHeight) {
+        applyMaxHeight(window.openai.maxHeight);
+      }
+    }
+
+    detectMaxHeight();
+
+    window.addEventListener('openai:set_globals', e => {
+      if (e.detail?.globals?.maxHeight) applyMaxHeight(e.detail.globals.maxHeight);
+    }, { passive: true });
+
+    window.addEventListener('message', e => {
+      if (e.data?.type === 'maxHeightChange') applyMaxHeight(e.data.maxHeight);
+    });
+
+    // =========================================================================
+    // Format Utilities
+    // =========================================================================
+
+    function fmt(v) {
+      if (v == null) return '—';
+      if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+      if (v >= 1e3) return '$' + Math.round(v / 1e3) + 'K';
+      return '$' + Math.round(v);
+    }
+
+    function fmtYr(v) {
+      if (v == null) return '—';
+      if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+      if (v >= 1e3) return '$' + Math.round(v / 1e3) + 'K';
+      return '$' + Math.round(v);
+    }
+
+    function fmtSigned(v) {
+      if (v == null) return '—';
+      const sign = v >= 0 ? '+' : '−';
+      const abs = Math.abs(v);
+      if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(1) + 'M';
+      if (abs >= 1e3) return sign + '$' + Math.round(abs / 1e3) + 'K';
+      return sign + '$' + Math.round(abs);
+    }
+
+    // =========================================================================
+    // State
+    // =========================================================================
+
+    let data = null;
+
+    // =========================================================================
+    // Render: Duration
+    // =========================================================================
+
+    function getMedianEndingAssets(d) {
+      // Try mc.finalNetWorthP50
+      if (d.mc?.finalNetWorthP50) return d.mc.finalNetWorthP50;
+
+      // Try last trajectory point
+      const trajectory = d.netWorthTrajectory || d.mc?.netWorthTrajectory || [];
+      if (trajectory.length > 0) {
+        const last = trajectory[trajectory.length - 1];
+        return last.p50 || 0;
+      }
+
+      // Try last annual snapshot
+      const snaps = d.annualSnapshots || [];
+      if (snaps.length > 0) {
+        const last = snaps[snaps.length - 1];
+        return last.endBalance || 0;
+      }
+
+      return 0;
+    }
+
+    function renderDuration(d) {
+      const pd = d.planDuration;
+      const horizonMonths = d.inputs?.horizonMonths || 360;
+      const currentAge = d.inputs?.currentAge || 35;
+      const horizonAge = currentAge + Math.floor(horizonMonths / 12);
+
+      let mostAge, earlierAge, laterAge, saturated;
+
+      if (pd) {
+        mostAge = pd.mostPathsAge;
+        earlierAge = pd.earlierStressAge;
+        laterAge = pd.laterOutcomesAge;
+        saturated = pd.horizonSaturated;
+      } else {
+        const runwayP10 = d.mc?.runwayP10 ?? horizonMonths;
+        const runwayP50 = d.mc?.runwayP50 ?? horizonMonths;
+        const runwayP75 = d.mc?.runwayP75 ?? d.mc?.runwayP90 ?? horizonMonths;
+        mostAge = currentAge + Math.floor(runwayP50 / 12);
+        earlierAge = currentAge + Math.floor(runwayP10 / 12);
+        laterAge = currentAge + Math.floor(runwayP75 / 12);
+        saturated = runwayP50 >= horizonMonths;
+      }
+
+      // Additional saturation detection:
+      // 1. If all three ages are identical or nearly identical (within 2 years),
+      //    no meaningful constraint was observed - treat as saturated
+      // 2. If ever-breach probability is very low (<5%), effectively saturated
+      const agesIdentical = Math.abs(mostAge - earlierAge) <= 2 && Math.abs(mostAge - laterAge) <= 2;
+      const lowBreachProb = (d.mc?.everBreachProbability ?? 1) < 0.05;
+
+      if (!saturated && (agesIdentical || lowBreachProb)) {
+        saturated = true;
+        console.log('[AreumFire Widget] Detected effective saturation:',
+          { agesIdentical, lowBreachProb, mostAge, earlierAge, laterAge });
+      }
+
+      const answerEl = document.getElementById('duration-answer');
+      const noteEl = document.getElementById('duration-note');
+
+      if (saturated) {
+        // Saturated: plan lasts through horizon
+        const endingAssets = getMedianEndingAssets(d);
+        answerEl.innerHTML =
+          '<div class="duration-saturated">' +
+            'This plan funds baseline spending through Age ' + horizonAge + '.' +
+            '<br>~' + fmt(endingAssets) + ' remaining in a typical outcome.' +
+          '</div>';
+        noteEl.style.display = 'none';
+      } else {
+        // Constrained: plan runs out at some point
+        answerEl.innerHTML =
+          '<ul class="duration-outcomes">' +
+            '<li class="typical">Around <span class="age">Age ' + mostAge + '</span> in a typical outcome</li>' +
+            '<li>As early as <span class="age">Age ' + earlierAge + '</span> in harder scenarios (~10%)</li>' +
+            '<li>As late as <span class="age">Age ' + laterAge + '</span> in stronger outcomes (~25%)</li>' +
+          '</ul>';
+        noteEl.style.display = 'block';
+        noteEl.textContent = 'After this point, the money runs out at current spending levels.';
+      }
+    }
+
+    // =========================================================================
+    // Render: Scenario
+    // =========================================================================
+
+    function renderScenario(d) {
+      const sch = d.schedule;
+      const inp = d.inputs;
+
+      // Starting point
+      if (sch?.startingPoint) {
+        document.getElementById('start-age').textContent = sch.startingPoint.age;
+        document.getElementById('start-assets').textContent = fmt(sch.startingPoint.assets);
+        document.getElementById('start-income').textContent = fmtYr(sch.startingPoint.income);
+        document.getElementById('start-spending').textContent = fmtYr(sch.startingPoint.spending);
+      } else if (inp) {
+        document.getElementById('start-age').textContent = inp.currentAge;
+        document.getElementById('start-assets').textContent = fmt(inp.investableAssets);
+        document.getElementById('start-income').textContent = fmtYr(inp.expectedIncome);
+        document.getElementById('start-spending').textContent = fmtYr(inp.annualSpending);
+      }
+
+      // Events
+      const eventsEl = document.getElementById('events');
+      const eventsSection = document.getElementById('events-section');
+      let events = sch?.scheduledEvents || buildEvents(d);
+
+      if (events.length > 0) {
+        eventsSection.style.display = 'block';
+        eventsEl.innerHTML = events.map(e =>
+          '<div class="event">' +
+            '<span class="event-icon">' + (e.icon || '📅') + '</span>' +
+            '<span class="event-age">Age ' + e.age + '</span>' +
+            '<span class="event-label">' + e.label + '</span>' +
+            '<span class="event-change">' + e.change + '</span>' +
+          '</div>'
+        ).join('');
+      } else {
+        eventsSection.style.display = 'none';
+      }
+    }
+
+    function buildEvents(d) {
+      const events = [];
+      const age = d.inputs?.currentAge || 35;
+      const m2a = m => age + Math.floor(m / 12);
+
+      if (d.incomeChange) {
+        const ic = d.incomeChange;
+        events.push({
+          age: m2a(ic.monthOffset),
+          icon: '📅',
+          label: ic.description || (ic.newAnnualIncome === 0 ? 'Retirement' : 'Income change'),
+          change: ic.newAnnualIncome === 0 ? '$0' : fmtYr(ic.newAnnualIncome)
+        });
+      }
+      if (d.spendingChange) {
+        const sc = d.spendingChange;
+        events.push({
+          age: m2a(sc.monthOffset),
+          icon: '📅',
+          label: sc.description || 'Spending change',
+          change: fmtYr(sc.newAnnualSpending)
+        });
+      }
+      if (d.socialSecurity) {
+        events.push({
+          age: d.socialSecurity.claimingAge,
+          icon: '🏛️',
+          label: 'Social Security',
+          change: '+' + fmtYr(d.socialSecurity.monthlyBenefit * 12)
+        });
+      }
+      if (d.rothConversions) {
+        d.rothConversions.forEach(rc => {
+          events.push({
+            age: age + rc.yearOffset,
+            icon: '🔄',
+            label: 'Roth conversion',
+            change: fmt(rc.amount)
+          });
+        });
+      }
+      if (d.oneTimeEvents) {
+        d.oneTimeEvents.forEach(ote => {
+          events.push({
+            age: m2a(ote.monthOffset),
+            icon: ote.type === 'income' ? '💰' : '💸',
+            label: ote.description,
+            change: fmt(ote.amount)
+          });
+        });
+      }
+      return events.sort((a, b) => a.age - b.age);
+    }
+
+    // =========================================================================
+    // Render: Trajectory with P10/P50/P75 bands
+    // =========================================================================
+
+    function renderTrajectory(d) {
+      const currentAge = d.inputs?.currentAge || 35;
+      const horizonMonths = d.inputs?.horizonMonths || 360;
+      const endAge = currentAge + Math.floor(horizonMonths / 12);
+      const trajectory = d.netWorthTrajectory || d.mc?.netWorthTrajectory || [];
+
+      // If no trajectory data, show placeholder message
+      if (trajectory.length === 0) {
+        document.getElementById('trajectory-bars').innerHTML =
+          '<div style="padding: var(--space-4); text-align: center; color: var(--color-text-muted); font-size: var(--font-size-sm);">' +
+          'Trajectory data not available. Run with more MC paths.' +
+          '</div>';
+        return;
+      }
+
+      const milestones = buildMilestones(d, currentAge);
+
+      // Sample ages - use 10yr intervals for long horizons (>50yr) to keep ≤7 rows
+      const horizonYears = endAge - currentAge;
+      const interval = horizonYears > 50 ? 10 : 5;
+
+      const ages = new Set();
+      // Start from first round interval after currentAge
+      const firstAge = Math.ceil(currentAge / interval) * interval;
+      for (let a = firstAge; a <= endAge; a += interval) ages.add(a);
+      // Always include start and end
+      ages.add(currentAge);
+      ages.add(endAge);
+      // Include milestone ages
+      Object.keys(milestones).forEach(a => ages.add(parseInt(a)));
+
+      const sortedAges = [...ages].sort((a, b) => a - b);
+
+      // Find max for scaling
+      let maxVal = 0;
+      trajectory.forEach(pt => {
+        const v = pt.p75 || pt.p50 || 0;
+        if (v > maxVal) maxVal = v;
+      });
+      if (maxVal === 0) maxVal = 1;
+
+      let html = '';
+      let lastMilestone = null;
+
+      sortedAges.forEach(age => {
+        const yearOffset = age - currentAge;
+        const monthOffset = yearOffset * 12;
+
+        // Find closest point (WASM uses monthOffset, not month)
+        let pt = trajectory[0] || { p10: 0, p50: 0, p75: 0 };
+        let minDiff = Math.abs((trajectory[0]?.monthOffset || trajectory[0]?.month || 0) - monthOffset);
+        trajectory.forEach(p => {
+          const diff = Math.abs((p.monthOffset || p.month || 0) - monthOffset);
+          if (diff < minDiff) { minDiff = diff; pt = p; }
+        });
+
+        // Milestone divider
+        if (milestones[age] && milestones[age] !== lastMilestone) {
+          html += '<div class="traj-milestone"><span class="traj-milestone-text">' + milestones[age] + '</span></div>';
+          lastMilestone = milestones[age];
+        }
+
+        const p10 = pt.p10 || pt.p50 * 0.7 || 0;
+        const p50 = pt.p50 || 0;
+        const p75 = pt.p75 || pt.p50 * 1.3 || 0;
+
+        const pct10 = Math.round((p10 / maxVal) * 100);
+        const pct50 = Math.round((p50 / maxVal) * 100);
+        const pct75 = Math.round((p75 / maxVal) * 100);
+
+        const ariaLabel = 'Age ' + age + ', median net worth ' + fmt(p50) + '. Click to view details.';
+        // Boxplot visualization:
+        // [empty: 0→P10] [range bar: P10→P75] with P50 marker inside
+        const rangeWidth = Math.max(0, pct75 - pct10);
+        html += '<div class="traj-row" data-age="' + age + '" data-year="' + yearOffset + '" ' +
+          'role="button" tabindex="0" aria-label="' + ariaLabel + '">' +
+          '<span class="traj-age" aria-hidden="true">' + age + '</span>' +
+          '<div class="traj-bar-container" aria-hidden="true">' +
+            '<div class="traj-bar-range" style="left:' + pct10 + '%; width:' + rangeWidth + '%"></div>' +
+            '<div class="traj-bar-p50" style="left:' + pct50 + '%"></div>' +
+          '</div>' +
+          '<span class="traj-value" aria-hidden="true">' + fmt(p50) + '</span>' +
+          '<span class="traj-inspect" aria-hidden="true" title="Inspect year">ⓘ</span>' +
+        '</div>';
+      });
+
+      document.getElementById('trajectory-bars').innerHTML = html;
+
+      // Click and keyboard handlers for trajectory rows
+      document.querySelectorAll('.traj-row').forEach(row => {
+        const handler = () => {
+          showInspector(parseInt(row.dataset.age), parseInt(row.dataset.year));
+        };
+        row.addEventListener('click', handler);
+        row.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handler();
+          }
+        });
+      });
+    }
+
+    function buildMilestones(d, age) {
+      const ms = {};
+      const m2a = m => age + Math.floor(m / 12);
+      if (d.incomeChange?.newAnnualIncome === 0) {
+        ms[m2a(d.incomeChange.monthOffset)] = d.incomeChange.description || 'Retirement';
+      }
+      if (d.socialSecurity) {
+        ms[d.socialSecurity.claimingAge] = 'Social Security';
+      }
+      return ms;
+    }
+
+    // =========================================================================
+    // Render: Survival
+    // =========================================================================
+
+    function renderSurvival(d, currentAge, endAge) {
+      const breachData = d.mc?.breachProbabilityByMonth;
+      const section = document.getElementById('survival-section');
+
+      if (!breachData || breachData.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = 'block';
+
+      const decades = [];
+      const first = Math.ceil(currentAge / 10) * 10;
+      for (let a = first; a <= endAge; a += 10) {
+        if (a > currentAge) decades.push(a);
+      }
+
+      let html = '';
+      decades.forEach(age => {
+        const years = age - currentAge;
+        const idx = Math.min(years * 12 - 1, breachData.length - 1);
+        const pct = Math.round((1 - (breachData[idx]?.cumulativeBreachProb || 0)) * 100);
+
+        html += '<div class="survival-row">' +
+          '<span class="survival-age">Age ' + age + '</span>' +
+          '<div class="survival-bar-bg"><div class="survival-bar" style="width:' + pct + '%"></div></div>' +
+          '<span class="survival-pct">' + pct + '%</span>' +
+        '</div>';
+      });
+
+      document.getElementById('survival-bars').innerHTML = html;
+    }
+
+    // =========================================================================
+    // Year Inspector
+    // =========================================================================
+
+    // Helper: render a sub-item in the ledger
+    function subItem(prefix, label, value, muted) {
+      const cls = muted ? 'ledger-row ledger-indent muted' : 'ledger-row ledger-indent';
+      const valStr = muted ? '—' : fmt(value);
+      return '<div class="' + cls + '"><span>' + prefix + ' ' + label + '</span><span>' + valStr + '</span></div>';
+    }
+
+    // Helper: render account bar
+    function accountBar(label, value, total) {
+      const pct = total > 0 ? Math.round((value / total) * 100) : 0;
+      return '<div class="account-row">' +
+        '<span class="account-label">' + label + '</span>' +
+        '<span class="account-value">' + fmt(value) + '</span>' +
+        '<div class="account-bar-bg"><div class="account-bar" style="width:' + pct + '%"></div></div>' +
+        '<span class="account-pct">' + pct + '%</span>' +
+      '</div>';
+    }
+
+    // Build income breakdown from snapshot
+    function renderIncomeBreakdown(snap, totalIncome) {
+      let html = '';
+      const src = snap.cashFlow?.incomeSources || {};
+
+      // Check if we have detailed breakdown
+      const hasDetails = src.employment > 0 || src.socialSecurity > 0 || src.investment > 0;
+
+      if (hasDetails) {
+        if (src.employment > 0) html += subItem('├─', 'Salary', src.employment);
+        if (src.socialSecurity > 0) html += subItem('├─', 'Social Security', src.socialSecurity);
+        if (src.investment > 0) html += subItem('├─', 'Investment income', src.investment);
+        // Replace last ├─ with └─
+        html = html.replace(/├─([^├]+)$/, '└─$1');
+      } else if (totalIncome > 0) {
+        // Fallback: show aggregate
+        html = subItem('└─', 'Earnings & benefits', totalIncome);
+      } else {
+        html = subItem('└─', '(none this year)', 0, true);
+      }
+      return html;
+    }
+
+    // Build spending breakdown from snapshot
+    function renderSpendingBreakdown(snap, totalExpenses) {
+      let html = '';
+      const exp = snap.cashFlow?.expenseSources || {};
+
+      // Check if we have detailed breakdown
+      const living = exp.living || 0;
+      const healthcare = exp.healthcare || 0;
+      const hasDetails = living > 0 || healthcare > 0;
+
+      if (hasDetails) {
+        if (living > 0) html += subItem('├─', 'Living expenses', living);
+        if (healthcare > 0) html += subItem('├─', 'Healthcare', healthcare);
+        // Replace last ├─ with └─
+        html = html.replace(/├─([^├]+)$/, '└─$1');
+      } else {
+        // Fallback: show aggregate
+        html = subItem('└─', 'Living expenses', totalExpenses);
+      }
+      return html;
+    }
+
+    // Build tax breakdown from snapshot
+    function renderTaxBreakdown(snap) {
+      const t = snap.cashFlow?.expenseSources?.taxes || {};
+      if (!t.total && !t.federal && !t.state && !t.capitalGains) return '';
+
+      let html = '';
+      if (t.federal > 0) html += subItem('├─', 'Federal', t.federal);
+      if (t.state > 0) html += subItem('├─', 'State', t.state);
+      if (t.capitalGains > 0) html += subItem('├─', 'Capital gains', t.capitalGains);
+      if (t.fica > 0) html += subItem('├─', 'FICA', t.fica);
+      // Replace last ├─ with └─
+      html = html.replace(/├─([^├]+)$/, '└─$1');
+      return html;
+    }
+
+    // Render withdrawals section
+    function renderWithdrawals(snap) {
+      const w = snap.withdrawals || snap.withdrawalsByAccount || {};
+      const taxable = w.taxable || w.taxableBrokerage || 0;
+      const taxDeferred = w.taxDeferred || w.account401k || w.ira || 0;
+      const roth = w.roth || w.rothIRA || 0;
+      const total = taxable + taxDeferred + roth;
+
+      if (total === 0) return '';
+
+      return '<div class="inspector-subsection">' +
+        '<div class="subsection-title">Withdrawals (funding spending)</div>' +
+        accountBar('From Taxable', taxable, total) +
+        accountBar('From Tax-deferred', taxDeferred, total) +
+        accountBar('From Roth', roth, total) +
+      '</div>';
+    }
+
+    // Render account balances section (legacy - keeping for fallback)
+    function renderAccountBalances(snap) {
+      const accts = snap.balanceSheet?.investmentAccounts || snap.accounts || {};
+      const cash = accts.cash || 0;
+      const taxable = accts.taxableBrokerage || accts.taxable || 0;
+      const taxDeferred = accts.account401k || accts.taxDeferred || accts.ira || 0;
+      const roth = accts.rothIRA || accts.roth || 0;
+      const total = snap.endBalance || (cash + taxable + taxDeferred + roth) || 1;
+
+      // Only show if we have account-level data
+      if (!accts.cash && !accts.taxableBrokerage && !accts.taxable && !accts.account401k && !accts.taxDeferred && !accts.rothIRA && !accts.roth) {
+        return '';
+      }
+
+      return '<div class="inspector-subsection">' +
+        '<div class="subsection-title">Accounts (year-end)</div>' +
+        accountBar('Cash', cash, total) +
+        accountBar('Taxable', taxable, total) +
+        accountBar('Tax-deferred', taxDeferred, total) +
+        accountBar('Roth', roth, total) +
+      '</div>';
+    }
+
+    // Render stacked accounts bar (new visual)
+    function renderStackedAccounts(snap) {
+      const accts = snap.balanceSheet?.investmentAccounts || snap.accounts || {};
+      const cash = accts.cash || 0;
+      const taxable = accts.taxableBrokerage || accts.taxable || 0;
+      const taxDeferred = accts.account401k || accts.taxDeferred || accts.ira || 0;
+      const roth = accts.rothIRA || accts.roth || 0;
+      const total = cash + taxable + taxDeferred + roth;
+
+      // Only show if we have account-level data
+      if (total === 0) return '';
+
+      const pctCash = Math.round((cash / total) * 100);
+      const pctTaxable = Math.round((taxable / total) * 100);
+      const pctTaxDeferred = Math.round((taxDeferred / total) * 100);
+      const pctRoth = 100 - pctCash - pctTaxable - pctTaxDeferred; // remainder to avoid rounding issues
+
+      let segments = '';
+      if (pctCash > 0) segments += '<div class="accounts-stack-segment cash" style="width:' + pctCash + '%"></div>';
+      if (pctTaxable > 0) segments += '<div class="accounts-stack-segment taxable" style="width:' + pctTaxable + '%"></div>';
+      if (pctTaxDeferred > 0) segments += '<div class="accounts-stack-segment tax-deferred" style="width:' + pctTaxDeferred + '%"></div>';
+      if (pctRoth > 0) segments += '<div class="accounts-stack-segment roth" style="width:' + pctRoth + '%"></div>';
+
+      let legend = '';
+      if (cash > 0) legend += '<div class="accounts-legend-item"><span class="accounts-legend-swatch cash"></span>Cash <span class="accounts-legend-value">' + fmt(cash) + '</span></div>';
+      if (taxable > 0) legend += '<div class="accounts-legend-item"><span class="accounts-legend-swatch taxable"></span>Taxable <span class="accounts-legend-value">' + fmt(taxable) + '</span></div>';
+      if (taxDeferred > 0) legend += '<div class="accounts-legend-item"><span class="accounts-legend-swatch tax-deferred"></span>Tax-def <span class="accounts-legend-value">' + fmt(taxDeferred) + '</span></div>';
+      if (roth > 0) legend += '<div class="accounts-legend-item"><span class="accounts-legend-swatch roth"></span>Roth <span class="accounts-legend-value">' + fmt(roth) + '</span></div>';
+
+      return '<div class="accounts-stack">' +
+        '<div class="accounts-stack-title">Account Allocation (Year-End)</div>' +
+        '<div class="accounts-stack-bar">' + segments + '</div>' +
+        '<div class="accounts-legend">' + legend + '</div>' +
+      '</div>';
+    }
+
+    // Render summary header (start → delta → end)
+    function renderInspectorSummary(start, end) {
+      const delta = end - start;
+      const deltaClass = delta >= 0 ? 'positive' : 'negative';
+
+      return '<div class="inspector-summary">' +
+        '<div class="inspector-summary-start">' +
+          '<div class="inspector-summary-label">Start</div>' +
+          '<div class="inspector-summary-value">' + fmt(start) + '</div>' +
+        '</div>' +
+        '<div class="inspector-summary-arrow">' +
+          '<div class="inspector-summary-delta ' + deltaClass + '">' + fmtSigned(delta) + '</div>' +
+          '<div class="inspector-summary-line"><span class="inspector-summary-chevron">→</span></div>' +
+        '</div>' +
+        '<div class="inspector-summary-end">' +
+          '<div class="inspector-summary-label">End</div>' +
+          '<div class="inspector-summary-value">' + fmt(end) + '</div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    // Build minimal ledger (Layout B style)
+    function renderMinimalLedger(snap) {
+      const start = snap.startBalance || 0;
+      const end = snap.endBalance || 0;
+      const income = snap.totalIncome ?? snap.contributions ?? 0;
+      const expenses = snap.totalExpenses ?? snap.withdrawals ?? 0;
+      const growth = snap.investmentGrowth ?? (end - start - income + expenses);
+      const pct = snap.returnPct ? (Math.abs(snap.returnPct) > 1 ? snap.returnPct : snap.returnPct * 100) : 0;
+      const taxes = snap.cashFlow?.expenseSources?.taxes?.total || 0;
+
+      // Build income line items
+      const src = snap.cashFlow?.incomeSources || {};
+      let incomeLines = [];
+      if (src.employment > 0) incomeLines.push({ label: 'Salary', value: src.employment });
+      if (src.socialSecurity > 0) incomeLines.push({ label: 'Social Security', value: src.socialSecurity });
+      if (src.investment > 0) incomeLines.push({ label: 'Investment income', value: src.investment });
+      if (incomeLines.length === 0 && income > 0) incomeLines.push({ label: 'Income', value: income });
+
+      // Build expense line items
+      const exp = snap.cashFlow?.expenseSources || {};
+      let expenseLines = [];
+      const living = exp.living || 0;
+      const healthcare = exp.healthcare || 0;
+      if (living > 0) expenseLines.push({ label: 'Living expenses', value: living });
+      if (healthcare > 0) expenseLines.push({ label: 'Healthcare', value: healthcare });
+      if (expenseLines.length === 0 && expenses > 0) expenseLines.push({ label: 'Living expenses', value: expenses });
+
+      // Build accounts inline text
+      const acct = snap.accountBalances || {};
+      const cash = acct.cash || 0;
+      const taxable = acct.taxable || 0;
+      const taxDeferred = acct.taxDeferred || acct['tax-deferred'] || 0;
+      const roth = acct.roth || 0;
+
+      let accountParts = [];
+      if (cash > 0) accountParts.push('Cash <span class="val">' + fmt(cash) + '</span>');
+      if (taxable > 0) accountParts.push('Taxable <span class="val">' + fmt(taxable) + '</span>');
+      if (taxDeferred > 0) accountParts.push('Tax-def <span class="val">' + fmt(taxDeferred) + '</span>');
+      if (roth > 0) accountParts.push('Roth <span class="val">' + fmt(roth) + '</span>');
+
+      // Build HTML
+      let html = '<div class="minimal-ledger">';
+
+      // Start
+      html += '<div class="minimal-ledger-row"><span>Start</span><span>' + fmtFull(start) + '</span></div>';
+
+      // Income items
+      for (const item of incomeLines) {
+        html += '<div class="minimal-ledger-row indent"><span>+ ' + item.label + '</span><span class="positive">+' + fmtFull(item.value) + '</span></div>';
+      }
+
+      // Expense items
+      for (const item of expenseLines) {
+        html += '<div class="minimal-ledger-row indent"><span>− ' + item.label + '</span><span class="negative">−' + fmtFull(item.value) + '</span></div>';
+      }
+
+      // Taxes (if applied)
+      if (taxes > 0) {
+        html += '<div class="minimal-ledger-row indent"><span>− Taxes</span><span class="negative">−' + fmtFull(taxes) + '</span></div>';
+      }
+
+      // Market return
+      const marketSign = growth >= 0 ? '+' : '';
+      const marketClass = growth >= 0 ? 'positive' : 'negative';
+      html += '<div class="minimal-ledger-row indent"><span>± Market (' + (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%)</span><span class="' + marketClass + '">' + marketSign + fmtFull(growth) + '</span></div>';
+
+      // End (total row)
+      html += '<div class="minimal-ledger-row total"><span>End</span><span>' + fmtFull(end) + '</span></div>';
+
+      // Accounts inline under End
+      if (accountParts.length > 0) {
+        html += '<div class="minimal-ledger-accounts">' + accountParts.join(' · ') + '</div>';
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    // Format full number (not abbreviated)
+    function fmtFull(n) {
+      if (n == null || isNaN(n)) return '$0';
+      return '$' + Math.round(n).toLocaleString('en-US');
+    }
+
+    function showInspector(age, yearOffset) {
+      if (!data) return;
+
+      const inspector = document.getElementById('inspector');
+      const year = (data.startYear || 2024) + yearOffset;
+
+      document.getElementById('inspector-title').textContent = 'Year ' + year + ' (Age ' + age + ') — Median Path';
+
+      // Find snapshot
+      const snaps = data.annualSnapshots || [];
+      const snap = snaps.find(s => s.age === age) || snaps.find(s => Math.abs(s.age - age) <= 1);
+
+      const ledger = document.getElementById('ledger');
+      const withdrawalsSection = document.getElementById('withdrawals-section');
+      const accountsSection = document.getElementById('accounts-section');
+
+      if (snap) {
+        // Summary header (start → delta → end)
+        const startVal = snap.startBalance || 0;
+        const endVal = snap.endBalance || 0;
+        const summaryHtml = renderInspectorSummary(startVal, endVal);
+
+        // Minimal ledger with accounts inline under End
+        ledger.innerHTML = summaryHtml + renderMinimalLedger(snap);
+
+        // Stacked accounts bar (new visual)
+        accountsSection.innerHTML = renderStackedAccounts(snap);
+        withdrawalsSection.innerHTML = '';
+
+      } else {
+        // Fallback: use trajectory data when snapshot is missing
+        const trajectory = data.netWorthTrajectory || data.mc?.netWorthTrajectory || [];
+        const currentAge = data.inputs?.currentAge || 35;
+        const monthOffset = (age - currentAge) * 12;
+
+        // Find closest trajectory point
+        let pt = null;
+        let minDiff = Infinity;
+        trajectory.forEach(p => {
+          const diff = Math.abs((p.monthOffset || p.month || 0) - monthOffset);
+          if (diff < minDiff) { minDiff = diff; pt = p; }
+        });
+
+        if (pt) {
+          // Show trajectory percentiles when snapshot is missing
+          const p10 = pt.p10 || 0;
+          const p50 = pt.p50 || 0;
+          const p75 = pt.p75 || 0;
+
+          ledger.innerHTML =
+            '<div class="minimal-ledger">' +
+              '<div class="minimal-ledger-row" style="font-weight: 500; color: var(--color-text-tertiary); font-size: var(--font-size-2xs); text-transform: uppercase; letter-spacing: 0.3px; padding-bottom: var(--space-2);">Net Worth Distribution</div>' +
+              '<div class="minimal-ledger-row"><span>10th percentile (harder scenarios)</span><span>' + fmt(p10) + '</span></div>' +
+              '<div class="minimal-ledger-row total"><span>50th percentile (typical)</span><span>' + fmt(p50) + '</span></div>' +
+              '<div class="minimal-ledger-row"><span>75th percentile (stronger outcomes)</span><span>' + fmt(p75) + '</span></div>' +
+              '<div style="margin-top: var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--color-border-subtle); font-size: var(--font-size-2xs); color: var(--color-text-tertiary);">' +
+                'Detailed cash flow not available for this year. Full snapshots are kept for early and late years.' +
+              '</div>' +
+            '</div>';
+        } else {
+          ledger.innerHTML = '<div class="minimal-ledger"><div class="minimal-ledger-row"><span>No data available for this year</span></div></div>';
+        }
+        withdrawalsSection.innerHTML = '';
+        accountsSection.innerHTML = '';
+      }
+
+      inspector.classList.add('visible');
+
+      // Scroll inspector into view
+      inspector.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // =========================================================================
+    // Init
+    // =========================================================================
+
+    function init(raw) {
+      if (!raw) return;
+      // Priority: _meta.widgetData (optimized) > structuredContent (legacy) > result > raw
+      // The optimized path puts full data in _meta.widgetData to reduce model context
+      data = raw._meta?.widgetData || raw.structuredContent || raw.result || raw;
+      const source = raw._meta?.widgetData ? '_meta.widgetData (optimized)' :
+                     raw.structuredContent ? 'structuredContent (legacy)' :
+                     raw.result ? 'result' : 'raw';
+      console.log('[AreumFire Widget] Data source:', source);
+      console.log('[AreumFire Widget] Data received:', JSON.stringify(data, null, 2).slice(0, 2000));
+
+      // Check for error response
+      if (data.success === false || data.error) {
+        console.error('[AreumFire Widget] Error:', data.error);
+        document.getElementById('root').classList.remove('is-loading');
+        document.getElementById('root').innerHTML = `
+          <div class="header">
+            <span class="header-brand">AreumFire</span>
+          </div>
+          <div style="padding: var(--space-6); text-align: center;">
+            <div style="font-size: var(--font-size-lg); color: var(--color-negative); margin-bottom: var(--space-3);">
+              Simulation Error
+            </div>
+            <div style="font-size: var(--font-size-sm); color: var(--color-text-muted); margin-bottom: var(--space-4);">
+              ${data.error || 'Unknown error'}
+            </div>
+            ${data.details ? `<div style="font-size: var(--font-size-xs); color: var(--color-text-muted); font-family: monospace;">
+              ${JSON.stringify(data.details)}
+            </div>` : ''}
+          </div>
+        `;
+        return;
+      }
+
+      // Debug: Log trajectory data specifically
+      const trajectory = data.netWorthTrajectory || data.mc?.netWorthTrajectory || [];
+      console.log('[AreumFire Widget] Trajectory points:', trajectory.length);
+      if (trajectory.length > 0) {
+        console.log('[AreumFire Widget] First point:', JSON.stringify(trajectory[0]));
+        console.log('[AreumFire Widget] Last point:', JSON.stringify(trajectory[trajectory.length - 1]));
+      } else {
+        console.warn('[AreumFire Widget] No trajectory data! Bars will show 0.');
+      }
+
+      // Remove loading state
+      document.getElementById('root').classList.remove('is-loading');
+
+      renderDuration(data);
+      renderScenario(data);
+      renderTrajectory(data);
+
+      // Assumptions
+      const tax = data.taxMode === 'NOT_APPLIED' ? 'No tax' :
+                  data.taxMode === 'USER_DECLARED' ? 'User tax' : 'No tax';
+      document.getElementById('assumptions').innerHTML =
+        '<span>~7% returns</span><span>~2.5% inflation</span><span>' + tax + '</span>';
+
+      // Footer
+      document.getElementById('run-id').textContent = data.runId || '—';
+      document.getElementById('paths-run').textContent = data.pathsRun || 100;
+      document.getElementById('seed').textContent = data.baseSeed || data.seed || '—';
+    }
+
+    // =========================================================================
+    // Event Handlers
+    // =========================================================================
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('inspector-close').addEventListener('click', () => {
+        document.getElementById('inspector').classList.remove('visible');
+      });
+
+      if (window.openai?.toolOutput) init(window.openai.toolOutput);
+
+      window.addEventListener('message', e => {
+        if (e.data?.type === 'simulationResult') init(e.data.result);
+      });
+
+      window.addEventListener('openai:set_globals', e => {
+        if (e.detail?.globals?.toolOutput) init(e.detail.globals.toolOutput);
+      }, { passive: true });
+    });
+  </script>
+</body>
+</html>

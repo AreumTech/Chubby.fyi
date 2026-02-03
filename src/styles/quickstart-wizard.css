@@ -1,0 +1,245 @@
+/* QuickStart Wizard Enhanced Styles */
+
+.quickstart-wizard-enhanced {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Phase Help Modal Slide-up Animation */
+.phase-help-modal {
+  animation: slideUpModal 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUpModal {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth transitions for step changes */
+.quickstart-wizard-enhanced .step-content {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Enhanced button hover effects */
+.quickstart-wizard-enhanced button {
+  transition: all 0.2s ease;
+}
+
+.quickstart-wizard-enhanced button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Step indicator animations */
+.quickstart-wizard-enhanced .step-indicator {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Input field focus states */
+.quickstart-wizard-enhanced input:focus,
+.quickstart-wizard-enhanced select:focus,
+.quickstart-wizard-enhanced textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Preset button styles */
+.quickstart-wizard-enhanced .preset-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.quickstart-wizard-enhanced .preset-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+}
+
+.quickstart-wizard-enhanced .preset-button:hover::before {
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading state animations */
+.quickstart-wizard-enhanced .loading-overlay {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(4px);
+}
+
+/* Success animations */
+@keyframes checkmark {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.quickstart-wizard-enhanced .success-checkmark {
+  animation: checkmark 0.5s ease-out forwards;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .quickstart-wizard-enhanced .step-indicators {
+    font-size: 0.75rem;
+  }
+  
+  .quickstart-wizard-enhanced .step-indicator-icon {
+    width: 2rem;
+    height: 2rem;
+  }
+  
+  .quickstart-wizard-enhanced .modal-content {
+    padding: 1rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .quickstart-wizard-enhanced {
+    color-scheme: light;
+  }
+}
+
+/* Tooltip animations */
+.quickstart-wizard-enhanced .tooltip {
+  animation: tooltipIn 0.2s ease-out;
+}
+
+@keyframes tooltipIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Card hover effects */
+.quickstart-wizard-enhanced .preset-card {
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.quickstart-wizard-enhanced .preset-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Progress bar animation */
+.quickstart-wizard-enhanced .progress-bar {
+  position: relative;
+  overflow: hidden;
+}
+
+.quickstart-wizard-enhanced .progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Input group animations */
+.quickstart-wizard-enhanced .input-group {
+  transition: all 0.2s ease;
+}
+
+.quickstart-wizard-enhanced .input-group:focus-within {
+  transform: scale(1.02);
+}
+
+/* Smooth scrolling */
+.quickstart-wizard-enhanced .scrollable-content {
+  scroll-behavior: smooth;
+}
+
+/* Error state animations */
+.quickstart-wizard-enhanced .error-message {
+  animation: shake 0.3s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+/* Completion celebration */
+.quickstart-wizard-enhanced .completion-celebration {
+  animation: celebrate 0.5s ease-out;
+}
+
+@keyframes celebrate {
+  0% {
+    transform: scale(0.8) rotate(-5deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}

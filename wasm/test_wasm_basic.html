@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WASM Basic Function Test</title>
+</head>
+<body>
+    <h1>Testing WASM Simulation</h1>
+    <div id="output"></div>
+    <button onclick="runTest()">Run Basic Test</button>
+    
+    <script src="../public/wasm_exec.js"></script>
+    <script>
+        let wasmModule = null;
+        
+        function log(message) {
+            const output = document.getElementById('output');
+            output.innerHTML += message + '<br>';
+            console.log(message);
+        }
+        
+        async function loadWASM() {
+            try {
+                log('Loading WASM...');
+                const go = new Go();
+                const result = await WebAssembly.instantiateStreaming(fetch('../public/pathfinder.wasm'), go.importObject);
+                wasmModule = result.instance;
+                go.run(wasmModule);
+                log('✅ WASM loaded successfully');
+                return true;
+            } catch (error) {
+                log('❌ WASM loading failed: ' + error.message);
+                return false;
+            }
+        }
+        
+        async function runTest() {
+            log('=== Starting WASM Test ===');
+            
+            // Load WASM if not already loaded
+            if (!wasmModule) {
+                const loaded = await loadWASM();
+                if (!loaded) {
+                    log('❌ Cannot run test - WASM failed to load');
+                    return;
+                }
+            }
+            
+            try {
+                // Test basic WASM function availability
+                if (typeof window.runSingleSimulation === 'function') {
+                    log('✅ runSingleSimulation function is available');
+                } else {
+                    log('❌ runSingleSimulation function not found');
+                    return;
+                }
+                
+                // Create minimal test input
+                const testInput = {
+                    initialAccounts: {
+                        cash: 10000,
+                        taxable: { totalValue: 50000, holdings: [] },
+                        taxDeferred: { totalValue: 100000, holdings: [] },
+                        roth: { totalValue: 25000, holdings: [] }
+                    },
+                    events: [
+                        {
+                            id: "test-expense",
+                            type: "EXPENSE", 
+                            amount: 1000,
+                            startMonth: 1,
+                            endMonth: -1
+                        }
+                    ],
+                    monthsToRun: 12,
+                    config: {
+                        stochasticModel: {
+                            correlationMatrix: [
+                                [1.0, 0.2, 0.3],
+                                [0.2, 1.0, 0.1], 
+                                [0.3, 0.1, 1.0]
+                            ]
+                        }
+                    }
+                };
+                
+                log('📝 Running simulation with test data...');
+                const startTime = performance.now();
+                
+                // Run simulation
+                const result = window.runSingleSimulation(JSON.stringify(testInput));
+                
+                const endTime = performance.now();
+                const duration = Math.round(endTime - startTime);
+                
+                log(`⏱️ Simulation completed in ${duration}ms`);
+                
+                // Parse and validate result
+                let parsedResult;
+                try {
+                    parsedResult = typeof result === 'string' ? JSON.parse(result) : result;
+                } catch (e) {
+                    log('❌ Failed to parse simulation result: ' + e.message);
+                    return;
+                }
+                
+                // Check result structure
+                if (parsedResult.success === true) {
+                    log('✅ Simulation completed successfully');
+                    log(`📊 Final net worth: $${parsedResult.finalNetWorth?.toFixed(2) || 'N/A'}`);
+                    log(`📈 Monthly data points: ${parsedResult.monthlyData?.length || 0}`);
+                    
+                    // Performance check
+                    if (duration < 1000) {
+                        log('🚀 Performance: GOOD (< 1 second)');
+                    } else if (duration < 5000) {
+                        log('⚠️ Performance: ACCEPTABLE (1-5 seconds)');  
+                    } else {
+                        log('🐌 Performance: SLOW (> 5 seconds)');
+                    }
+                } else {
+                    log('❌ Simulation failed: ' + (parsedResult.error || 'Unknown error'));
+                }
+                
+                log('=== Test Complete ===');
+                
+            } catch (error) {
+                log('❌ Test failed with error: ' + error.message);
+                console.error('Full error:', error);
+            }
+        }
+        
+        // Auto-load WASM when page loads
+        window.addEventListener('load', loadWASM);
+    </script>
+</body>
+</html>

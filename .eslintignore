@@ -1,0 +1,5 @@
+tests/e2e/
+playwright.config.cjs
+**/*.cjs
+App.integration.test.tsx
+components/charts/NetWorthCanvasChart.test.tsx

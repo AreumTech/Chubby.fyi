@@ -1,0 +1,36 @@
+{
+  "_metadata": {
+    "sourceURL": "https://www.irs.gov/pub/irs-pdf/p15.pdf",
+    "citation": "IRS Publication 15 (2024) - Employer's Tax Guide, Social Security and Medicare tax tables",
+    "additionalMedicareSource": "https://www.irs.gov/forms-pubs/about-form-8959",
+    "additionalMedicareCitation": "IRS Instructions for Form 8959 (2023) - Additional Medicare Tax",
+    "legalAuthority": "IRC Sections 3101, 3111, 3101(b)(2)",
+    "taxYear": 2024,
+    "lastUpdated": "2024-01-01"
+  },
+  "socialSecurityRate": 0.062,
+  "medicareRate": 0.0145,
+  "additionalMedicareRate": 0.009,
+  "selfEmploymentRates": {
+    "socialSecurityRate": 0.124,
+    "medicareRate": 0.029,
+    "deduction": 0.9235
+  },
+  "additionalMedicareThresholds": {
+    "single": 200000,
+    "marriedFilingJointly": 250000,
+    "marriedSeparately": 125000
+  },
+  "socialSecurityThresholds": {
+    "single": {
+      "firstThreshold": 25000,
+      "secondThreshold": 34000
+    },
+    "marriedFilingJointly": {
+      "firstThreshold": 32000,
+      "secondThreshold": 44000
+    }
+  },
+  "socialSecurityWageBase": 168600,
+  "medicareWageBase": "unlimited"
+}

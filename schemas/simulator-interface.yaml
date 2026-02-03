@@ -1,0 +1,405 @@
+# Simulator Interface Schema
+# 
+# This is the SINGLE SOURCE OF TRUTH for the simulator-frontend interface.
+# Both TypeScript and Go types are generated from this schema.
+#
+# Run `npm run generate-types` to regenerate types after changes.
+
+openapi: 3.0.0
+info:
+  title: PathFinder Pro Simulator Interface
+  version: 1.0.0
+  description: |
+    Strict contract between frontend and WASM simulator.
+    
+    INVARIANTS:
+    - ALL amounts are monthly (no frequency field)
+    - ALL account types are standard (no legacy)
+    - ALL dates are monthOffset from simulation start
+    - NO growth rates at interface (pre-applied)
+
+components:
+  schemas:
+    # ==========================================================================
+    # BRANDED PRIMITIVE TYPES
+    # ==========================================================================
+    
+    MonthlyAmount:
+      type: number
+      format: float
+      description: Monthly amount in dollars per month (NEVER annual or other frequencies)
+      example: 10000
+      
+    MonthOffset:
+      type: integer
+      format: int32
+      minimum: 0
+      description: Month offset from simulation start (0 = first month)
+      example: 240
+      
+    Percentage:
+      type: number
+      format: float
+      minimum: -1
+      maximum: 10
+      description: Percentage as decimal (0.05 = 5%)
+      example: 0.07
+    
+    # ==========================================================================
+    # ENUM TYPES
+    # ==========================================================================
+    
+    StandardAccountType:
+      type: string
+      enum:
+        - cash
+        - taxable
+        - tax_deferred
+        - roth
+        - "529"
+      description: |
+        Standard account types only. Legacy types must be mapped before reaching the simulator:
+        - 401k → tax_deferred
+        - rothIra → roth
+        - ira → tax_deferred
+        - brokerage → taxable
+        - checking/savings → cash
+    
+    SimulatorEventType:
+      type: string
+      enum:
+        - INCOME
+        - EXPENSE
+        - CONTRIBUTION
+        - WITHDRAWAL
+        - TRANSFER
+        - ROTH_CONVERSION
+        - TAX_PAYMENT
+        - RMD
+      description: Simplified event types for simulator
+    
+    FilingStatus:
+      type: string
+      enum:
+        - single
+        - married_jointly
+        - married_separately
+        - head_of_household
+      description: Tax filing status
+    
+    # ==========================================================================
+    # EVENT TYPES
+    # ==========================================================================
+    
+    BaseSimulatorEvent:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - monthOffset
+        - monthlyAmount
+      properties:
+        id:
+          type: string
+          description: Unique event identifier
+        name:
+          type: string
+          description: Human-readable event name
+        type:
+          $ref: '#/components/schemas/SimulatorEventType'
+        monthOffset:
+          $ref: '#/components/schemas/MonthOffset'
+        endMonthOffset:
+          $ref: '#/components/schemas/MonthOffset'
+        monthlyAmount:
+          $ref: '#/components/schemas/MonthlyAmount'
+    
+    IncomeEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseSimulatorEvent'
+        - type: object
+          properties:
+            type:
+              type: string
+              const: INCOME
+            targetAccount:
+              type: string
+              const: cash
+              description: Income always goes to cash first
+    
+    ExpenseEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseSimulatorEvent'
+        - type: object
+          properties:
+            type:
+              type: string
+              const: EXPENSE
+            sourceAccount:
+              $ref: '#/components/schemas/StandardAccountType'
+              description: Optional - simulator decides if not specified
+    
+    ContributionEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseSimulatorEvent'
+        - type: object
+          required:
+            - targetAccount
+          properties:
+            type:
+              type: string
+              const: CONTRIBUTION
+            targetAccount:
+              $ref: '#/components/schemas/StandardAccountType'
+            isEmployerMatch:
+              type: boolean
+              default: false
+    
+    WithdrawalEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseSimulatorEvent'
+        - type: object
+          required:
+            - sourceAccount
+          properties:
+            type:
+              type: string
+              const: WITHDRAWAL
+            sourceAccount:
+              $ref: '#/components/schemas/StandardAccountType'
+            reason:
+              type: string
+              enum:
+                - retirement
+                - emergency
+                - rmd
+                - other
+    
+    TransferEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseSimulatorEvent'
+        - type: object
+          required:
+            - sourceAccount
+            - targetAccount
+          properties:
+            type:
+              type: string
+              const: TRANSFER
+            sourceAccount:
+              $ref: '#/components/schemas/StandardAccountType'
+            targetAccount:
+              $ref: '#/components/schemas/StandardAccountType'
+    
+    RothConversionEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseSimulatorEvent'
+        - type: object
+          properties:
+            type:
+              type: string
+              const: ROTH_CONVERSION
+            sourceAccount:
+              type: string
+              const: tax_deferred
+            targetAccount:
+              type: string
+              const: roth
+    
+    SimulatorEvent:
+      oneOf:
+        - $ref: '#/components/schemas/IncomeEvent'
+        - $ref: '#/components/schemas/ExpenseEvent'
+        - $ref: '#/components/schemas/ContributionEvent'
+        - $ref: '#/components/schemas/WithdrawalEvent'
+        - $ref: '#/components/schemas/TransferEvent'
+        - $ref: '#/components/schemas/RothConversionEvent'
+      discriminator:
+        propertyName: type
+    
+    # ==========================================================================
+    # ACCOUNT & BALANCE TYPES
+    # ==========================================================================
+    
+    AccountBalance:
+      type: object
+      required:
+        - accountType
+        - balance
+      properties:
+        accountType:
+          $ref: '#/components/schemas/StandardAccountType'
+        balance:
+          $ref: '#/components/schemas/MonthlyAmount'
+          description: Current balance in dollars
+        basis:
+          $ref: '#/components/schemas/MonthlyAmount'
+          description: Cost basis for tax calculations
+    
+    # ==========================================================================
+    # CONFIGURATION TYPES
+    # ==========================================================================
+    
+    MarketReturns:
+      type: object
+      required:
+        - stocks
+        - bonds
+        - cash
+      properties:
+        stocks:
+          $ref: '#/components/schemas/Percentage'
+        bonds:
+          $ref: '#/components/schemas/Percentage'
+        cash:
+          $ref: '#/components/schemas/Percentage'
+    
+    TaxConfig:
+      type: object
+      required:
+        - filingStatus
+        - state
+      properties:
+        filingStatus:
+          $ref: '#/components/schemas/FilingStatus'
+        state:
+          type: string
+          description: Two-letter state code or empty for no state taxes
+    
+    SimulatorConfig:
+      type: object
+      required:
+        - simulationMonths
+        - inflationRate
+        - marketReturns
+        - taxConfig
+      properties:
+        simulationMonths:
+          $ref: '#/components/schemas/MonthOffset'
+        inflationRate:
+          $ref: '#/components/schemas/Percentage'
+        marketReturns:
+          $ref: '#/components/schemas/MarketReturns'
+        taxConfig:
+          $ref: '#/components/schemas/TaxConfig'
+    
+    # ==========================================================================
+    # INPUT/OUTPUT CONTRACTS
+    # ==========================================================================
+    
+    SimulatorInput:
+      type: object
+      required:
+        - events
+        - initialBalances
+        - config
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/SimulatorEvent'
+          description: All events normalized to monthly amounts, sorted by monthOffset
+        initialBalances:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountBalance'
+          description: Initial account balances at simulation start
+        config:
+          $ref: '#/components/schemas/SimulatorConfig'
+    
+    CashFlow:
+      type: object
+      required:
+        - income
+        - expenses
+        - taxes
+      properties:
+        income:
+          $ref: '#/components/schemas/MonthlyAmount'
+        expenses:
+          $ref: '#/components/schemas/MonthlyAmount'
+        taxes:
+          $ref: '#/components/schemas/MonthlyAmount'
+    
+    MonthlySnapshot:
+      type: object
+      required:
+        - monthOffset
+        - accounts
+        - netWorth
+        - cashFlow
+      properties:
+        monthOffset:
+          $ref: '#/components/schemas/MonthOffset'
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountBalance'
+        netWorth:
+          $ref: '#/components/schemas/MonthlyAmount'
+        cashFlow:
+          $ref: '#/components/schemas/CashFlow'
+    
+    YearlySnapshot:
+      type: object
+      required:
+        - year
+        - endingNetWorth
+        - totalIncome
+        - totalExpenses
+        - totalTaxes
+        - accountBalances
+      properties:
+        year:
+          type: integer
+        endingNetWorth:
+          $ref: '#/components/schemas/MonthlyAmount'
+        totalIncome:
+          type: number
+          description: Annual total (sum of 12 months)
+        totalExpenses:
+          type: number
+          description: Annual total (sum of 12 months)
+        totalTaxes:
+          type: number
+          description: Annual total (sum of 12 months)
+        accountBalances:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountBalance'
+    
+    SimulationSummary:
+      type: object
+      required:
+        - successRate
+        - medianFinalNetWorth
+        - percentile25
+        - percentile75
+      properties:
+        successRate:
+          $ref: '#/components/schemas/Percentage'
+        medianFinalNetWorth:
+          $ref: '#/components/schemas/MonthlyAmount'
+        percentile25:
+          $ref: '#/components/schemas/MonthlyAmount'
+        percentile75:
+          $ref: '#/components/schemas/MonthlyAmount'
+    
+    SimulatorOutput:
+      type: object
+      required:
+        - months
+        - years
+        - summary
+      properties:
+        months:
+          type: array
+          items:
+            $ref: '#/components/schemas/MonthlySnapshot'
+        years:
+          type: array
+          items:
+            $ref: '#/components/schemas/YearlySnapshot'
+        summary:
+          $ref: '#/components/schemas/SimulationSummary'

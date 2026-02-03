@@ -1,0 +1,330 @@
+{
+  "_metadata": {
+    "description": "State income tax brackets for most populous states",
+    "dataSource": "Official state tax authorities and Tax Foundation verification",
+    "sources": {
+      "CA": "https://www.ftb.ca.gov/forms/2024/2024-540-tax-table.pdf",
+      "NY": "https://www.tax.ny.gov/pdf/current_forms/it/it201i.pdf",
+      "OH": "https://tax.ohio.gov/wps/portal/gov/tax/individual/resources",
+      "GA": "https://dor.georgia.gov/taxes/individual-income-tax"
+    },
+    "citations": {
+      "CA": "California Franchise Tax Board, 2024 Tax Tables",
+      "NY": "NYS Department of Taxation and Finance, Form IT-201-I",
+      "OH": "Ohio Department of Taxation, 2024 Individual Income Tax",
+      "GA": "Georgia Department of Revenue, Individual Income Tax"
+    },
+    "taxYear": 2024,
+    "lastUpdated": "2024-09-18"
+  },
+  "states": {
+    "CA": {
+      "name": "California",
+      "taxType": "progressive",
+      "single": [
+        {"incomeMin": 0, "incomeMax": 10099, "rate": 0.01},
+        {"incomeMin": 10099, "incomeMax": 23942, "rate": 0.02},
+        {"incomeMin": 23942, "incomeMax": 37788, "rate": 0.04},
+        {"incomeMin": 37788, "incomeMax": 52455, "rate": 0.06},
+        {"incomeMin": 52455, "incomeMax": 66295, "rate": 0.08},
+        {"incomeMin": 66295, "incomeMax": 338639, "rate": 0.093},
+        {"incomeMin": 338639, "incomeMax": 406364, "rate": 0.103},
+        {"incomeMin": 406364, "incomeMax": 677278, "rate": 0.113},
+        {"incomeMin": 677278, "incomeMax": "Infinity", "rate": 0.123}
+      ],
+      "marriedFilingJointly": [
+        {"incomeMin": 0, "incomeMax": 20198, "rate": 0.01},
+        {"incomeMin": 20198, "incomeMax": 47884, "rate": 0.02},
+        {"incomeMin": 47884, "incomeMax": 75576, "rate": 0.04},
+        {"incomeMin": 75576, "incomeMax": 104910, "rate": 0.06},
+        {"incomeMin": 104910, "incomeMax": 132590, "rate": 0.08},
+        {"incomeMin": 132590, "incomeMax": 677278, "rate": 0.093},
+        {"incomeMin": 677278, "incomeMax": 812728, "rate": 0.103},
+        {"incomeMin": 812728, "incomeMax": 1354556, "rate": 0.113},
+        {"incomeMin": 1354556, "incomeMax": "Infinity", "rate": 0.123}
+      ]
+    },
+    "NY": {
+      "name": "New York",
+      "taxType": "progressive",
+      "single": [
+        {"incomeMin": 0, "incomeMax": 8500, "rate": 0.04},
+        {"incomeMin": 8500, "incomeMax": 11700, "rate": 0.045},
+        {"incomeMin": 11700, "incomeMax": 13900, "rate": 0.0525},
+        {"incomeMin": 13900, "incomeMax": 80650, "rate": 0.059},
+        {"incomeMin": 80650, "incomeMax": 215400, "rate": 0.0645},
+        {"incomeMin": 215400, "incomeMax": 1077550, "rate": 0.0685},
+        {"incomeMin": 1077550, "incomeMax": "Infinity", "rate": 0.103}
+      ],
+      "marriedFilingJointly": [
+        {"incomeMin": 0, "incomeMax": 17150, "rate": 0.04},
+        {"incomeMin": 17150, "incomeMax": 23600, "rate": 0.045},
+        {"incomeMin": 23600, "incomeMax": 27900, "rate": 0.0525},
+        {"incomeMin": 27900, "incomeMax": 161550, "rate": 0.059},
+        {"incomeMin": 161550, "incomeMax": 323200, "rate": 0.0645},
+        {"incomeMin": 323200, "incomeMax": 2155350, "rate": 0.0685},
+        {"incomeMin": 2155350, "incomeMax": "Infinity", "rate": 0.103}
+      ]
+    },
+    "TX": {
+      "name": "Texas",
+      "taxType": "none",
+      "rate": 0.0
+    },
+    "FL": {
+      "name": "Florida",
+      "taxType": "none",
+      "rate": 0.0
+    },
+    "PA": {
+      "name": "Pennsylvania",
+      "taxType": "flat",
+      "rate": 0.0307
+    },
+    "IL": {
+      "name": "Illinois",
+      "taxType": "flat",
+      "rate": 0.0495
+    },
+    "OH": {
+      "name": "Ohio",
+      "taxType": "progressive",
+      "single": [
+        {"incomeMin": 0, "incomeMax": 26050, "rate": 0.0},
+        {"incomeMin": 26050, "incomeMax": 46700, "rate": 0.02765},
+        {"incomeMin": 46700, "incomeMax": 93450, "rate": 0.03226},
+        {"incomeMin": 93450, "incomeMax": 115300, "rate": 0.03688},
+        {"incomeMin": 115300, "incomeMax": "Infinity", "rate": 0.0399}
+      ],
+      "marriedFilingJointly": [
+        {"incomeMin": 0, "incomeMax": 26050, "rate": 0.0},
+        {"incomeMin": 26050, "incomeMax": 46700, "rate": 0.02765},
+        {"incomeMin": 46700, "incomeMax": 93450, "rate": 0.03226},
+        {"incomeMin": 93450, "incomeMax": 115300, "rate": 0.03688},
+        {"incomeMin": 115300, "incomeMax": "Infinity", "rate": 0.0399}
+      ]
+    },
+    "GA": {
+      "name": "Georgia",
+      "taxType": "flat",
+      "rate": 0.0519
+    },
+    "NC": {
+      "name": "North Carolina",
+      "taxType": "flat",
+      "rate": 0.0425
+    },
+    "MI": {
+      "name": "Michigan",
+      "taxType": "flat",
+      "rate": 0.0425
+    },
+    "AK": {
+      "name": "Alaska",
+      "taxType": "none",
+      "rate": 0.0
+    },
+    "AL": {
+      "name": "Alabama",
+      "taxType": "progressive",
+      "note": "Progressive 2-5%, full brackets not implemented"
+    },
+    "AR": {
+      "name": "Arkansas",
+      "taxType": "progressive",
+      "note": "Progressive 0-4.7%, full brackets not implemented"
+    },
+    "AZ": {
+      "name": "Arizona",
+      "taxType": "flat",
+      "rate": 0.025
+    },
+    "CO": {
+      "name": "Colorado",
+      "taxType": "flat",
+      "rate": 0.044
+    },
+    "CT": {
+      "name": "Connecticut",
+      "taxType": "progressive",
+      "note": "Progressive 2-6.99%, full brackets not implemented"
+    },
+    "DC": {
+      "name": "District of Columbia",
+      "taxType": "progressive",
+      "note": "Progressive 4-10.75%, full brackets not implemented"
+    },
+    "DE": {
+      "name": "Delaware",
+      "taxType": "progressive",
+      "note": "Progressive 0-6.6%, full brackets not implemented"
+    },
+    "HI": {
+      "name": "Hawaii",
+      "taxType": "progressive",
+      "note": "Progressive 1.4-11%, full brackets not implemented"
+    },
+    "IA": {
+      "name": "Iowa",
+      "taxType": "flat",
+      "rate": 0.038
+    },
+    "ID": {
+      "name": "Idaho",
+      "taxType": "flat",
+      "rate": 0.057
+    },
+    "IN": {
+      "name": "Indiana",
+      "taxType": "flat",
+      "rate": 0.03
+    },
+    "KS": {
+      "name": "Kansas",
+      "taxType": "progressive",
+      "note": "Progressive 3.1-5.7%, full brackets not implemented"
+    },
+    "KY": {
+      "name": "Kentucky",
+      "taxType": "flat",
+      "rate": 0.04
+    },
+    "LA": {
+      "name": "Louisiana",
+      "taxType": "flat",
+      "rate": 0.03
+    },
+    "MA": {
+      "name": "Massachusetts",
+      "taxType": "progressive",
+      "note": "5% base + 4% surtax on income >$1M, full brackets not implemented"
+    },
+    "MD": {
+      "name": "Maryland",
+      "taxType": "progressive",
+      "note": "Progressive 2-5.75%, full brackets not implemented"
+    },
+    "ME": {
+      "name": "Maine",
+      "taxType": "progressive",
+      "note": "Progressive 5.8-7.15%, full brackets not implemented"
+    },
+    "MN": {
+      "name": "Minnesota",
+      "taxType": "progressive",
+      "note": "Progressive 5.35-9.85%, full brackets not implemented"
+    },
+    "MO": {
+      "name": "Missouri",
+      "taxType": "progressive",
+      "note": "Progressive 0-4.95%, full brackets not implemented"
+    },
+    "MS": {
+      "name": "Mississippi",
+      "taxType": "flat",
+      "rate": 0.044
+    },
+    "MT": {
+      "name": "Montana",
+      "taxType": "progressive",
+      "note": "Progressive 4.7-5.9%, full brackets not implemented"
+    },
+    "ND": {
+      "name": "North Dakota",
+      "taxType": "progressive",
+      "note": "Progressive 1.1-2.9%, full brackets not implemented"
+    },
+    "NE": {
+      "name": "Nebraska",
+      "taxType": "progressive",
+      "note": "Progressive 2.46-6.64%, full brackets not implemented"
+    },
+    "NH": {
+      "name": "New Hampshire",
+      "taxType": "none",
+      "rate": 0.0,
+      "note": "Repealed interest and dividends tax in 2025"
+    },
+    "NJ": {
+      "name": "New Jersey",
+      "taxType": "progressive",
+      "note": "Progressive 1.4-10.75%, full brackets not implemented"
+    },
+    "NM": {
+      "name": "New Mexico",
+      "taxType": "progressive",
+      "note": "Progressive 1.7-5.9%, full brackets not implemented"
+    },
+    "NV": {
+      "name": "Nevada",
+      "taxType": "none",
+      "rate": 0.0
+    },
+    "OK": {
+      "name": "Oklahoma",
+      "taxType": "progressive",
+      "note": "Progressive 0.25-4.75%, full brackets not implemented"
+    },
+    "OR": {
+      "name": "Oregon",
+      "taxType": "progressive",
+      "note": "Progressive 4.75-9.9%, full brackets not implemented"
+    },
+    "RI": {
+      "name": "Rhode Island",
+      "taxType": "progressive",
+      "note": "Progressive 3.75-5.99%, full brackets not implemented"
+    },
+    "SC": {
+      "name": "South Carolina",
+      "taxType": "progressive",
+      "note": "Progressive 0-6.4%, full brackets not implemented"
+    },
+    "SD": {
+      "name": "South Dakota",
+      "taxType": "none",
+      "rate": 0.0
+    },
+    "TN": {
+      "name": "Tennessee",
+      "taxType": "none",
+      "rate": 0.0
+    },
+    "UT": {
+      "name": "Utah",
+      "taxType": "flat",
+      "rate": 0.0455
+    },
+    "VA": {
+      "name": "Virginia",
+      "taxType": "progressive",
+      "note": "Progressive 2-5.75%, full brackets not implemented"
+    },
+    "VT": {
+      "name": "Vermont",
+      "taxType": "progressive",
+      "note": "Progressive 3.35-8.75%, full brackets not implemented"
+    },
+    "WA": {
+      "name": "Washington",
+      "taxType": "none",
+      "rate": 0.0,
+      "note": "No income tax on wages, but 7% capital gains tax on gains >$270K"
+    },
+    "WV": {
+      "name": "West Virginia",
+      "taxType": "progressive",
+      "note": "Progressive 2.36-5.12%, full brackets not implemented"
+    },
+    "WI": {
+      "name": "Wisconsin",
+      "taxType": "progressive",
+      "note": "Progressive 3.5-7.65%, full brackets not implemented"
+    },
+    "WY": {
+      "name": "Wyoming",
+      "taxType": "none",
+      "rate": 0.0
+    }
+  }
+}

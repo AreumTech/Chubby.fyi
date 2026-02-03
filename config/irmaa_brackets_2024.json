@@ -1,0 +1,23 @@
+{
+  "irmaaBrackets": {
+    "single": [
+      {"magiMin": 0, "magiMax": 103000, "monthlyPremiumAdd": 0},
+      {"magiMin": 103000, "magiMax": 129000, "monthlyPremiumAdd": 69.90},
+      {"magiMin": 129000, "magiMax": 161000, "monthlyPremiumAdd": 174.70},
+      {"magiMin": 161000, "magiMax": 193000, "monthlyPremiumAdd": 279.50},
+      {"magiMin": 193000, "magiMax": 500000, "monthlyPremiumAdd": 384.30},
+      {"magiMin": 500000, "magiMax": 999999999, "monthlyPremiumAdd": 419.30}
+    ],
+    "marriedFilingJointly": [
+      {"magiMin": 0, "magiMax": 206000, "monthlyPremiumAdd": 0},
+      {"magiMin": 206000, "magiMax": 258000, "monthlyPremiumAdd": 69.90},
+      {"magiMin": 258000, "magiMax": 322000, "monthlyPremiumAdd": 174.70},
+      {"magiMin": 322000, "magiMax": 386000, "monthlyPremiumAdd": 279.50},
+      {"magiMin": 386000, "magiMax": 750000, "monthlyPremiumAdd": 384.30},
+      {"magiMin": 750000, "magiMax": 999999999, "monthlyPremiumAdd": 419.30}
+    ]
+  },
+  "description": "Medicare Part B IRMAA premiums for 2024",
+  "lookBackYears": 2,
+  "notes": "These brackets use Modified Adjusted Gross Income (MAGI) from 2 years prior"
+}

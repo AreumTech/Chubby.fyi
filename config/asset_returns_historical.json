@@ -1,0 +1,108 @@
+{
+  "description": "Historical Asset Class Returns for True Mathematical Accuracy",
+  "dataSource": "Multiple sources: FRED Economic Data, Yahoo Finance, Morningstar, REIT indices",
+  "lastUpdated": "2025-09-16",
+  "methodology": "Replace approximations with actual historical performance data",
+  "notes": {
+    "spyReturns": "S&P 500 total returns including dividends from SPDR S&P 500 ETF",
+    "bondReturns": "US Aggregate Bond total returns from iShares Core US Aggregate Bond ETF",
+    "intlReturns": "International developed markets from Vanguard Total International Stock Index",
+    "realEstateReturns": "REIT returns from Vanguard Real Estate Index Fund",
+    "commodityReturns": "Commodity returns from DJP commodities index",
+    "cashReturns": "3-month Treasury bill rates from FRED Economic Data",
+    "inflationRates": "Consumer Price Index from Bureau of Labor Statistics"
+  },
+  "assetClassReturns": {
+    "2020": {
+      "spy": 0.1838,
+      "bnd": 0.0751,
+      "intl": 0.1081,
+      "realEstate": -0.0511,
+      "commodities": -0.0331,
+      "cash": 0.0037,
+      "inflation": 0.0123
+    },
+    "2021": {
+      "spy": 0.2871,
+      "bnd": -0.0154,
+      "intl": 0.1167,
+      "realEstate": 0.4346,
+      "commodities": 0.2714,
+      "cash": 0.0005,
+      "inflation": 0.0470
+    },
+    "2022": {
+      "spy": -0.1813,
+      "bnd": -0.1304,
+      "intl": -0.1424,
+      "realEstate": -0.2493,
+      "commodities": 0.1647,
+      "cash": 0.0162,
+      "inflation": 0.0801
+    },
+    "2023": {
+      "spy": 0.2626,
+      "bnd": 0.0547,
+      "intl": 0.1548,
+      "realEstate": 0.1328,
+      "commodities": -0.0779,
+      "cash": 0.0463,
+      "inflation": 0.0323
+    },
+    "2024": {
+      "spy": 0.2489,
+      "bnd": 0.0126,
+      "intl": 0.0548,
+      "realEstate": 0.1534,
+      "commodities": 0.0034,
+      "cash": 0.0512,
+      "inflation": 0.0291
+    }
+  },
+  "individualStockPremiums": {
+    "description": "Individual stock returns vs market - statistical premiums/discounts",
+    "methodology": "Based on academic research on single-stock volatility and returns",
+    "notes": "Individual stocks typically have 2-3x market volatility with varying risk premiums",
+    "annualVolatilityMultiplier": 2.5,
+    "riskPremiumRange": {
+      "min": -0.05,
+      "max": 0.03,
+      "mean": -0.01
+    },
+    "survivorshipBias": -0.015,
+    "concentrationRisk": -0.025
+  },
+  "alternativeAssetAllocations": {
+    "description": "Real-world alternative asset compositions",
+    "balanced": {
+      "spy": 0.35,
+      "intl": 0.25,
+      "realEstate": 0.20,
+      "commodities": 0.10,
+      "bnd": 0.10
+    },
+    "growth": {
+      "spy": 0.50,
+      "intl": 0.30,
+      "realEstate": 0.15,
+      "commodities": 0.05,
+      "bnd": 0.00
+    },
+    "conservative": {
+      "spy": 0.20,
+      "intl": 0.15,
+      "realEstate": 0.15,
+      "commodities": 0.05,
+      "bnd": 0.45
+    }
+  },
+  "cashEquivalents": {
+    "description": "Cash return models based on actual interest rate environments",
+    "savingsAccountRate": 0.0001,
+    "moneyMarketRate": 0.0015,
+    "threeMoTreasury": 0.0052,
+    "sixMoCD": 0.0067,
+    "correlationWithInflation": 0.65,
+    "realReturnHistoricalAvg": -0.007
+  }
+}

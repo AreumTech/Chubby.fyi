@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chubby.fyi/schemas/index.json",
+  "title": "AreumFire Schema Index",
+  "description": "Index of all schemas used in the AreumFire application",
+  "type": "object",
+  "properties": {
+    "schemas": {
+      "type": "object",
+      "properties": {
+        "financialEvent": {
+          "$ref": "financial-event.json"
+        },
+        "accountHoldings": {
+          "$ref": "account-holdings.json"
+        },
+        "simulationInput": {
+          "$ref": "simulation-input.json"
+        },
+        "monthlyData": {
+          "$ref": "monthly-data.json"
+        },
+        "simulationResult": {
+          "$ref": "simulation-result.json"
+        },
+        "simulationResults": {
+          "$ref": "simulation-results.json"
+        }
+      }
+    }
+  }
+}

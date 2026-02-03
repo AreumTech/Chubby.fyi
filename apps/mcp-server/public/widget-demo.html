@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Widget Spacing Variants</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    h1 {
+      text-align: center;
+      color: #fff;
+      margin-bottom: 10px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 30px;
+      font-size: 13px;
+    }
+    .variants {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+    @media (max-width: 1200px) {
+      .variants {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 800px) {
+      .variants {
+        grid-template-columns: 1fr;
+      }
+    }
+    .variant {
+      background: #252525;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .variant-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: #2a2a2a;
+      border-bottom: 1px solid #333;
+    }
+    .variant-title {
+      font-weight: 600;
+      font-size: 13px;
+      color: #fff;
+    }
+    .variant-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: #333;
+      color: #888;
+    }
+    .variant-badge.recommended {
+      background: #0a84ff;
+      color: #fff;
+    }
+    .variant iframe {
+      width: 100%;
+      height: 700px;
+      border: none;
+      display: block;
+    }
+    .variant-info {
+      padding: 12px 16px;
+      background: #2a2a2a;
+      border-top: 1px solid #333;
+      font-size: 11px;
+      color: #666;
+    }
+    .variant-info code {
+      background: #333;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <h1>Widget Spacing Variants</h1>
+  <p class="subtitle">Compare side-by-side on desktop. Pick one to make default.</p>
+
+  <div class="variants">
+    <div class="variant">
+      <div class="variant-header">
+        <span class="variant-title">Normal</span>
+        <span class="variant-badge recommended">Default</span>
+      </div>
+      <iframe id="frame-normal" src="simulation-widget.html"></iframe>
+      <div class="variant-info">
+        Events: 28px · Trajectory: 24px · <code>default</code>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-header">
+        <span class="variant-title">Compact</span>
+        <span class="variant-badge">Tighter</span>
+      </div>
+      <iframe id="frame-compact" src="simulation-widget.html"></iframe>
+      <div class="variant-info">
+        Events: 22px · Trajectory: 20px · <code>.compact</code>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-header">
+        <span class="variant-title">Ultra Compact</span>
+        <span class="variant-badge">Dense</span>
+      </div>
+      <iframe id="frame-ultra" src="simulation-widget.html"></iframe>
+      <div class="variant-info">
+        Events: 18px · Trajectory: 16px · <code>.ultra-compact</code>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sample data for testing
+    const sampleData = {
+      success: true,
+      runId: 'demo-123',
+      baseSeed: 1738270432,
+      pathsRun: 100,
+      startYear: 2024,
+      inputs: {
+        investableAssets: 500000,
+        annualSpending: 60000,
+        currentAge: 35,
+        expectedIncome: 120000,
+        horizonMonths: 540
+      },
+      mc: {
+        finalNetWorthP10: 850000,
+        finalNetWorthP50: 2100000,
+        finalNetWorthP75: 3500000
+      },
+      netWorthTrajectory: [
+        { monthOffset: 0, p10: 500000, p50: 500000, p75: 500000 },
+        { monthOffset: 60, p10: 520000, p50: 680000, p75: 850000 },
+        { monthOffset: 120, p10: 580000, p50: 920000, p75: 1300000 },
+        { monthOffset: 180, p10: 650000, p50: 1200000, p75: 1800000 },
+        { monthOffset: 240, p10: 720000, p50: 1500000, p75: 2400000 },
+        { monthOffset: 300, p10: 780000, p50: 1800000, p75: 2900000 },
+        { monthOffset: 360, p10: 820000, p50: 2000000, p75: 3300000 },
+        { monthOffset: 420, p10: 840000, p50: 2050000, p75: 3400000 },
+        { monthOffset: 480, p10: 850000, p50: 2080000, p75: 3450000 },
+        { monthOffset: 540, p10: 850000, p50: 2100000, p75: 3500000 }
+      ],
+      schedule: {
+        startingPoint: {
+          age: 35,
+          assets: 500000,
+          income: 120000,
+          spending: 60000
+        },
+        scheduledEvents: [
+          { age: 55, label: 'Retirement', icon: '🏖️', type: 'income_change', change: '$0' },
+          { age: 62, label: 'Social Security', icon: '🏛️', type: 'income_event', change: '+$24K/yr' },
+          { age: 65, label: 'Medicare', icon: '🏥', type: 'expense', change: '-$3K/yr' }
+        ]
+      },
+      planDuration: {
+        p10Age: 78,
+        p50Age: null,
+        horizonAge: 80,
+        saturated: true
+      },
+      // Annual snapshots for year inspector
+      annualSnapshots: [
+        { year: 2024, age: 35, startBalance: 500000, endBalance: 560000, totalIncome: 120000, totalExpenses: 60000, returnPct: 7.2 },
+        { year: 2029, age: 40, startBalance: 680000, endBalance: 780000, totalIncome: 130000, totalExpenses: 65000, returnPct: 8.1 },
+        { year: 2034, age: 45, startBalance: 920000, endBalance: 1050000, totalIncome: 140000, totalExpenses: 70000, returnPct: 6.5 },
+        { year: 2039, age: 50, startBalance: 1200000, endBalance: 1350000, totalIncome: 150000, totalExpenses: 75000, returnPct: 5.8 },
+        { year: 2044, age: 55, startBalance: 1500000, endBalance: 1420000, totalIncome: 0, totalExpenses: 80000, returnPct: 4.2 },
+        { year: 2049, age: 60, startBalance: 1600000, endBalance: 1580000, totalIncome: 0, totalExpenses: 85000, returnPct: 3.9 },
+        { year: 2054, age: 65, startBalance: 1800000, endBalance: 1820000, totalIncome: 24000, totalExpenses: 88000, returnPct: 5.1 },
+        { year: 2059, age: 70, startBalance: 2000000, endBalance: 2050000, totalIncome: 26000, totalExpenses: 90000, returnPct: 4.8 },
+        { year: 2064, age: 75, startBalance: 2080000, endBalance: 2100000, totalIncome: 28000, totalExpenses: 92000, returnPct: 4.5 },
+        { year: 2069, age: 80, startBalance: 2100000, endBalance: 2100000, totalIncome: 30000, totalExpenses: 95000, returnPct: 4.2 }
+      ],
+      // First-month events for "show the math"
+      firstMonthEvents: {
+        35: [
+          { n: 'Salary deposit', t: 'income', d: 10000, cb: 50000, ca: 60000 },
+          { n: 'Living expenses', t: 'expense', d: -5000, cb: 60000, ca: 55000 },
+          { n: 'Tax withholding', t: 'expense', d: -2500, cb: 55000, ca: 52500 },
+          { n: 'Market returns', t: 'market', d: 2800, cb: 52500, ca: 55300 }
+        ],
+        40: [
+          { n: 'Salary deposit', t: 'income', d: 10833, cb: 55000, ca: 65833 },
+          { n: 'Living expenses', t: 'expense', d: -5417, cb: 65833, ca: 60416 },
+          { n: 'Tax withholding', t: 'expense', d: -2708, cb: 60416, ca: 57708 },
+          { n: 'Market returns', t: 'market', d: 4200, cb: 57708, ca: 61908 }
+        ],
+        55: [
+          { n: 'Living expenses', t: 'expense', d: -6667, cb: 80000, ca: 73333 },
+          { n: 'Portfolio withdrawal', t: 'withdrawal', d: -6667, cb: 1500000, ca: 1493333 },
+          { n: 'Market returns', t: 'market', d: 5200, cb: 1493333, ca: 1498533 }
+        ],
+        65: [
+          { n: 'Social Security', t: 'income', d: 2000, cb: 70000, ca: 72000 },
+          { n: 'Living expenses', t: 'expense', d: -7333, cb: 72000, ca: 64667 },
+          { n: 'Medicare premium', t: 'expense', d: -175, cb: 64667, ca: 64492 },
+          { n: 'Market returns', t: 'market', d: 7500, cb: 64492, ca: 71992 }
+        ]
+      }
+    };
+
+    // Initialize all iframes
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        // Normal variant (default)
+        const frameNormal = document.getElementById('frame-normal');
+        frameNormal.contentWindow.postMessage({ type: 'simulationResult', result: sampleData }, '*');
+
+        // Compact variant
+        const frameCompact = document.getElementById('frame-compact');
+        frameCompact.contentWindow.postMessage({ type: 'simulationResult', result: sampleData }, '*');
+        setTimeout(() => {
+          frameCompact.contentWindow.postMessage({ type: 'setVariant', variant: 'compact' }, '*');
+        }, 100);
+
+        // Ultra compact variant
+        const frameUltra = document.getElementById('frame-ultra');
+        frameUltra.contentWindow.postMessage({ type: 'simulationResult', result: sampleData }, '*');
+        setTimeout(() => {
+          frameUltra.contentWindow.postMessage({ type: 'setVariant', variant: 'ultra' }, '*');
+        }, 100);
+      }, 500);
+    });
+  </script>
+</body>
+</html>
