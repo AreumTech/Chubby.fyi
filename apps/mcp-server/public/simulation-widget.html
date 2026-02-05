@@ -3,13 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>AreumFire Simulation Summary</title>
+  <title>Chubby Simulation Summary</title>
   <style>
     /* =========================================================================
      * CSS Custom Properties - Aligned with OpenAI Apps SDK UI
      * ========================================================================= */
+    /* Keep document canvas neutral - don't trigger UA dark canvas painting */
+    html {
+      color-scheme: normal;
+      background: transparent;
+    }
+
     :root {
-      color-scheme: light dark;
 
       /* =====================================================================
        * Typography Scale (Apps SDK aligned)
@@ -71,11 +76,15 @@
       --color-text: var(--gray-1000);
       --color-text-secondary: var(--gray-500);
       --color-text-tertiary: var(--gray-400);
+      --color-text-muted: var(--gray-400);
 
       /* Surfaces */
       --color-surface: var(--gray-0);
       --color-surface-secondary: var(--gray-50);
       --color-surface-elevated: light-dark(#f5f5f5, #1a1a1a);
+      --color-background: var(--color-surface);
+      --color-surface-hover: light-dark(#f1f1f1, #1f1f1f);
+      --color-surface-active: light-dark(#e8e8e8, #262626);
 
       /* Borders - using alpha */
       --color-border: light-dark(rgba(13,13,13,0.1), rgba(255,255,255,0.1));
@@ -85,6 +94,7 @@
       --color-positive: light-dark(#2d8a4e, #6db88a);
       --color-negative: light-dark(#9a6458, #c4897c);
       --color-link: light-dark(#0285ff, #60a5fa);
+      --color-success: light-dark(#2d8a4e, #6db88a);
 
       /* Trajectory bands - distinct visual layers */
       --color-bar-p50: var(--gray-700);
@@ -121,14 +131,19 @@
       --color-text: #0d0d0d;
       --color-text-secondary: #5d5d5d;
       --color-text-tertiary: #8f8f8f;
+      --color-text-muted: #8f8f8f;
       --color-surface: #ffffff;
       --color-surface-secondary: #f9f9f9;
       --color-surface-elevated: #f5f5f5;
+      --color-background: #ffffff;
+      --color-surface-hover: #f1f1f1;
+      --color-surface-active: #e8e8e8;
       --color-border: rgba(13,13,13,0.1);
       --color-border-subtle: rgba(13,13,13,0.06);
       --color-positive: #2d8a4e;
       --color-negative: #9a6458;
       --color-link: #0285ff;
+      --color-success: #2d8a4e;
       --color-bar-p50: #303030;
       --color-bar-p75: #c5c5c5;
       --color-bar-p10: #a0a0a0;
@@ -155,14 +170,19 @@
       --color-text: #ffffff;
       --color-text-secondary: #5d5d5d;
       --color-text-tertiary: #414141;
+      --color-text-muted: #414141;
       --color-surface: #0d0d0d;
       --color-surface-secondary: #131313;
       --color-surface-elevated: #1a1a1a;
+      --color-background: #0d0d0d;
+      --color-surface-hover: #1f1f1f;
+      --color-surface-active: #262626;
       --color-border: rgba(255,255,255,0.1);
       --color-border-subtle: rgba(255,255,255,0.08);
       --color-positive: #6db88a;
       --color-negative: #c4897c;
       --color-link: #60a5fa;
+      --color-success: #6db88a;
       --color-bar-p50: #afafaf;
       --color-bar-p75: #4a4a4a;
       --color-bar-p10: #656565;
@@ -187,12 +207,9 @@
       font-size: var(--font-size-sm);
       line-height: 1.5;
       color: var(--color-text);
-      background: transparent; /* Let host background show through rounded corners */
-    }
-
-    /* Ensure transparent background for floating card effect in ChatGPT */
-    html, body {
-      background: transparent !important;
+      color-scheme: light dark; /* Enable light-dark() inside body subtree */
+      background: transparent;
+      margin: 0;
     }
 
     .widget {
@@ -1064,6 +1081,94 @@
       font-size: var(--font-size-2xs);
     }
 
+    /* =========================================================================
+     * Onboarding (missing inputs)
+     * ========================================================================= */
+    .input-panel {
+      background: var(--color-surface-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+    }
+
+    .input-title {
+      font-size: var(--font-size-md);
+      font-weight: 600;
+      margin-bottom: var(--space-1);
+    }
+
+    .input-subtitle {
+      color: var(--color-text-muted);
+      font-size: var(--font-size-sm);
+      margin-bottom: var(--space-3);
+    }
+
+    .input-form {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .input-row {
+      display: grid;
+      gap: var(--space-1);
+    }
+
+    .input-label {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+
+    .input-control {
+      height: var(--control-lg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 0 var(--space-3);
+      background: var(--color-surface);
+      color: var(--color-text);
+      font-size: var(--font-size-sm);
+    }
+
+    .input-control:focus {
+      outline: none;
+      border-color: var(--color-link);
+      box-shadow: var(--focus-ring);
+    }
+
+    .input-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .input-button {
+      height: var(--control-lg);
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+      background: var(--color-text);
+      color: var(--color-surface);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .input-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .input-helper {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-muted);
+    }
+
+    .input-error {
+      font-size: var(--font-size-xs);
+      color: var(--color-negative);
+      margin-top: var(--space-2);
+    }
+
     .accounts-legend-item {
       display: flex;
       align-items: center;
@@ -1603,7 +1708,7 @@
     <!-- Loading State -->
     <div class="loading-state">
       <div class="header">
-        <span class="header-brand">AreumFire</span>
+        <span class="header-brand">Chubby</span>
         <span class="header-tag">Educational simulation</span>
       </div>
       <div class="loading-message" aria-live="polite">
@@ -1640,7 +1745,7 @@
     <div class="content-state">
     <!-- Header -->
     <div class="header">
-      <span class="header-brand">AreumFire</span>
+      <span class="header-brand">Chubby</span>
       <span class="header-tag">Educational simulation</span>
     </div>
 
@@ -1780,11 +1885,9 @@
 
     function applyTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme || 'light');
-      document.documentElement.style.colorScheme = theme || 'light';
-      // Override browser's default canvas background that colorScheme applies
-      document.documentElement.style.background = 'transparent';
-      document.body.style.background = 'transparent';
-      console.log('[AreumFire Widget] Theme:', theme);
+      // Don't set colorScheme on html - keep it 'normal' to avoid UA canvas painting
+      // color-scheme is set on body via CSS, which inherits to the widget subtree
+      console.log('[Chubby Widget] Theme:', theme);
     }
 
     function detectTheme() {
@@ -1821,7 +1924,7 @@
       const validModes = ['inline', 'pip', 'fullscreen'];
       const m = validModes.includes(mode) ? mode : 'inline';
       widget.setAttribute('data-display-mode', m);
-      console.log('[AreumFire Widget] Display mode:', m);
+      console.log('[Chubby Widget] Display mode:', m);
     }
 
     function detectDisplayMode() {
@@ -1855,7 +1958,7 @@
       // Apply max-height to prevent internal scrolling (per OpenAI guidelines)
       widget.style.maxHeight = maxHeight + 'px';
       widget.style.overflowY = 'auto';
-      console.log('[AreumFire Widget] Max height:', maxHeight);
+      console.log('[Chubby Widget] Max height:', maxHeight);
     }
 
     function detectMaxHeight() {
@@ -1919,7 +2022,7 @@
 
     function getMedianEndingAssets(d) {
       // Try mc.finalNetWorthP50
-      if (d.mc?.finalNetWorthP50) return d.mc.finalNetWorthP50;
+      if (d.mc?.finalNetWorthP50 != null) return d.mc.finalNetWorthP50;
 
       // Try last trajectory point
       const trajectory = d.netWorthTrajectory || d.mc?.netWorthTrajectory || [];
@@ -1940,7 +2043,7 @@
 
     function getP10EndingAssets(d) {
       // Try mc.finalNetWorthP10
-      if (d.mc?.finalNetWorthP10) return d.mc.finalNetWorthP10;
+      if (d.mc?.finalNetWorthP10 != null) return d.mc.finalNetWorthP10;
 
       // Try last trajectory point
       const trajectory = d.netWorthTrajectory || d.mc?.netWorthTrajectory || [];
@@ -2014,7 +2117,7 @@
 
       if (!saturated && (agesIdentical || lowConstraintProb)) {
         saturated = true;
-        console.log('[AreumFire Widget] Detected effective saturation:',
+        console.log('[Chubby Widget] Detected effective saturation:',
           { agesIdentical, lowConstraintProb, mostAge, earlierAge, laterAge });
       }
 
@@ -2875,6 +2978,142 @@
       inspector.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
+    function renderNeedsInput(payload) {
+      const root = document.getElementById('root');
+      if (!root) return;
+
+      const stateDraft = window.openai?.widgetState?.inputDraft || {};
+      const inputDraft = { ...(payload?.inputDraft || {}), ...stateDraft };
+      const missingFields = payload?.missingFields || [];
+      const labelMap = {
+        investableAssets: 'investable assets',
+        annualSpending: 'annual spending',
+        currentAge: 'current age',
+        expectedIncome: 'annual income (0 if retired)',
+      };
+      const missingText = missingFields.map((field) => labelMap[field] || field).join(', ');
+
+      root.classList.remove('is-loading');
+      root.innerHTML = `
+        <div class="header">
+          <span class="header-brand">Chubby</span>
+        </div>
+        <div class="input-panel">
+          <div class="input-title">Run a simulation</div>
+          <div class="input-subtitle">Add the missing basics and I’ll run the model.</div>
+          ${missingText ? `<div class="input-helper">Missing: ${missingText}</div>` : ''}
+          <form id="inputForm" class="input-form">
+            <div class="input-row">
+              <label class="input-label" for="input-investableAssets">Investable assets (USD)</label>
+              <input id="input-investableAssets" class="input-control" type="number" inputmode="decimal" step="any" min="0" placeholder="500000" value="${inputDraft.investableAssets ?? ''}">
+            </div>
+            <div class="input-row">
+              <label class="input-label" for="input-annualSpending">Annual spending (USD)</label>
+              <input id="input-annualSpending" class="input-control" type="number" inputmode="decimal" step="any" min="0" placeholder="60000" value="${inputDraft.annualSpending ?? ''}">
+            </div>
+            <div class="input-row">
+              <label class="input-label" for="input-currentAge">Current age</label>
+              <input id="input-currentAge" class="input-control" type="number" inputmode="numeric" step="1" min="0" placeholder="35" value="${inputDraft.currentAge ?? ''}">
+            </div>
+            <div class="input-row">
+              <label class="input-label" for="input-expectedIncome">Annual income (USD)</label>
+              <input id="input-expectedIncome" class="input-control" type="number" inputmode="decimal" step="any" min="0" placeholder="120000" value="${inputDraft.expectedIncome ?? ''}">
+              <div class="input-helper">Use 0 if retired.</div>
+            </div>
+            <div class="input-actions">
+              <button id="inputSubmit" class="input-button" type="submit">Run simulation</button>
+              <div class="input-helper">Seed and start year are set automatically.</div>
+            </div>
+            <div id="inputError" class="input-error" style="display:none;"></div>
+          </form>
+        </div>
+      `;
+
+      const form = document.getElementById('inputForm');
+      const errorEl = document.getElementById('inputError');
+      const submitBtn = document.getElementById('inputSubmit');
+      const inputIds = ['investableAssets', 'annualSpending', 'currentAge', 'expectedIncome'];
+
+      inputIds.forEach((field) => {
+        const el = document.getElementById(`input-${field}`);
+        if (!el) return;
+        el.addEventListener('input', () => {
+          const nextDraft = {};
+          inputIds.forEach((key) => {
+            const fieldEl = document.getElementById(`input-${key}`);
+            if (fieldEl) nextDraft[key] = fieldEl.value;
+          });
+          if (window.openai?.setWidgetState) {
+            window.openai.setWidgetState({ inputDraft: nextDraft });
+          }
+        });
+      });
+
+      if (form) {
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          if (!window.openai?.callTool) {
+            if (errorEl) {
+              errorEl.textContent = 'Tool calls are unavailable in this environment.';
+              errorEl.style.display = 'block';
+            }
+            return;
+          }
+
+          const parseValue = (field) => {
+            const el = document.getElementById(`input-${field}`);
+            if (!el || el.value === '') return undefined;
+            const value = Number(el.value);
+            return Number.isNaN(value) ? undefined : value;
+          };
+
+          const args = {
+            investableAssets: parseValue('investableAssets'),
+            annualSpending: parseValue('annualSpending'),
+            currentAge: parseValue('currentAge'),
+            expectedIncome: parseValue('expectedIncome'),
+            seed: payload?.seed ?? Date.now(),
+            startYear: payload?.startYear ?? new Date().getFullYear(),
+          };
+
+          const missing = [];
+          if (!(args.investableAssets > 0)) missing.push('investable assets');
+          if (!(args.annualSpending > 0)) missing.push('annual spending');
+          if (!(args.currentAge > 0)) missing.push('current age');
+          if (!(args.expectedIncome >= 0)) missing.push('annual income');
+
+          if (missing.length > 0) {
+            if (errorEl) {
+              errorEl.textContent = `Please provide: ${missing.join(', ')}.`;
+              errorEl.style.display = 'block';
+            }
+            return;
+          }
+
+          if (errorEl) {
+            errorEl.style.display = 'none';
+          }
+          if (submitBtn) {
+            submitBtn.textContent = 'Running...';
+            submitBtn.setAttribute('disabled', 'true');
+          }
+
+          try {
+            await window.openai.callTool('run_simulation_packet', args);
+          } catch (err) {
+            if (errorEl) {
+              errorEl.textContent = 'Simulation failed to start. Please try again.';
+              errorEl.style.display = 'block';
+            }
+            if (submitBtn) {
+              submitBtn.textContent = 'Run simulation';
+              submitBtn.removeAttribute('disabled');
+            }
+          }
+        });
+      }
+    }
+
     // =========================================================================
     // Init
     // =========================================================================
@@ -2887,22 +3126,27 @@
       const source = raw._meta?.widgetData ? '_meta.widgetData (optimized)' :
                      raw.structuredContent ? 'structuredContent (legacy)' :
                      raw.result ? 'result' : 'raw';
-      console.log('[AreumFire Widget] Data source:', source);
-      console.log('[AreumFire Widget] Data received:', JSON.stringify(data, null, 2).slice(0, 2000));
+      console.log('[Chubby Widget] Data source:', source);
+      console.log('[Chubby Widget] Data received:', JSON.stringify(data, null, 2).slice(0, 2000));
       // Debug: Log annualSnapshots and firstMonthEvents
-      console.log('[AreumFire Widget] annualSnapshots:', data.annualSnapshots?.length || 0, 'entries');
-      console.log('[AreumFire Widget] firstMonthEvents:', Object.keys(data.firstMonthEvents || {}).length, 'ages');
+      console.log('[Chubby Widget] annualSnapshots:', data.annualSnapshots?.length || 0, 'entries');
+      console.log('[Chubby Widget] firstMonthEvents:', Object.keys(data.firstMonthEvents || {}).length, 'ages');
       if (data.traceNote) {
-        console.warn('[AreumFire Widget] traceNote:', data.traceNote.message);
+        console.warn('[Chubby Widget] traceNote:', data.traceNote.message);
+      }
+
+      if (data.needsInput) {
+        renderNeedsInput(data);
+        return;
       }
 
       // Check for error response
       if (data.success === false || data.error) {
-        console.error('[AreumFire Widget] Error:', data.error);
+        console.error('[Chubby Widget] Error:', data.error);
         document.getElementById('root').classList.remove('is-loading');
         document.getElementById('root').innerHTML = `
           <div class="header">
-            <span class="header-brand">AreumFire</span>
+            <span class="header-brand">Chubby</span>
           </div>
           <div style="padding: var(--space-6); text-align: center;">
             <div style="font-size: var(--font-size-lg); color: var(--color-negative); margin-bottom: var(--space-3);">
@@ -2921,12 +3165,12 @@
 
       // Debug: Log trajectory data specifically
       const trajectory = data.netWorthTrajectory || data.mc?.netWorthTrajectory || [];
-      console.log('[AreumFire Widget] Trajectory points:', trajectory.length);
+      console.log('[Chubby Widget] Trajectory points:', trajectory.length);
       if (trajectory.length > 0) {
-        console.log('[AreumFire Widget] First point:', JSON.stringify(trajectory[0]));
-        console.log('[AreumFire Widget] Last point:', JSON.stringify(trajectory[trajectory.length - 1]));
+        console.log('[Chubby Widget] First point:', JSON.stringify(trajectory[0]));
+        console.log('[Chubby Widget] Last point:', JSON.stringify(trajectory[trajectory.length - 1]));
       } else {
-        console.warn('[AreumFire Widget] No trajectory data! Bars will show 0.');
+        console.warn('[Chubby Widget] No trajectory data! Bars will show 0.');
       }
 
       // Remove loading state
@@ -2940,7 +3184,7 @@
       const tax = data.taxMode === 'NOT_APPLIED' ? 'No tax' :
                   data.taxMode === 'USER_DECLARED' ? 'User tax rates' : 'No tax';
       document.getElementById('assumptions-summary').innerHTML =
-        '<span>~7% returns</span><span>~2.5% inflation</span><span>' + tax + '</span>';
+        '<span>Stocks 7% / Bonds 4%</span><span>~2.5% inflation</span><span>' + tax + '</span>';
 
       // Footer
       const horizonMonths = data.inputs?.horizonMonths || 360;

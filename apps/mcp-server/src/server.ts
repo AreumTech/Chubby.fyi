@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * AreumFire MCP Server (SSE Transport)
+ * Chubby MCP Server (SSE Transport)
  *
  * Server-Sent Events transport for ChatGPT Apps SDK integration.
  * This server exposes the same tools as the stdio server but uses HTTP/SSE
@@ -104,6 +104,7 @@ import {
 
 import { handleRunSimulation } from './tools/runSimulation.js';
 import { RUN_SIMULATION_TOOL, WIDGET_TEMPLATE_URI, WIDGET_VERSION } from './tools/toolDefinition.js';
+import { ErrorCode } from './errors.js';
 import type { RunSimulationParams } from './types.js';
 
 // Directory paths
@@ -116,6 +117,30 @@ const WIDGET_MIME_TYPE = 'text/html+skybridge';
 // Fragment viewer URL for Claude connector (privacy-first)
 // The payload in the fragment (#d=...) is NEVER sent to the server
 const WIDGET_VIEWER_BASE_URL = process.env.WIDGET_VIEWER_URL || 'https://widget.chubby.fyi';
+const REQUIRED_INPUT_FIELDS = ['investableAssets', 'annualSpending', 'currentAge', 'expectedIncome'] as const;
+
+function isNumber(value: unknown): value is number {
+  return typeof value === 'number' && !Number.isNaN(value);
+}
+
+function isPositiveNumber(value: unknown): boolean {
+  return isNumber(value) && value > 0;
+}
+
+function isNonNegativeNumber(value: unknown): boolean {
+  return isNumber(value) && value >= 0;
+}
+
+function getMissingInputFields(params: Partial<RunSimulationParams>): string[] {
+  const missing: string[] = [];
+
+  if (!isPositiveNumber(params.investableAssets)) missing.push('investableAssets');
+  if (!isPositiveNumber(params.annualSpending)) missing.push('annualSpending');
+  if (!isPositiveNumber(params.currentAge)) missing.push('currentAge');
+  if (!isNonNegativeNumber(params.expectedIncome)) missing.push('expectedIncome');
+
+  return missing;
+}
 
 /**
  * Generate a privacy-first fragment URL for the simulation viewer.
@@ -217,6 +242,16 @@ function toolDescriptorMeta() {
   } as const;
 }
 
+const WIDGET_DESCRIPTION =
+  'Chubby interactive Monte Carlo summary: trajectory bands (P10/P50/P75), runway timing, and key assumptions. Educational only — not advice.';
+
+function widgetResourceMeta() {
+  return {
+    ...toolDescriptorMeta(),
+    'openai/widgetDescription': WIDGET_DESCRIPTION,
+  } as const;
+}
+
 // Load widget HTML at startup
 let widgetHtml: string;
 try {
@@ -244,9 +279,9 @@ const resources: Resource[] = [
   {
     name: 'Simulation Summary Widget',
     uri: WIDGET_TEMPLATE_URI,
-    description: 'AreumFire simulation summary widget for ChatGPT inline display',
+    description: 'Chubby simulation summary widget for ChatGPT inline display',
     mimeType: WIDGET_MIME_TYPE,
-    _meta: toolDescriptorMeta(),
+    _meta: widgetResourceMeta(),
   },
 ];
 
@@ -254,9 +289,9 @@ const resourceTemplates: ResourceTemplate[] = [
   {
     name: 'Simulation Summary Widget Template',
     uriTemplate: WIDGET_TEMPLATE_URI,
-    description: 'AreumFire simulation summary widget template',
+    description: 'Chubby simulation summary widget template',
     mimeType: WIDGET_MIME_TYPE,
-    _meta: toolDescriptorMeta(),
+    _meta: widgetResourceMeta(),
   },
 ];
 
@@ -305,7 +340,7 @@ function createMcpServer(): Server {
             mimeType: WIDGET_MIME_TYPE,
             text: widgetHtml,
             _meta: {
-              ...toolDescriptorMeta(),
+              ...widgetResourceMeta(),
               // Cache headers for widget resource
               'cache-control': 'public, max-age=3600', // 1 hour
               etag: etag,
@@ -329,26 +364,84 @@ function createMcpServer(): Server {
     console.error(`${'='.repeat(60)}\n`);
 
     if (name === 'run_simulation_packet') {
-      const params = args as unknown as RunSimulationParams;
+      const rawParams = args as Partial<RunSimulationParams>;
+      const resolvedParams = {
+        ...rawParams,
+        seed: rawParams.seed ?? Date.now(),
+        startYear: rawParams.startYear ?? new Date().getFullYear(),
+      } as RunSimulationParams;
 
       // Log key params for quick debugging
       console.error(`🔧 Simulation params:`);
-      console.error(`   seed: ${params.seed}`);
-      console.error(`   currentAge: ${params.currentAge}`);
-      console.error(`   investableAssets: ${params.investableAssets}`);
-      console.error(`   annualSpending: ${params.annualSpending}`);
-      console.error(`   expectedIncome: ${params.expectedIncome}`);
-      console.error(`   horizonMonths: ${params.horizonMonths || 360}`);
-      console.error(`   mcPaths: ${params.mcPaths || 100}`);
-      if (params.incomeChange) console.error(`   incomeChange: ${JSON.stringify(params.incomeChange)}`);
-      if (params.spendingChange) console.error(`   spendingChange: ${JSON.stringify(params.spendingChange)}`);
-      if (params.socialSecurity) console.error(`   socialSecurity: ${JSON.stringify(params.socialSecurity)}`);
+      console.error(`   seed: ${resolvedParams.seed}`);
+      console.error(`   currentAge: ${resolvedParams.currentAge}`);
+      console.error(`   investableAssets: ${resolvedParams.investableAssets}`);
+      console.error(`   annualSpending: ${resolvedParams.annualSpending}`);
+      console.error(`   expectedIncome: ${resolvedParams.expectedIncome}`);
+      console.error(`   horizonMonths: ${resolvedParams.horizonMonths || 360}`);
+      console.error(`   mcPaths: ${resolvedParams.mcPaths || 100}`);
+      if (resolvedParams.incomeChange) console.error(`   incomeChange: ${JSON.stringify(resolvedParams.incomeChange)}`);
+      if (resolvedParams.spendingChange) console.error(`   spendingChange: ${JSON.stringify(resolvedParams.spendingChange)}`);
+      if (resolvedParams.socialSecurity) console.error(`   socialSecurity: ${JSON.stringify(resolvedParams.socialSecurity)}`);
 
       const startTime = Date.now();
-      const result = await handleRunSimulation(params);
+      const result = await handleRunSimulation(resolvedParams);
       const elapsed = Date.now() - startTime;
 
       console.error(`✅ Simulation complete in ${elapsed}ms`);
+
+      const resultCode = (result as { code?: string }).code;
+      const missingFields = getMissingInputFields(rawParams);
+      const shouldPromptForInput =
+        result.success === false &&
+        missingFields.length > 0 &&
+        (resultCode === ErrorCode.MISSING_INPUT ||
+          resultCode === ErrorCode.INVALID_RANGE ||
+          resultCode === ErrorCode.INVALID_TYPE);
+
+      if (shouldPromptForInput) {
+        const fieldLabels: Record<string, string> = {
+          investableAssets: 'investable assets',
+          annualSpending: 'annual spending',
+          currentAge: 'current age',
+          expectedIncome: 'annual income (0 if retired)',
+        };
+        const missingText = missingFields.map((field) => fieldLabels[field] || field).join(', ');
+        const textContent = `To run a simulation, I need: ${missingText}.`;
+
+        const needsInputPayload = {
+          success: false,
+          code: resultCode || ErrorCode.MISSING_INPUT,
+          error: result.error,
+          needsInput: true,
+          missingFields,
+          requiredFields: REQUIRED_INPUT_FIELDS,
+          inputDraft: {
+            investableAssets: rawParams.investableAssets,
+            annualSpending: rawParams.annualSpending,
+            currentAge: rawParams.currentAge,
+            expectedIncome: rawParams.expectedIncome,
+          },
+          seed: resolvedParams.seed,
+          startYear: resolvedParams.startYear,
+        };
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: textContent,
+            },
+          ],
+          structuredContent: needsInputPayload,
+          _meta: {
+            'openai/outputTemplate': WIDGET_TEMPLATE_URI,
+            'openai/toolInvocation/invoking': 'Running Monte Carlo simulation...',
+            'openai/toolInvocation/invoked': 'Awaiting inputs',
+            widgetData: needsInputPayload,
+          },
+        };
+      }
 
       // Format runway for text summary (phase-aware)
       const horizonMonths = result.inputs?.horizonMonths || 360;
@@ -554,7 +647,7 @@ The widget shows trajectories and when assets may be depleted.`;
       // Claude ignores _meta, so we include the link in the text content
       let textContent = textSummary;
       if (fragmentUrl) {
-        textContent += `\n\n📊 [See your projections →](${fragmentUrl})\n\n_Your data never leaves your browser._`;
+        textContent += `\n\nVisualization: ${fragmentUrl}\n(Your data never leaves your browser.)`;
         console.error(`📝 Added projections link to response`);
       } else {
         console.error(`⚠️ No fragment URL - visualization link NOT added`);
