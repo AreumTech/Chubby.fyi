@@ -252,7 +252,11 @@ func (ep *EventPreprocessor) cloneEventForMonth(event FinancialEvent, month int)
 
 	// Apply growth rate if specified
 	if growthRate, ok := event.Metadata["growthRate"].(float64); ok && growthRate > 0 {
-		yearsElapsed := float64(month-event.MonthOffset) / 12.0
+		effectiveStart := event.MonthOffset
+		if effectiveStart < 0 {
+			effectiveStart = 0
+		}
+		yearsElapsed := float64(month-effectiveStart) / 12.0
 		if yearsElapsed > 0 {
 			growthMultiplier := math.Pow(1+growthRate, yearsElapsed)
 			clone.Amount = event.Amount * growthMultiplier
@@ -265,7 +269,11 @@ func (ep *EventPreprocessor) cloneEventForMonth(event FinancialEvent, month int)
 		if rate, ok := event.Metadata["inflationRate"].(float64); ok {
 			inflationRate = rate
 		}
-		yearsElapsed := float64(month) / 12.0
+		effectiveStart := event.MonthOffset
+		if effectiveStart < 0 {
+			effectiveStart = 0
+		}
+		yearsElapsed := float64(month-effectiveStart) / 12.0
 		inflationMultiplier := math.Pow(1+inflationRate, yearsElapsed)
 		clone.Amount = clone.Amount * inflationMultiplier
 	}
@@ -315,10 +323,10 @@ func ValidateQueueIntegrity(queue *EventPriorityQueue) []string {
 				event.MonthOffset, event.Priority, lastPriority))
 		}
 
-		lastMonth = event.MonthOffset
-		if event.MonthOffset > lastMonth {
-			lastPriority = event.Priority
+		if event.MonthOffset != lastMonth {
+			lastMonth = event.MonthOffset
 		}
+		lastPriority = event.Priority
 	}
 
 	// Validate essential system events exist
