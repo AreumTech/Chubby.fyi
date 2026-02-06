@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monthly Trace Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a1a;
+      padding: 20px;
+    }
+    h1 { font-size: 16px; color: #fff; margin-bottom: 6px; }
+    .subtitle { font-size: 12px; color: #888; margin-bottom: 20px; }
+    .frame {
+      max-width: 520px;
+      margin: 0 auto;
+      background: #252525;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .frame iframe {
+      width: 100%;
+      height: 900px;
+      border: none;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>Monthly Trace — Show the Math</h1>
+  <p class="subtitle">Click any age row, then expand "Show the math" to see month-by-month event replay.</p>
+  <div class="frame">
+    <iframe id="widget" src="simulation-widget.html"></iframe>
+  </div>
+
+  <script>
+    // Realistic demo data: 35-year-old, $500k assets, $120k income, $72k spending
+    const demoData = {
+      success: true,
+      runId: 'DEMO-MTR1',
+      startYear: 2026,
+      inputs: {
+        investableAssets: 500000,
+        annualSpending: 72000,
+        currentAge: 35,
+        expectedIncome: 120000,
+        horizonMonths: 660,
+        savingsRate: 0.40,
+        annualSurplus: 48000,
+      },
+      pathsRun: 100,
+      baseSeed: 42,
+      dollarsMode: 'NOMINAL',
+      taxMode: 'NOT_APPLIED',
+      phaseInfo: { accumulationFraction: 0.75, cashFlowMode: 'netPositive', phase: 'accumulation' },
+      planDuration: {
+        mostPathsAge: 90,
+        earlierStressAge: 82,
+        laterOutcomesAge: 90,
+        horizonAge: 90,
+        horizonSaturated: true,
+        horizonSaturatedLabel: 'Plan funded through age 90 in most scenarios',
+      },
+      schedule: {
+        startingPoint: { age: 35, assets: 500000, income: 120000, spending: 72000 },
+        scheduledEvents: [
+          { age: 50, type: 'spending', change: '$84,000/yr', label: 'Spending increase' },
+          { age: 62, type: 'income', change: '$0/yr', label: 'Retirement' },
+          { age: 67, type: 'social_security', change: '+$2,800/mo', label: 'Social Security' },
+        ],
+      },
+      mc: {
+        finalNetWorthP10: 420000,
+        finalNetWorthP50: 1850000,
+        finalNetWorthP75: 3200000,
+        constraintProbability: 0.08,
+        runwayP10Months: 564,
+        runwayP50Months: 660,
+        runwayP75Months: 660,
+        netWorthTrajectory: generateTrajectory(),
+      },
+      netWorthTrajectory: generateTrajectory(),
+      annualSnapshots: generateAnnualSnapshots(),
+      firstMonthEvents: generateFirstMonthEvents(),
+    };
+
+    // Generate realistic trajectory (35→90, monthly points sampled yearly)
+    function generateTrajectory() {
+      const pts = [];
+      let nw = 500000;
+      for (let y = 0; y <= 55; y++) {
+        const age = 35 + y;
+        const monthOffset = y * 12;
+        // Accumulation: growing. After 62: drawdown.
+        const income = age < 62 ? 120000 : (age >= 67 ? 33600 : 0);
+        const spending = age < 50 ? 72000 : 84000;
+        const netFlow = income - spending;
+        const marketReturn = 0.07;
+        nw = nw * (1 + marketReturn) + netFlow;
+        if (nw < 0) nw = 0;
+        const spread = 0.15 + y * 0.008;
+        pts.push({
+          monthOffset,
+          p10: Math.max(0, Math.round(nw * (1 - spread))),
+          p50: Math.round(nw),
+          p75: Math.round(nw * (1 + spread * 0.8)),
+          pctPathsFunded: Math.max(0.5, 1 - y * 0.005),
+        });
+      }
+      return pts;
+    }
+
+    function generateAnnualSnapshots() {
+      const snaps = [];
+      let balance = 500000;
+      for (let y = 0; y <= 55; y++) {
+        const age = 35 + y;
+        const income = age < 62 ? 120000 : (age >= 67 ? 33600 : 0);
+        const spending = age < 50 ? 72000 : 84000;
+        const start = balance;
+        const growth = balance * 0.07;
+        balance = balance + growth + income - spending;
+        if (balance < 0) balance = 0;
+        snaps.push({
+          year: 2026 + y,
+          age,
+          startBalance: Math.round(start),
+          contributions: Math.round(income),
+          withdrawals: Math.round(spending),
+          returnPct: 7.0,
+          endBalance: Math.round(balance),
+          totalIncome: Math.round(income),
+          totalExpenses: Math.round(spending),
+          investmentGrowth: Math.round(growth),
+        });
+      }
+      return snaps;
+    }
+
+    // Generate realistic first-month events for displayed ages (January only)
+    function generateFirstMonthEvents() {
+      const events = {};
+      const displayedAges = [35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90];
+
+      for (const age of displayedAges) {
+        const yearOffset = age - 35;
+        const isRetired = age >= 62;
+        const hasSS = age >= 67;
+        const monthlyIncome = isRetired ? 0 : 10000;
+        const monthlySS = hasSS ? 2800 : 0;
+        const monthlySpending = age < 50 ? 6000 : 7000;
+        const monthlyHealthcare = age >= 65 ? 350 : (isRetired ? 800 : 200);
+
+        let cash = 50000 + yearOffset * 2000;
+        const ageEvents = [];
+
+        // Income
+        if (monthlyIncome > 0) {
+          cash += monthlyIncome;
+          ageEvents.push({ n: 'Salary income', t: 'income', d: monthlyIncome, cb: Math.round(cash - monthlyIncome), ca: Math.round(cash) });
+        }
+        if (monthlySS > 0) {
+          cash += monthlySS;
+          ageEvents.push({ n: 'Social Security', t: 'income', d: monthlySS, cb: Math.round(cash - monthlySS), ca: Math.round(cash) });
+        }
+
+        // 401k
+        if (!isRetired) {
+          const contrib = 1875;
+          cash -= contrib;
+          ageEvents.push({ n: '401(k) contribution', t: 'transfer', d: -contrib, cb: Math.round(cash + contrib), ca: Math.round(cash) });
+        }
+
+        // Living expenses
+        cash -= monthlySpending;
+        ageEvents.push({ n: 'Living expenses', t: 'expense', d: -monthlySpending, cb: Math.round(cash + monthlySpending), ca: Math.round(cash) });
+
+        // Healthcare
+        cash -= monthlyHealthcare;
+        ageEvents.push({ n: age >= 65 ? 'Medicare + supplement' : 'Healthcare premium', t: 'expense', d: -monthlyHealthcare, cb: Math.round(cash + monthlyHealthcare), ca: Math.round(cash) });
+
+        // Regime change markers
+        if (age === 50) {
+          ageEvents.push({ n: 'Spending increase (lifestyle)', t: 'regime_change', d: 0, cb: Math.round(cash), ca: Math.round(cash) });
+        }
+        if (age === 62) {
+          ageEvents.push({ n: 'Retirement — income stops', t: 'regime_change', d: 0, cb: Math.round(cash), ca: Math.round(cash) });
+        }
+
+        // Portfolio withdrawal if retired
+        if (isRetired && cash < 20000) {
+          const w = 15000;
+          cash += w;
+          ageEvents.push({ n: 'Portfolio withdrawal', t: 'withdrawal', d: w, cb: Math.round(cash - w), ca: Math.round(cash) });
+        }
+
+        events[age] = ageEvents;
+      }
+
+      return events;
+    }
+
+    // Inject data into widget iframe
+    document.getElementById('widget').addEventListener('load', () => {
+      document.getElementById('widget').contentWindow.postMessage(
+        { type: 'simulationResult', result: demoData },
+        '*'
+      );
+    });
+  </script>
+</body>
+</html>

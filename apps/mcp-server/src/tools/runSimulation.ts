@@ -1562,6 +1562,15 @@ export async function handleRunSimulation(
       );
     }
 
+    // Reject incomeStreams until the adapter supports them
+    if (params.incomeStreams && params.incomeStreams.length > 0) {
+      throw new SimulationError(
+        ErrorCode.INVALID_RANGE,
+        'incomeStreams is not yet supported. Use expectedIncome + incomeChange to model income transitions.',
+        { hint: 'incomeStreams will be supported in a future release' }
+      );
+    }
+
     // Resolve tax assumptions (shared context for all runs)
     const { taxMode, taxConfig } = resolveTaxAssumptions(params.taxAssumptions);
     const context: SimulationContext = { taxMode, taxConfig };

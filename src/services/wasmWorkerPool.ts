@@ -186,15 +186,14 @@ class WASMWorkerPool {
   }
 
   /**
-   * PARALLEL PROCESSING RE-ENABLED: Multiple workers with crash recovery
-   * Now using automatic worker restart and memory management for reliability
+   * PARALLEL PROCESSING: Auto-size based on hardware capabilities
    */
   private getOptimalPoolSize(): number {
-    // Default to 5 workers for consistent parallel processing performance
-    const defaultWorkers = 5;
+    const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 5 : 5;
+    const poolSize = Math.max(2, Math.min(8, cores - 1));
 
-    logger.performanceLog(`Using ${defaultWorkers} WASM workers for parallel processing`);
-    return defaultWorkers;
+    logger.performanceLog(`Using ${poolSize} WASM workers for parallel processing (${cores} cores detected)`);
+    return poolSize;
   }
 
   /**

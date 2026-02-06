@@ -11,6 +11,9 @@ import (
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
+// PERF: Pre-computed constant to avoid repeated math.Sqrt(12) calls in GARCH
+const sqrt12 = 3.4641016151377544
+
 
 // safeFloat64 generates a cryptographically secure random float64 in [0,1)
 // This replaces rand.Float64() to prevent WASM runtime crashes from corrupted global state
@@ -385,6 +388,16 @@ func GetCachedCholeskyMatrix(correlationMatrix [][]float64) ([][]float64, error)
 // PrecomputeConfigParameters pre-calculates monthly parameters and Cholesky matrix
 // PERF: Called once per simulation to avoid repeated calculations during simulation loop
 func PrecomputeConfigParameters(config *StochasticModelConfig) error {
+	// PERF: Validate config once and mark as validated to skip per-month validation
+	if !config.ConfigValidated {
+		if err := validateStochasticConfig(config); err != nil {
+			// Non-fatal: config may be incomplete (e.g., missing correlation matrix).
+			// Per-month validation will still catch this.
+			return nil
+		}
+		config.ConfigValidated = true
+	}
+
 	// Pre-compute Cholesky matrix (avoid recomputing O(n^3) every month)
 	if len(config.CorrelationMatrix) > 0 && config.CachedCholeskyMatrix == nil {
 		chol, err := CholeskyDecomposition(config.CorrelationMatrix)
@@ -557,9 +570,11 @@ func validateStochasticConfig(config *StochasticModelConfig) error {
 
 // GenerateAdvancedStochasticReturns generates one month of stochastic returns using GARCH and AR(1) models
 func GenerateAdvancedStochasticReturns(state StochasticState, config StochasticModelConfig) (StochasticReturns, StochasticState, error) {
-	// Validate inputs (and apply Go-side defaults if needed)
-	if err := validateStochasticConfig(&config); err != nil {
-		return StochasticReturns{}, state, fmt.Errorf("invalid config: %v", err)
+	// PERF: Skip validation if already validated at simulation start
+	if !config.ConfigValidated {
+		if err := validateStochasticConfig(&config); err != nil {
+			return StochasticReturns{}, state, fmt.Errorf("invalid config: %v", err)
+		}
 	}
 
 	// DEBUG MODE: If randomness is disabled, return deterministic mean returns
@@ -681,42 +696,57 @@ func GenerateAdvancedStochasticReturns(state StochasticState, config StochasticM
 		return returns, state, nil
 	}
 
-	// Get Cholesky matrix
-	choleskyMatrix, err := GetCachedCholeskyMatrix(config.CorrelationMatrix)
-	if err != nil {
-		return StochasticReturns{}, state, fmt.Errorf("failed to get Cholesky matrix: %v", err)
+	// PERF: Use pre-cached Cholesky matrix if available
+	choleskyMatrix := config.CachedCholeskyMatrix
+	if choleskyMatrix == nil {
+		var err error
+		choleskyMatrix, err = GetCachedCholeskyMatrix(config.CorrelationMatrix)
+		if err != nil {
+			return StochasticReturns{}, state, fmt.Errorf("failed to get Cholesky matrix: %v", err)
+		}
 	}
 
-	// Generate correlated shocks
-	shocks := GenerateCorrelatedTShocks(choleskyMatrix, config.FatTailParameter)
+	// PERF: Use pooled buffer for shock generation (zero allocations)
+	buf := shockBufferPool.Get().(*ShockBuffer8)
+	GenerateCorrelatedTShocksFixed8(choleskyMatrix, config.FatTailParameter, buf)
 
 	// Order of shocks must match correlationMatrix order in config.go:
 	// SPY, Bond, Intl, Infl, Home, Rent, Other, Individual
-	// CRITICAL: Add bounds checking to prevent index out of bounds panics
-	if len(shocks) < 8 {
-		// Correlation matrix is malformed - return error instead of panicking
-		return StochasticReturns{}, state, fmt.Errorf("correlation matrix malformed: expected 8 shocks, got %d", len(shocks))
+	zSPY := buf.Correlated[0]
+	zBND := buf.Correlated[1]
+	zIntl := buf.Correlated[2]
+	zInflation := buf.Correlated[3]
+	zHome := buf.Correlated[4]
+	zRent := buf.Correlated[5]
+	zOther := buf.Correlated[6]
+	zIndividualStock := buf.Correlated[7]
+
+	// Return buffer to pool
+	shockBufferPool.Put(buf)
+
+	// PERF: Use pre-computed monthly parameters if available
+	var monthlyMeanSPYReturn, monthlyMeanBondReturn, monthlyMeanIntlReturn float64
+	var monthlyMeanOtherReturn, monthlyMeanIndividualStockReturn float64
+	var monthlyVolatilityInflation, monthlyVolatilityHomeValue, monthlyVolatilityRental float64
+	if pm := config.PrecomputedMonthly; pm != nil {
+		monthlyMeanSPYReturn = pm.MeanSPY
+		monthlyMeanBondReturn = pm.MeanBond
+		monthlyMeanIntlReturn = pm.MeanIntl
+		monthlyMeanOtherReturn = pm.MeanOther
+		monthlyMeanIndividualStockReturn = pm.MeanIndividual
+		monthlyVolatilityInflation = pm.VolInflation
+		monthlyVolatilityHomeValue = pm.VolHome
+		monthlyVolatilityRental = pm.VolRental
+	} else {
+		monthlyMeanSPYReturn = AnnualToMonthlyRate(config.MeanSPYReturn)
+		monthlyMeanBondReturn = AnnualToMonthlyRate(config.MeanBondReturn)
+		monthlyMeanIntlReturn = AnnualToMonthlyRate(config.MeanIntlStockReturn)
+		monthlyMeanOtherReturn = AnnualToMonthlyRate(config.MeanOtherReturn)
+		monthlyMeanIndividualStockReturn = AnnualToMonthlyRate(config.MeanIndividualStockReturn)
+		monthlyVolatilityInflation = AnnualToMonthlyVolatility(config.VolatilityInflation)
+		monthlyVolatilityHomeValue = AnnualToMonthlyVolatility(config.VolatilityHomeValue)
+		monthlyVolatilityRental = AnnualToMonthlyVolatility(config.VolatilityRentalIncomeGrowth)
 	}
-	zSPY := shocks[0]
-	zBND := shocks[1]
-	zIntl := shocks[2]
-	zInflation := shocks[3]
-	zHome := shocks[4]
-	zRent := shocks[5]
-	zOther := shocks[6]
-	zIndividualStock := shocks[7]
-
-	// Convert annual parameters to monthly
-	monthlyMeanSPYReturn := AnnualToMonthlyRate(config.MeanSPYReturn)
-	monthlyMeanBondReturn := AnnualToMonthlyRate(config.MeanBondReturn)
-	monthlyMeanIntlReturn := AnnualToMonthlyRate(config.MeanIntlStockReturn)
-	monthlyMeanOtherReturn := AnnualToMonthlyRate(config.MeanOtherReturn)
-	monthlyMeanIndividualStockReturn := AnnualToMonthlyRate(config.MeanIndividualStockReturn)
-
-	// Convert annual volatilities to monthly
-	monthlyVolatilityInflation := AnnualToMonthlyVolatility(config.VolatilityInflation)
-	monthlyVolatilityHomeValue := AnnualToMonthlyVolatility(config.VolatilityHomeValue)
-	monthlyVolatilityRental := AnnualToMonthlyVolatility(config.VolatilityRentalIncomeGrowth)
 
 	// GARCH omega parameters: properly scale for monthly frequency
 	// For annual to monthly: ω_monthly = ω_annual / 12
@@ -729,46 +759,56 @@ func GenerateAdvancedStochasticReturns(state StochasticState, config StochasticM
 
 	// --- GARCH(1,1) for SPY ---
 	monthlyLastSPYReturn := AnnualToMonthlyRate(state.SPYLastReturn)
-	spyErrorSq := math.Pow(monthlyLastSPYReturn-monthlyMeanSPYReturn, 2)
+	spyDiff := monthlyLastSPYReturn - monthlyMeanSPYReturn
+	spyErrorSq := spyDiff * spyDiff
+	spyLastMonthlyVol := state.SPYVolatility / sqrt12
 	spyVariance := monthlyGarchSPYOmega +
 		config.GarchSPYAlpha*spyErrorSq +
-		config.GarchSPYBeta*math.Pow(state.SPYVolatility/math.Sqrt(12), 2)
+		config.GarchSPYBeta*spyLastMonthlyVol*spyLastMonthlyVol
 	newMonthlySPYVolatility := math.Sqrt(math.Max(1e-12, spyVariance))
 	monthlySPYReturn := monthlyMeanSPYReturn + newMonthlySPYVolatility*zSPY
 
 	// --- GARCH(1,1) for BND ---
 	monthlyLastBNDReturn := AnnualToMonthlyRate(state.BNDLastReturn)
-	bndErrorSq := math.Pow(monthlyLastBNDReturn-monthlyMeanBondReturn, 2)
+	bndDiff := monthlyLastBNDReturn - monthlyMeanBondReturn
+	bndErrorSq := bndDiff * bndDiff
+	bndLastMonthlyVol := state.BNDVolatility / sqrt12
 	bndVariance := monthlyGarchBondOmega +
 		config.GarchBondAlpha*bndErrorSq +
-		config.GarchBondBeta*math.Pow(state.BNDVolatility/math.Sqrt(12), 2)
+		config.GarchBondBeta*bndLastMonthlyVol*bndLastMonthlyVol
 	newMonthlyBNDVolatility := math.Sqrt(math.Max(1e-12, bndVariance))
 	monthlyBNDReturn := monthlyMeanBondReturn + newMonthlyBNDVolatility*zBND
 
 	// --- GARCH(1,1) for INTL Stocks ---
 	monthlyLastIntlReturn := AnnualToMonthlyRate(state.IntlLastReturn)
-	intlErrorSq := math.Pow(monthlyLastIntlReturn-monthlyMeanIntlReturn, 2)
+	intlDiff := monthlyLastIntlReturn - monthlyMeanIntlReturn
+	intlErrorSq := intlDiff * intlDiff
+	intlLastMonthlyVol := state.IntlVolatility / sqrt12
 	intlVariance := monthlyGarchIntlOmega +
 		config.GarchIntlStockAlpha*intlErrorSq +
-		config.GarchIntlStockBeta*math.Pow(state.IntlVolatility/math.Sqrt(12), 2)
+		config.GarchIntlStockBeta*intlLastMonthlyVol*intlLastMonthlyVol
 	newMonthlyIntlVolatility := math.Sqrt(math.Max(1e-12, intlVariance))
 	monthlyIntlReturn := monthlyMeanIntlReturn + newMonthlyIntlVolatility*zIntl
 
 	// --- GARCH(1,1) for Other Assets ---
 	monthlyLastOtherReturn := AnnualToMonthlyRate(state.OtherLastReturn)
-	otherErrorSq := math.Pow(monthlyLastOtherReturn-monthlyMeanOtherReturn, 2)
+	otherDiff := monthlyLastOtherReturn - monthlyMeanOtherReturn
+	otherErrorSq := otherDiff * otherDiff
+	otherLastMonthlyVol := state.OtherVolatility / sqrt12
 	otherVariance := monthlyGarchOtherOmega +
 		config.GarchOtherAlpha*otherErrorSq +
-		config.GarchOtherBeta*math.Pow(state.OtherVolatility/math.Sqrt(12), 2)
+		config.GarchOtherBeta*otherLastMonthlyVol*otherLastMonthlyVol
 	newMonthlyOtherVolatility := math.Sqrt(math.Max(1e-12, otherVariance))
 	monthlyOtherReturn := monthlyMeanOtherReturn + newMonthlyOtherVolatility*zOther
 
 	// --- GARCH(1,1) for Individual Stock ---
 	monthlyLastIndividualStockReturn := AnnualToMonthlyRate(state.IndividualStockLastReturn)
-	individualStockErrorSq := math.Pow(monthlyLastIndividualStockReturn-monthlyMeanIndividualStockReturn, 2)
+	indivDiff := monthlyLastIndividualStockReturn - monthlyMeanIndividualStockReturn
+	individualStockErrorSq := indivDiff * indivDiff
+	indivLastMonthlyVol := state.IndividualStockVolatility / sqrt12
 	individualStockVariance := monthlyGarchIndividualStockOmega +
 		config.GarchIndividualStockAlpha*individualStockErrorSq +
-		config.GarchIndividualStockBeta*math.Pow(state.IndividualStockVolatility/math.Sqrt(12), 2)
+		config.GarchIndividualStockBeta*indivLastMonthlyVol*indivLastMonthlyVol
 	newMonthlyIndividualStockVolatility := math.Sqrt(math.Max(1e-12, individualStockVariance))
 	monthlyIndividualStockReturn := monthlyMeanIndividualStockReturn + newMonthlyIndividualStockVolatility*zIndividualStock
 
@@ -816,15 +856,15 @@ func GenerateAdvancedStochasticReturns(state StochasticState, config StochasticM
 
 	// Create new state
 	newState := StochasticState{
-		SPYVolatility:                     newMonthlySPYVolatility * math.Sqrt(12),
+		SPYVolatility:                     newMonthlySPYVolatility * sqrt12,
 		SPYLastReturn:                     annualSPYReturn,
-		BNDVolatility:                     newMonthlyBNDVolatility * math.Sqrt(12),
+		BNDVolatility:                     newMonthlyBNDVolatility * sqrt12,
 		BNDLastReturn:                     annualBNDReturn,
-		IntlVolatility:                    newMonthlyIntlVolatility * math.Sqrt(12),
+		IntlVolatility:                    newMonthlyIntlVolatility * sqrt12,
 		IntlLastReturn:                    annualIntlReturn,
-		OtherVolatility:                   newMonthlyOtherVolatility * math.Sqrt(12),
+		OtherVolatility:                   newMonthlyOtherVolatility * sqrt12,
 		OtherLastReturn:                   annualOtherReturn,
-		IndividualStockVolatility:         newMonthlyIndividualStockVolatility * math.Sqrt(12),
+		IndividualStockVolatility:         newMonthlyIndividualStockVolatility * sqrt12,
 		IndividualStockLastReturn:         annualIndividualStockReturn,
 		LastInflation:                     annualInflationReturn,
 		LastHomeValueGrowth:               annualHomeReturn,
@@ -881,9 +921,11 @@ func GenerateAdvancedStochasticReturnsSeeded(state StochasticState, config Stoch
 		return GenerateAdvancedStochasticReturns(state, config)
 	}
 
-	// Validate inputs (and apply Go-side defaults if needed)
-	if err := validateStochasticConfig(&config); err != nil {
-		return StochasticReturns{}, state, err
+	// PERF: Skip validation if already validated at simulation start
+	if !config.ConfigValidated {
+		if err := validateStochasticConfig(&config); err != nil {
+			return StochasticReturns{}, state, err
+		}
 	}
 
 	// DEBUG MODE: If randomness is disabled, return deterministic mean returns
@@ -999,42 +1041,57 @@ func GenerateAdvancedStochasticReturnsSeeded(state StochasticState, config Stoch
 		return returns, state, nil
 	}
 
-	// Get Cholesky matrix
-	choleskyMatrix, err := GetCachedCholeskyMatrix(config.CorrelationMatrix)
-	if err != nil {
-		return StochasticReturns{}, state, err
+	// PERF: Use pre-cached Cholesky matrix if available
+	choleskyMatrix := config.CachedCholeskyMatrix
+	if choleskyMatrix == nil {
+		var err error
+		choleskyMatrix, err = GetCachedCholeskyMatrix(config.CorrelationMatrix)
+		if err != nil {
+			return StochasticReturns{}, state, err
+		}
 	}
 
-	// Generate correlated shocks using SEEDED RNG
-	shocks := GenerateCorrelatedTShocksSeeded(choleskyMatrix, config.FatTailParameter, rng)
-
-	// Bounds check
-	if len(shocks) < 8 {
-		return StochasticReturns{}, state, fmt.Errorf("correlation matrix malformed: expected 8 shocks, got %d", len(shocks))
-	}
+	// PERF: Use pooled buffer for shock generation (zero allocations)
+	buf := shockBufferPool.Get().(*ShockBuffer8)
+	GenerateCorrelatedTShocksSeededFixed8(choleskyMatrix, config.FatTailParameter, rng, buf)
 
 	// Order of shocks must match correlationMatrix order in config.go:
 	// SPY, Bond, Intl, Infl, Home, Rent, Other, Individual
-	zSPY := shocks[0]
-	zBND := shocks[1]
-	zIntl := shocks[2]
-	zInflation := shocks[3]
-	zHome := shocks[4]
-	zRent := shocks[5]
-	zOther := shocks[6]
-	zIndividualStock := shocks[7]
+	zSPY := buf.Correlated[0]
+	zBND := buf.Correlated[1]
+	zIntl := buf.Correlated[2]
+	zInflation := buf.Correlated[3]
+	zHome := buf.Correlated[4]
+	zRent := buf.Correlated[5]
+	zOther := buf.Correlated[6]
+	zIndividualStock := buf.Correlated[7]
 
-	// Convert annual parameters to monthly
-	monthlyMeanSPYReturn := AnnualToMonthlyRate(config.MeanSPYReturn)
-	monthlyMeanBondReturn := AnnualToMonthlyRate(config.MeanBondReturn)
-	monthlyMeanIntlReturn := AnnualToMonthlyRate(config.MeanIntlStockReturn)
-	monthlyMeanOtherReturn := AnnualToMonthlyRate(config.MeanOtherReturn)
-	monthlyMeanIndividualStockReturn := AnnualToMonthlyRate(config.MeanIndividualStockReturn)
+	// Return buffer to pool
+	shockBufferPool.Put(buf)
 
-	// Convert annual volatilities to monthly
-	monthlyVolatilityInflation := AnnualToMonthlyVolatility(config.VolatilityInflation)
-	monthlyVolatilityHomeValue := AnnualToMonthlyVolatility(config.VolatilityHomeValue)
-	monthlyVolatilityRental := AnnualToMonthlyVolatility(config.VolatilityRentalIncomeGrowth)
+	// PERF: Use pre-computed monthly parameters if available
+	var monthlyMeanSPYReturn, monthlyMeanBondReturn, monthlyMeanIntlReturn float64
+	var monthlyMeanOtherReturn, monthlyMeanIndividualStockReturn float64
+	var monthlyVolatilityInflation, monthlyVolatilityHomeValue, monthlyVolatilityRental float64
+	if pm := config.PrecomputedMonthly; pm != nil {
+		monthlyMeanSPYReturn = pm.MeanSPY
+		monthlyMeanBondReturn = pm.MeanBond
+		monthlyMeanIntlReturn = pm.MeanIntl
+		monthlyMeanOtherReturn = pm.MeanOther
+		monthlyMeanIndividualStockReturn = pm.MeanIndividual
+		monthlyVolatilityInflation = pm.VolInflation
+		monthlyVolatilityHomeValue = pm.VolHome
+		monthlyVolatilityRental = pm.VolRental
+	} else {
+		monthlyMeanSPYReturn = AnnualToMonthlyRate(config.MeanSPYReturn)
+		monthlyMeanBondReturn = AnnualToMonthlyRate(config.MeanBondReturn)
+		monthlyMeanIntlReturn = AnnualToMonthlyRate(config.MeanIntlStockReturn)
+		monthlyMeanOtherReturn = AnnualToMonthlyRate(config.MeanOtherReturn)
+		monthlyMeanIndividualStockReturn = AnnualToMonthlyRate(config.MeanIndividualStockReturn)
+		monthlyVolatilityInflation = AnnualToMonthlyVolatility(config.VolatilityInflation)
+		monthlyVolatilityHomeValue = AnnualToMonthlyVolatility(config.VolatilityHomeValue)
+		monthlyVolatilityRental = AnnualToMonthlyVolatility(config.VolatilityRentalIncomeGrowth)
+	}
 
 	// GARCH omega parameters: scale for monthly frequency
 	monthlyGarchSPYOmega := config.GarchSPYOmega / 12.0
@@ -1045,46 +1102,56 @@ func GenerateAdvancedStochasticReturnsSeeded(state StochasticState, config Stoch
 
 	// --- GARCH(1,1) for SPY ---
 	monthlyLastSPYReturn := AnnualToMonthlyRate(state.SPYLastReturn)
-	spyErrorSq := math.Pow(monthlyLastSPYReturn-monthlyMeanSPYReturn, 2)
+	spyDiff := monthlyLastSPYReturn - monthlyMeanSPYReturn
+	spyErrorSq := spyDiff * spyDiff
+	spyLastMonthlyVol := state.SPYVolatility / sqrt12
 	spyVariance := monthlyGarchSPYOmega +
 		config.GarchSPYAlpha*spyErrorSq +
-		config.GarchSPYBeta*math.Pow(state.SPYVolatility/math.Sqrt(12), 2)
+		config.GarchSPYBeta*spyLastMonthlyVol*spyLastMonthlyVol
 	newMonthlySPYVolatility := math.Sqrt(math.Max(1e-12, spyVariance))
 	monthlySPYReturn := monthlyMeanSPYReturn + newMonthlySPYVolatility*zSPY
 
 	// --- GARCH(1,1) for BND ---
 	monthlyLastBNDReturn := AnnualToMonthlyRate(state.BNDLastReturn)
-	bndErrorSq := math.Pow(monthlyLastBNDReturn-monthlyMeanBondReturn, 2)
+	bndDiff := monthlyLastBNDReturn - monthlyMeanBondReturn
+	bndErrorSq := bndDiff * bndDiff
+	bndLastMonthlyVol := state.BNDVolatility / sqrt12
 	bndVariance := monthlyGarchBondOmega +
 		config.GarchBondAlpha*bndErrorSq +
-		config.GarchBondBeta*math.Pow(state.BNDVolatility/math.Sqrt(12), 2)
+		config.GarchBondBeta*bndLastMonthlyVol*bndLastMonthlyVol
 	newMonthlyBNDVolatility := math.Sqrt(math.Max(1e-12, bndVariance))
 	monthlyBNDReturn := monthlyMeanBondReturn + newMonthlyBNDVolatility*zBND
 
 	// --- GARCH(1,1) for INTL Stocks ---
 	monthlyLastIntlReturn := AnnualToMonthlyRate(state.IntlLastReturn)
-	intlErrorSq := math.Pow(monthlyLastIntlReturn-monthlyMeanIntlReturn, 2)
+	intlDiff := monthlyLastIntlReturn - monthlyMeanIntlReturn
+	intlErrorSq := intlDiff * intlDiff
+	intlLastMonthlyVol := state.IntlVolatility / sqrt12
 	intlVariance := monthlyGarchIntlOmega +
 		config.GarchIntlStockAlpha*intlErrorSq +
-		config.GarchIntlStockBeta*math.Pow(state.IntlVolatility/math.Sqrt(12), 2)
+		config.GarchIntlStockBeta*intlLastMonthlyVol*intlLastMonthlyVol
 	newMonthlyIntlVolatility := math.Sqrt(math.Max(1e-12, intlVariance))
 	monthlyIntlReturn := monthlyMeanIntlReturn + newMonthlyIntlVolatility*zIntl
 
 	// --- GARCH(1,1) for Other Assets ---
 	monthlyLastOtherReturn := AnnualToMonthlyRate(state.OtherLastReturn)
-	otherErrorSq := math.Pow(monthlyLastOtherReturn-monthlyMeanOtherReturn, 2)
+	otherDiff := monthlyLastOtherReturn - monthlyMeanOtherReturn
+	otherErrorSq := otherDiff * otherDiff
+	otherLastMonthlyVol := state.OtherVolatility / sqrt12
 	otherVariance := monthlyGarchOtherOmega +
 		config.GarchOtherAlpha*otherErrorSq +
-		config.GarchOtherBeta*math.Pow(state.OtherVolatility/math.Sqrt(12), 2)
+		config.GarchOtherBeta*otherLastMonthlyVol*otherLastMonthlyVol
 	newMonthlyOtherVolatility := math.Sqrt(math.Max(1e-12, otherVariance))
 	monthlyOtherReturn := monthlyMeanOtherReturn + newMonthlyOtherVolatility*zOther
 
 	// --- GARCH(1,1) for Individual Stock ---
 	monthlyLastIndividualStockReturn := AnnualToMonthlyRate(state.IndividualStockLastReturn)
-	individualStockErrorSq := math.Pow(monthlyLastIndividualStockReturn-monthlyMeanIndividualStockReturn, 2)
+	indivDiff := monthlyLastIndividualStockReturn - monthlyMeanIndividualStockReturn
+	individualStockErrorSq := indivDiff * indivDiff
+	indivLastMonthlyVol := state.IndividualStockVolatility / sqrt12
 	individualStockVariance := monthlyGarchIndividualStockOmega +
 		config.GarchIndividualStockAlpha*individualStockErrorSq +
-		config.GarchIndividualStockBeta*math.Pow(state.IndividualStockVolatility/math.Sqrt(12), 2)
+		config.GarchIndividualStockBeta*indivLastMonthlyVol*indivLastMonthlyVol
 	newMonthlyIndividualStockVolatility := math.Sqrt(math.Max(1e-12, individualStockVariance))
 	monthlyIndividualStockReturn := monthlyMeanIndividualStockReturn + newMonthlyIndividualStockVolatility*zIndividualStock
 
@@ -1125,15 +1192,15 @@ func GenerateAdvancedStochasticReturnsSeeded(state StochasticState, config Stoch
 
 	// Create new state
 	newState := StochasticState{
-		SPYVolatility:                  newMonthlySPYVolatility * math.Sqrt(12),
+		SPYVolatility:                  newMonthlySPYVolatility * sqrt12,
 		SPYLastReturn:                  annualSPYReturn,
-		BNDVolatility:                  newMonthlyBNDVolatility * math.Sqrt(12),
+		BNDVolatility:                  newMonthlyBNDVolatility * sqrt12,
 		BNDLastReturn:                  annualBNDReturn,
-		IntlVolatility:                 newMonthlyIntlVolatility * math.Sqrt(12),
+		IntlVolatility:                 newMonthlyIntlVolatility * sqrt12,
 		IntlLastReturn:                 annualIntlReturn,
-		OtherVolatility:                newMonthlyOtherVolatility * math.Sqrt(12),
+		OtherVolatility:                newMonthlyOtherVolatility * sqrt12,
 		OtherLastReturn:                annualOtherReturn,
-		IndividualStockVolatility:      newMonthlyIndividualStockVolatility * math.Sqrt(12),
+		IndividualStockVolatility:      newMonthlyIndividualStockVolatility * sqrt12,
 		IndividualStockLastReturn:      annualIndividualStockReturn,
 		LastInflation:                  annualInflationReturn,
 		LastHomeValueGrowth:            annualHomeReturn,

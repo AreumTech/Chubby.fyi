@@ -10,7 +10,6 @@ package engine
 
 import (
 	"math"
-	"sync"
 )
 
 // =============================================================================
@@ -83,12 +82,12 @@ func (p *PCG32) NormFloat64() float64 {
 // SEEDED RNG WRAPPER (Thread-Safe)
 // =============================================================================
 
-// SeededRNG wraps PCG32 with thread-safety and reset capability
+// SeededRNG wraps PCG32 with reset capability
+// PERF: No mutex — simulation is single-threaded (no goroutines in MC loop)
 type SeededRNG struct {
-	pcg          *PCG32
-	initialSeed  int64
-	mu           sync.Mutex
-	callCount    uint64 // Track number of random calls for debugging
+	pcg         *PCG32
+	initialSeed int64
+	callCount   uint64
 }
 
 // NewSeededRNG creates a new thread-safe seeded RNG
@@ -102,16 +101,12 @@ func NewSeededRNG(seed int64) *SeededRNG {
 
 // Float64 returns a uniformly distributed float64 in [0, 1)
 func (rng *SeededRNG) Float64() float64 {
-	rng.mu.Lock()
-	defer rng.mu.Unlock()
 	rng.callCount++
 	return rng.pcg.Float64()
 }
 
 // NormFloat64 returns a normally distributed float64 with mean 0 and stddev 1
 func (rng *SeededRNG) NormFloat64() float64 {
-	rng.mu.Lock()
-	defer rng.mu.Unlock()
 	rng.callCount++
 	return rng.pcg.NormFloat64()
 }
@@ -119,8 +114,6 @@ func (rng *SeededRNG) NormFloat64() float64 {
 // Reset resets the RNG to its initial seed state
 // This allows replaying the same sequence of random numbers
 func (rng *SeededRNG) Reset() {
-	rng.mu.Lock()
-	defer rng.mu.Unlock()
 	rng.pcg.Seed(rng.initialSeed)
 	rng.callCount = 0
 }
@@ -132,8 +125,6 @@ func (rng *SeededRNG) Seed() int64 {
 
 // CallCount returns the number of random calls made (for debugging)
 func (rng *SeededRNG) CallCount() uint64 {
-	rng.mu.Lock()
-	defer rng.mu.Unlock()
 	return rng.callCount
 }
 

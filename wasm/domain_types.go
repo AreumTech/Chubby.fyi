@@ -237,6 +237,9 @@ type StochasticModelConfig struct {
 
 	// PERF: Pre-computed monthly parameters (avoid repeated AnnualToMonthly conversions)
 	PrecomputedMonthly *PrecomputedMonthlyParams `json:"-"`
+
+	// PERF: Set to true after first validateStochasticConfig call to skip redundant validation
+	ConfigValidated bool `json:"-"`
 }
 
 // PrecomputedMonthlyParams holds pre-calculated monthly values

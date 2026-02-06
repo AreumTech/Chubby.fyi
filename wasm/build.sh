@@ -16,6 +16,12 @@ if ! command -v go &> /dev/null; then
     exit 1
 fi
 
+PGO_FLAG=""
+if [ -f "default.pgo" ]; then
+    echo "Using Profile-Guided Optimization (default.pgo found)"
+    PGO_FLAG="-pgo=default.pgo"
+fi
+
 if [ "$MODE" = "prod" ] || [ "$MODE" = "production" ]; then
     echo "Building PRODUCTION mode (no debug logs)..."
     # Production build with safe optimizations:
@@ -26,6 +32,7 @@ if [ "$MODE" = "prod" ] || [ "$MODE" = "production" ]; then
         -tags "wasm production" \
         -trimpath \
         -ldflags="-s -w" \
+        $PGO_FLAG \
         -o pathfinder.wasm .; then
         echo "✓ PRODUCTION build successful"
     else
@@ -37,6 +44,7 @@ else
     # Development build - keep debug info for easier debugging
     if GOOS=js GOARCH=wasm go build \
         -tags wasm \
+        $PGO_FLAG \
         -o pathfinder.wasm .; then
         echo "✓ DEVELOPMENT build successful"
     else

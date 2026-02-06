@@ -535,6 +535,7 @@ app.post('/simulate', async (req, res) => {
           bronzeParams.currentAge
         );
         console.error(`   → firstMonthEvents: ${Object.keys(response.firstMonthEvents || {}).length} ages`);
+
       }
 
       // Add full trace for 'trace' verbosity

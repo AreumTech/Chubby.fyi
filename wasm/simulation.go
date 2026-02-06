@@ -1217,12 +1217,10 @@ func (se *SimulationEngine) RunSingleSimulation(input SimulationInput) Simulatio
 	simLogVerbose("🔥 WASM VERSION: 2025-10-03-18:00 INCOME-MONTHLY-FIX 🔥")
 	simLogVerbose("RunSingleSimulation started")
 
-	// PERF: Pre-compute Cholesky matrix and monthly parameters once per simulation
-	if se.config.LiteMode {
-		if err := PrecomputeConfigParameters(&se.config); err != nil {
-			simLogVerbose("⚠️ [PERF] Failed to precompute config: %v", err)
-			// Non-fatal - fallback to computing on the fly
-		}
+	// PERF: Pre-compute Cholesky matrix, monthly parameters, and validate config once per simulation
+	if err := PrecomputeConfigParameters(&se.config); err != nil {
+		simLogVerbose("⚠️ [PERF] Failed to precompute config: %v", err)
+		// Non-fatal - fallback to computing on the fly
 	}
 
 	// BANKRUPTCY DEBUG: Log starting configuration
@@ -2441,13 +2439,11 @@ func RunMonteCarloSimulation(input SimulationInput, numberOfRuns int) Simulation
 	// Cash floor for breach detection (default 0 = breach when going negative)
 	cashFloor := input.Config.CashFloor
 
-	// PERF: Pre-compute Cholesky matrix and monthly parameters once for all paths
-	if input.Config.LiteMode {
-		if err := PrecomputeConfigParameters(&input.Config); err != nil {
-			return SimulationResults{
-				Success: false,
-				Error:   fmt.Sprintf("Failed to precompute config: %v", err),
-			}
+	// PERF: Pre-compute Cholesky matrix, monthly parameters, and validate config once for all paths
+	if err := PrecomputeConfigParameters(&input.Config); err != nil {
+		return SimulationResults{
+			Success: false,
+			Error:   fmt.Sprintf("Failed to precompute config: %v", err),
 		}
 	}
 
@@ -2463,16 +2459,27 @@ func RunMonteCarloSimulation(input SimulationInput, numberOfRuns int) Simulation
 	// Track max months for breach time series
 	maxMonthsObserved := 0
 
+	// PERF: Create one engine and reuse across all paths
+	// NewSimulationEngine creates ~15 expensive calculator objects (TaxCalculator, RMDCalculator, etc.)
+	// ResetSimulationState() (called inside RunSingleSimulation) resets per-path state while preserving them
+	engine := NewSimulationEngine(input.Config)
+	engine.trackMonthlyData = false // MC mode: use incremental metrics
+
 	simLogVerbose("🔧 MONTE-CARLO: Starting %d Monte Carlo runs (baseSeed=%d, cashFloor=%.2f)", numberOfRuns, baseSeed, cashFloor)
 	for i := 0; i < numberOfRuns; i++ {
 		if i == 0 || i == numberOfRuns-1 || i%25 == 0 {
 			simLogVerbose("🔧 MONTE-CARLO: Run %d/%d", i+1, numberOfRuns)
 		}
 
-		// Use RunIsolatedPath for proper seed diversity and state isolation
-		result := RunIsolatedPath(input, i, IsolatedPathOptions{
-			TrackMonthlyData: false, // MC mode: use incremental metrics
-		})
+		// PERF: Reuse engine — update seed + deep-copy accounts (instead of RunIsolatedPath)
+		pathSeed := baseSeed + int64(i)
+		engine.config.RandomSeed = pathSeed
+
+		pathInput := input
+		pathInput.Config = engine.config
+		pathInput.InitialAccounts = deepCopyInputAccounts(input.InitialAccounts)
+
+		result := engine.RunSingleSimulation(pathInput)
 
 		// Track max months for breach time series
 		// CRITICAL FIX: In MC mode, MonthlyData is empty (trackMonthlyData=false)

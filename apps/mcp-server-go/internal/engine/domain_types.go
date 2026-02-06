@@ -261,6 +261,21 @@ type PrecomputedMonthlyParams struct {
 	VolInflation  float64
 	VolHome       float64
 	VolRental     float64
+
+	// GARCH omega monthly (omega / 12)
+	GarchSPYOmegaMonthly             float64
+	GarchBondOmegaMonthly            float64
+	GarchIntlOmegaMonthly            float64
+	GarchOtherOmegaMonthly           float64
+	GarchIndividualStockOmegaMonthly float64
+
+	// AR(1) precomputed monthly transformations
+	AR1InflationPhiMonthly      float64
+	AR1InflationConstantMonthly float64
+	AR1HomePhiMonthly           float64
+	AR1HomeConstantMonthly      float64
+	AR1RentalPhiMonthly         float64
+	AR1RentalConstantMonthly    float64
 }
 
 // =============================================================================

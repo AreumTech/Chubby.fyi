@@ -803,26 +803,6 @@
       font-style: italic;
     }
 
-    /* Long-horizon rows (age >= 65): show only median, subdued styling */
-    .traj-row.long-horizon {
-      opacity: 0.75;
-    }
-    .traj-row.long-horizon .traj-bar-p50 {
-      width: 4px;
-      border-radius: 2px;
-    }
-    .traj-row.long-horizon .traj-bar-range {
-      opacity: 0.5;
-    }
-
-    .traj-long-horizon-note {
-      font-size: var(--font-size-2xs);
-      color: var(--color-text-muted);
-      margin-top: var(--space-2);
-      padding: var(--space-1) var(--space-2);
-      font-style: italic;
-    }
-
 
     /* =========================================================================
      * YEAR INSPECTOR - Shows on click
@@ -1722,6 +1702,69 @@
       font-style: italic;
       padding: var(--space-2) 0;
     }
+
+    /* =========================================================================
+     * MONTHLY TRACE - Compact month-by-month event timeline
+     * ========================================================================= */
+    .monthly-trace {
+      font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .monthly-trace-month {
+      margin-bottom: var(--space-2);
+    }
+
+    .monthly-trace-month-header {
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 10px;
+      padding: var(--space-1) 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+      margin-bottom: 2px;
+    }
+
+    .monthly-trace-event {
+      display: flex;
+      justify-content: space-between;
+      padding: 1px 0;
+      gap: var(--space-2);
+    }
+
+    .monthly-trace-name {
+      color: var(--color-text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .monthly-trace-delta {
+      font-weight: 500;
+      white-space: nowrap;
+      text-align: right;
+      min-width: 70px;
+    }
+
+    .monthly-trace-delta.positive {
+      color: var(--color-positive);
+    }
+
+    .monthly-trace-delta.negative {
+      color: var(--color-negative);
+    }
+
+    .monthly-trace-balance {
+      color: var(--color-text-muted);
+      white-space: nowrap;
+      text-align: right;
+      min-width: 70px;
+    }
+
   </style>
 </head>
 <body>
@@ -1811,14 +1854,14 @@
 
     <!-- Trajectory -->
     <div class="trajectory" id="trajectory-section">
-      <div class="traj-title">What Happens to Your Money</div>
+      <div class="traj-title">Simulated Outcomes Over Time</div>
       <div class="traj-explanation" id="traj-explanation" style="display: none; font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: var(--space-2);"></div>
       <div id="trajectory-bars"></div>
       <div class="traj-legend">
-        <div class="traj-legend-item" title="The bar shows the range from harder scenarios (left edge) to typical (right edge). 10% of outcomes fall below the left edge."><span class="traj-legend-swatch range"></span> Harder → Typical</div>
+        <div class="traj-legend-item" title="The bar spans from P10 (left) to P75 (right). The line marks P50 (typical)."><span class="traj-legend-swatch range"></span> Harder → Stronger</div>
         <div class="traj-legend-item" title="The median: half of simulated outcomes are better, half are worse"><span class="traj-legend-swatch p50"></span> Typical Outcome</div>
       </div>
-      <div class="traj-legend-note" style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-1);" title="Each age shows percentiles across all simulated paths at that point — not one continuous 'typical path' over time">Percentiles recalculated at each age</div>
+      <div class="traj-legend-note" style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: var(--space-2);" title="Each age shows percentiles across all simulated paths at that point — not one continuous 'typical path' over time">Percentiles recalculated at each age</div>
       <div class="traj-hint">Tap an age to see the math</div>
       <div id="traj-horizon-note" class="traj-horizon-note" style="display: none;"></div>
     </div>
@@ -1849,7 +1892,7 @@
         <span class="assumptions-summary" id="assumptions-summary">
           <span>Stocks 7% / Bonds 4%</span>
           <span>~2.5% inflation</span>
-          <span>No tax</span>
+          <span>Taxes: not modeled</span>
         </span>
       </summary>
       <div class="assumptions-expanded" id="assumptions-expanded">
@@ -2179,7 +2222,7 @@
         // Calculate spending multiplier (pure arithmetic, not advice)
         const spendingMultiple = annualSpending > 0 ? Math.round(p50Assets / annualSpending) : null;
         const multiplierLine = spendingMultiple ?
-          '<div class="duration-multiplier">≈ ' + spendingMultiple + '× current annual spending</div>' : '';
+          '<div class="duration-multiplier">≈ ' + spendingMultiple + '× current annual spending (for scale)</div>' : '';
 
         answerEl.innerHTML =
           '<div class="duration-saturated">' +
@@ -2447,9 +2490,6 @@
       // Scale to P50 max + 10% padding
       const maxVal = maxP50 > 0 ? maxP50 * 1.1 : 1;
 
-      // Age threshold for collapsing to P50-only (long-horizon uncertainty)
-      const LONG_HORIZON_AGE = 65;
-
       let html = '';
       let lastMilestone = null;
       let constraintMarkerShown = false;
@@ -2511,14 +2551,13 @@
         const pct10 = Math.round((p10 / maxVal) * 100);
         const pct50 = Math.min(100, Math.round((p50 / maxVal) * 100));
 
-        const rowClass = age >= LONG_HORIZON_AGE ? 'traj-row long-horizon' : 'traj-row';
+        const rowClass = 'traj-row';
 
         // Tooltip shows all three scenarios
         const tooltipText = 'Age ' + age + ': Harder ' + fmt(p10) + ' · Typical ' + fmt(p50) + ' · Optimistic ' + fmt(p75) + ' (reflects stronger markets in this model)';
         const ariaLabel = 'Age ' + age + ', median net worth ' + fmt(p50) + '. Press Enter or tap to view details.';
 
-        // After age 65: show only P50 marker (long-horizon uncertainty)
-        // Before age 65: show P10→P50 range bar with P50 marker
+        // Show P10→P50 range bar with P50 marker
         const rangeWidth = Math.max(0, pct50 - pct10);
         const showRange = true;
 
@@ -2538,14 +2577,6 @@
       if (constraintMarkerShown) {
         html += '<div class="traj-constraint-note">' +
           'At this point, assets are exhausted and spending can no longer be sustained.' +
-        '</div>';
-      }
-
-      // Add note if long-horizon rows are present (age >= 65)
-      const hasLongHorizon = sortedAges.some(a => a >= LONG_HORIZON_AGE);
-      if (hasLongHorizon && !constraintMarkerShown) {
-        html += '<div class="traj-long-horizon-note">' +
-          'After 65, bars are dimmed because outcome spread becomes very wide. Tap any row for full percentiles.' +
         '</div>';
       }
 
@@ -2906,56 +2937,28 @@
       return sign + '$' + abs.toLocaleString('en-US');
     }
 
-    // Render first-month events for "show the math"
-    function renderFirstMonthEvents(age, year) {
+    // Render first-month events for "show the math" (compact monospace layout)
+    function renderShowTheMath(age, year) {
       const events = data.firstMonthEvents?.[age];
+      if (!events || events.length === 0) return null;
 
-      if (!events || events.length === 0) {
-        // Fallback: construct annual summary from annualSnapshot
-        const snaps = data.annualSnapshots || [];
-        const snap = snaps.find(s => s.age === age) || snaps.find(s => Math.abs(s.age - age) <= 1);
-        if (snap) {
-          const income = snap.totalIncome ?? snap.contributions ?? 0;
-          const expenses = snap.totalExpenses ?? snap.withdrawals ?? 0;
-          const start = snap.startBalance || 0;
-          const end = snap.endBalance || 0;
-          const growth = snap.investmentGrowth ?? (end - start - income + expenses);
-          const pct = snap.returnPct ? (Math.abs(snap.returnPct) > 1 ? snap.returnPct : snap.returnPct * 100) : 0;
-
-          let html = '<div class="event-detail-month">Year ' + year + ' — Annual Summary</div>';
-          html += '<div class="event-card"><div class="event-card-name">Income</div>' +
-            '<div class="event-card-flow"><span>' + fmtFull(income) + '</span>' +
-            '<span class="event-card-delta positive">+' + fmtFull(income) + '</span></div></div>';
-          html += '<div class="event-card"><div class="event-card-name">Expenses</div>' +
-            '<div class="event-card-flow"><span>' + fmtFull(expenses) + '</span>' +
-            '<span class="event-card-delta negative">\u2212' + fmtFull(expenses) + '</span></div></div>';
-          html += '<div class="event-card"><div class="event-card-name">Market returns (' + pct.toFixed(1) + '%)</div>' +
-            '<div class="event-card-flow"><span>' + fmtFull(Math.abs(growth)) + '</span>' +
-            '<span class="event-card-delta ' + (growth >= 0 ? 'positive' : 'negative') + '">' +
-            (growth >= 0 ? '+' : '\u2212') + fmtFull(Math.abs(growth)) + '</span></div></div>';
-          html += '<div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic;">Annual summary shown (monthly event trace not available for this year)</div>';
-          return html;
-        }
-        return '<div class="event-detail-empty">Event detail not available for this year.</div>';
-      }
-
-      let html = '<div class="event-detail-month">January ' + year + ' — Event by Event</div>';
+      let html = '<div class="monthly-trace">';
+      html += '<div class="monthly-trace-month">';
+      html += '<div class="monthly-trace-month-header">January ' + year + '</div>';
 
       for (const evt of events) {
         const delta = evt.d || 0;
         const deltaClass = delta >= 0 ? 'positive' : 'negative';
-        const deltaSign = delta >= 0 ? '+' : '−';
+        const deltaSign = delta >= 0 ? '+' : '\u2212';
         const deltaAbs = Math.abs(delta);
-
-        html += '<div class="event-card">' +
-          '<div class="event-card-name">' + (evt.n || 'Unknown event') + '</div>' +
-          '<div class="event-card-flow">' +
-            '<span>Cash: ' + fmtFull(evt.cb) + ' → ' + fmtFull(evt.ca) + '</span>' +
-            '<span class="event-card-delta ' + deltaClass + '">' + deltaSign + fmtFull(deltaAbs) + '</span>' +
-          '</div>' +
+        html += '<div class="monthly-trace-event">' +
+          '<span class="monthly-trace-name">' + (evt.n || 'Event') + '</span>' +
+          '<span class="monthly-trace-delta ' + deltaClass + '">' + deltaSign + '$' + deltaAbs.toLocaleString('en-US') + '</span>' +
+          '<span class="monthly-trace-balance">$' + Math.max(0, evt.ca).toLocaleString('en-US') + '</span>' +
         '</div>';
       }
 
+      html += '</div></div>';
       return html;
     }
 
@@ -2965,7 +2968,7 @@
       const inspector = document.getElementById('inspector');
       const year = (data.startYear || 2024) + yearOffset;
 
-      document.getElementById('inspector-title').innerHTML = 'Age ' + age + ' — Typical outcomes';
+      document.getElementById('inspector-title').innerHTML = 'Age ' + age + ' — Outcome range';
 
       const ledger = document.getElementById('ledger');
       const withdrawalsSection = document.getElementById('withdrawals-section');
@@ -3006,7 +3009,7 @@
 
       if (snap) {
         ledgerHtml += '<details class="event-detail-toggle" style="margin-top: var(--space-3);">' +
-          '<summary>One example path (year breakdown)</summary>' +
+          '<summary>One random example path — not the median</summary>' +
           '<div class="event-detail-content">' +
             renderMinimalLedger(snap) +
           '</div>' +
@@ -3018,9 +3021,9 @@
 
       ledger.innerHTML = ledgerHtml;
 
-      // Show the math (from exemplar path events or annual summary fallback)
-      const mathHtml = renderFirstMonthEvents(age, year);
-      if (mathHtml && !mathHtml.includes('event-detail-empty')) {
+      // Show the math (month-by-month event replay)
+      const mathHtml = renderShowTheMath(age, year);
+      if (mathHtml) {
         withdrawalsSection.innerHTML = '<details class="event-detail-toggle">' +
           '<summary>Show the math</summary>' +
           '<div class="event-detail-content">' + mathHtml + '</div>' +
@@ -3238,8 +3241,8 @@
       renderTrajectory(data);
 
       // Assumptions
-      const tax = data.taxMode === 'NOT_APPLIED' ? 'No tax' :
-                  data.taxMode === 'USER_DECLARED' ? 'User tax rates' : 'No tax';
+      const tax = data.taxMode === 'NOT_APPLIED' ? 'Taxes: not modeled' :
+                  data.taxMode === 'USER_DECLARED' ? 'User tax rates' : 'Taxes: not modeled';
       document.getElementById('assumptions-summary').innerHTML =
         '<span>Stocks 7% / Bonds 4%</span><span>~2.5% inflation</span><span>' + tax + '</span>';
 

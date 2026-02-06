@@ -63,6 +63,8 @@ type SimpleLedger struct {
 	transactions []LedgerTransaction
 	nextEntryID  int
 	nextTxnID    int
+	// PERF: When true, all Record* methods become no-ops (used in MC mode)
+	disabled bool
 }
 
 // NewSimpleLedger creates a new ledger with default accounts
@@ -115,6 +117,11 @@ func (sl *SimpleLedger) Reset() {
 
 // RecordTransaction records a balanced transaction in the ledger
 func (sl *SimpleLedger) RecordTransaction(description string, entries []LedgerEntry) error {
+	// PERF: Skip all ledger work in MC mode (no one reads the ledger)
+	if sl.disabled {
+		return nil
+	}
+
 	// Validate that transaction is balanced
 	if err := sl.validateTransaction(entries); err != nil {
 		return fmt.Errorf("transaction validation failed: %v", err)

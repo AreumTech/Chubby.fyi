@@ -11,6 +11,9 @@ type CashManager struct {
 	nextLotID    int
 	config       *StochasticModelConfig
 	marketPrices *MarketPrices // Current market prices for share-based calculations
+	// PERF: When true, SellAssetsFromAccountFIFO computes totals without materializing
+	// SoldLots/SaleTransactions slices (MC mode never reads them)
+	SummaryOnly bool
 }
 
 // NewCashManager creates a new cash manager
@@ -273,18 +276,15 @@ func (cm *CashManager) UpdateLotTermStatus(accounts *AccountHoldingsMonthEnd, cu
 
 // SellAssetsFromAccountFIFO sells assets using FIFO methodology with liquidity-aware prioritization using current market prices
 func (cm *CashManager) SellAssetsFromAccountFIFO(account *Account, targetAmount float64, currentMonth int) LotSaleResult {
-	result := LotSaleResult{
-		SoldLots:         make([]TaxLot, 0, 10),          // Pre-allocate with reasonable capacity
-		SaleTransactions: make([]SaleTransaction, 0, 10), // Pre-allocate with reasonable capacity
+	var result LotSaleResult
+	if !cm.SummaryOnly {
+		result.SoldLots = make([]TaxLot, 0, 10)
+		result.SaleTransactions = make([]SaleTransaction, 0, 10)
 	}
 
 	if account == nil || targetAmount <= 0 {
-		simLogVerbose("SELL-ASSETS-FIFO EARLY-EXIT: account nil=%v, targetAmount=%.0f", account == nil, targetAmount)
 		return result
 	}
-
-	simLogVerbose("SELL-ASSETS-FIFO ENTRY: TotalValue=%.0f, Holdings=%d, Target=%.0f",
-		account.TotalValue, len(account.Holdings), targetAmount)
 
 	// Ensure holdings have liquidity tiers assigned
 	liquidityMgr := NewLiquidityManager()
@@ -319,11 +319,9 @@ func (cm *CashManager) SellAssetsFromAccountFIFO(account *Account, targetAmount 
 		// If this fails, skip the entire holding to prevent destructive operations
 		currentPrice, err := cm.getPricePerShare(holding.AssetClass, cm.marketPrices)
 		if err != nil {
-			simLogVerbose("CRITICAL: Cannot sell from holding '%s' - %v. Skipping entire holding to prevent data corruption.", holding.AssetClass, err)
 			continue // Skip to next holding without modifying this one
 		}
 		if currentPrice <= 0 {
-			simLogVerbose("CRITICAL: Invalid price %.6f for asset class %s. Skipping entire holding to prevent data corruption.", currentPrice, holding.AssetClass)
 			continue // Skip to next holding without modifying this one
 		}
 
@@ -346,52 +344,65 @@ func (cm *CashManager) SellAssetsFromAccountFIFO(account *Account, targetAmount 
 			sellQuantity := sellAmount / currentPrice
 
 			if sellQuantity > 0 {
-				// Create sale transaction
-				saleResult := cm.createSaleTransaction(lot, sellQuantity, currentPrice, currentMonth)
-				result.SaleTransactions = append(result.SaleTransactions, saleResult)
+				// PERF: In summary-only mode, compute totals inline without materializing
+				// SaleTransaction/SoldLot objects (saves fmt.Sprintf + struct allocs in MC)
+				costBasis := sellQuantity * lot.CostBasisPerUnit
+				grossProceeds := sellQuantity * currentPrice
+				transactionCost := cm.calculateTransactionCost(grossProceeds)
+				netProceeds := grossProceeds - transactionCost
+				gainLoss := netProceeds - costBasis
 
-				simLogVerbose("🔍 SALE TRANSACTION: Asset=%s, Quantity=%.2f, SalePrice=%.2f, Proceeds=%.2f, CostBasis=%.2f, Gain=%.2f, IsLongTerm=%v",
-					saleResult.AssetClass, sellQuantity, currentPrice, saleResult.Proceeds, saleResult.CostBasis, saleResult.RealizedGainLoss, saleResult.IsLongTerm)
+				if !cm.SummaryOnly {
+					saleResult := cm.createSaleTransaction(lot, sellQuantity, currentPrice, currentMonth)
+					result.SaleTransactions = append(result.SaleTransactions, saleResult)
+				}
+
+				if VERBOSE_DEBUG {
+					simLogVerbose("🔍 SALE TRANSACTION: Asset=%s, Quantity=%.2f, SalePrice=%.2f, Proceeds=%.2f, CostBasis=%.2f, Gain=%.2f, IsLongTerm=%v",
+						string(lot.AssetClass), sellQuantity, currentPrice, netProceeds, costBasis, gainLoss, lot.IsLongTerm)
+				}
 
 				// Update totals
-				result.TotalProceeds += saleResult.Proceeds
-				result.TotalCostBasis += saleResult.CostBasis
-				result.TotalRealizedGains += saleResult.RealizedGainLoss
+				result.TotalProceeds += netProceeds
+				result.TotalCostBasis += costBasis
+				result.TotalRealizedGains += gainLoss
 
-				if saleResult.RealizedGainLoss > 0 { // Only positive gains
-					if saleResult.IsLongTerm {
-						result.LongTermGains += saleResult.RealizedGainLoss
+				if gainLoss > 0 { // Only positive gains
+					if lot.IsLongTerm {
+						result.LongTermGains += gainLoss
 					} else {
-						result.ShortTermGains += saleResult.RealizedGainLoss
+						result.ShortTermGains += gainLoss
 					}
 				}
 
 				// Update lot
 				if sellQuantity >= lot.Quantity {
 					// Completely sold this lot
-					result.SoldLots = append(result.SoldLots, lot)
+					if !cm.SummaryOnly {
+						result.SoldLots = append(result.SoldLots, lot)
+					}
 					lotsToRemove = append(lotsToRemove, j)
 				} else {
-					// Partially sold this lot - create a new lot representing the sold portion
-					partialLot := TaxLot{
-						ID:                fmt.Sprintf("%s_partial_%d", lot.ID, cm.nextLotID),
-						AssetClass:        lot.AssetClass,
-						Quantity:          sellQuantity,
-						CostBasisPerUnit:  lot.CostBasisPerUnit,
-						CostBasisTotal:    lot.CostBasisPerUnit * sellQuantity,
-						AcquisitionDate:   lot.AcquisitionDate,
-						IsLongTerm:        lot.IsLongTerm,
-						WashSalePeriodEnd: lot.WashSalePeriodEnd,
+					// Partially sold
+					if !cm.SummaryOnly {
+						partialLot := TaxLot{
+							ID:                fmt.Sprintf("%s_partial_%d", lot.ID, cm.nextLotID),
+							AssetClass:        lot.AssetClass,
+							Quantity:          sellQuantity,
+							CostBasisPerUnit:  lot.CostBasisPerUnit,
+							CostBasisTotal:    lot.CostBasisPerUnit * sellQuantity,
+							AcquisitionDate:   lot.AcquisitionDate,
+							IsLongTerm:        lot.IsLongTerm,
+							WashSalePeriodEnd: lot.WashSalePeriodEnd,
+						}
+						cm.nextLotID++
+						result.SoldLots = append(result.SoldLots, partialLot)
 					}
-					cm.nextLotID++
-					result.SoldLots = append(result.SoldLots, partialLot)
-
-					simLogVerbose("🔍 PARTIAL LOT SALE: Original lot ID=%s, quantity=%.2f, cost=%.2f. Selling quantity=%.2f, cost=%.2f",
-						lot.ID, lot.Quantity, lot.CostBasisTotal, sellQuantity, partialLot.CostBasisTotal)
 
 					// Update remaining lot
+					partialCost := lot.CostBasisPerUnit * sellQuantity
 					holding.Lots[j].Quantity -= sellQuantity
-					holding.Lots[j].CostBasisTotal -= partialLot.CostBasisTotal
+					holding.Lots[j].CostBasisTotal -= partialCost
 				}
 
 				remainingToSell -= sellAmount
@@ -425,8 +436,6 @@ func (cm *CashManager) SellAssetsFromAccountFIFO(account *Account, targetAmount 
 	// Update account total value
 	account.TotalValue -= result.TotalProceeds
 
-	simLogVerbose("SELL-ASSETS-FIFO EXIT: TotalProceeds=%.0f, NetProceeds=%.0f, RemainingAccountValue=%.0f",
-		result.TotalProceeds, result.NetProceeds, account.TotalValue)
 	return result
 }
 

@@ -3,7 +3,6 @@ package engine
 import (
 	"fmt"
 	"math"
-	"runtime"
 	"sort"
 	"strings"
 )
@@ -311,6 +310,7 @@ func (se *SimulationEngine) ResetSimulationState() {
 	se.currentMonthReturns = nil
 	se.stochasticState = InitializeStochasticState(se.config)
 	se.cashManager = NewCashManagerWithConfig(&se.config)
+	se.cashManager.SummaryOnly = !se.trackMonthlyData // PERF: skip SoldLots/SaleTransactions in MC
 
 	// Reset seeded RNG if configured for deterministic simulation
 	if se.config.RandomSeed > 0 {
@@ -318,7 +318,13 @@ func (se *SimulationEngine) ResetSimulationState() {
 	} else {
 		se.seededRng = nil
 	}
-	se.ledger = NewSimpleLedger()
+	// PERF: Reuse ledger in MC mode (just reset), disable recording to avoid allocations
+	if se.ledger != nil {
+		se.ledger.Reset()
+	} else {
+		se.ledger = NewSimpleLedger()
+	}
+	se.ledger.disabled = !se.trackMonthlyData
 	se.strategyProcessor = NewStrategyProcessor(se.taxCalculator, se.cashManager)
 
 	// Recreate event registry with dynamic event tracking
@@ -366,7 +372,12 @@ func (se *SimulationEngine) ResetSimulationState() {
 	se.resetMonthlyFlows()
 
 	// Reset realized path variables for stochastic transparency
-	se.realizedPathVariables = make([]RealizedMonthVariables, 0)
+	// PERF: Only allocate in trace mode; MC paths never read these
+	if se.trackMonthlyData {
+		se.realizedPathVariables = make([]RealizedMonthVariables, 0)
+	} else {
+		se.realizedPathVariables = nil
+	}
 }
 
 // resetMonthlyFlows resets the monthly flow tracking for a new month
@@ -862,7 +873,8 @@ func (se *SimulationEngine) ApplyMarketGrowth(accounts *AccountHoldingsMonthEnd,
 	se.currentMonthFlows.InvestmentGrowthThisMonth = investedAfter - investedBefore
 
 	// Capture realized stochastic variables for "show the math" transparency
-	if se.simulationInput != nil {
+	// PERF: Only needed in single-path deterministic trace; skip in MC mode
+	if se.trackMonthlyData && se.simulationInput != nil {
 		se.captureRealizedVariables(currentMonthOffset, se.simulationInput.StartYear, *accounts)
 	}
 
@@ -1393,28 +1405,31 @@ func (se *SimulationEngine) RunSingleSimulation(input SimulationInput) Simulatio
 // The monolithic loop has been replaced by the priority queue-based discrete event system
 // runQueueSimulationLoop implements the new priority queue-based simulation engine
 func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accounts AccountHoldingsMonthEnd) SimulationResult {
+	return se.runQueueSimulationLoopWithEvents(input, accounts, nil, false)
+}
+
+// runQueueSimulationLoopWithEvents runs simulation with optional pre-sorted events
+// PERF: When sharedSortedEvents is non-nil, skips PreprocessAndPopulateQueue (reused across MC paths)
+// When shared=true, events are NOT released back to pool (they're owned by the MC runner)
+func (se *SimulationEngine) runQueueSimulationLoopWithEvents(input SimulationInput, accounts AccountHoldingsMonthEnd, sharedSortedEvents []*QueuedEvent, shared bool) SimulationResult {
 	// Store simulation input for access by event handlers
 	se.simulationInput = &input
 
-	// Create and populate the event queue FIRST (before initializing accounts)
-	// This is required because initializeAccountsForQueue checks for investment events
-	eventQueue := PreprocessAndPopulateQueue(input)
-
-	// DEBUG: Log queue size
-	simLogVerbose("🔍 [QUEUE-SIZE-DEBUG] Event queue contains %d events for %d months", eventQueue.Len(), input.MonthsToRun)
-
-	// PERF: Convert heap to pre-sorted slice for O(1) iteration (Phase B.2)
-	// This is a one-time O(n log n) sort that eliminates n * log(n) heap pops
-	sortedEvents := eventQueue.ToSortedSlice()
-	simLogVerbose("🚀 [PERF] Pre-sorted %d events for fast iteration", len(sortedEvents))
-
-	// CRITICAL: Clear the queue after extracting to sorted slice to prevent double processing
-	// Events are now in sortedEvents; queue will only be used for dynamically injected events
-	eventQueue.Clear()
-
-	// Set queue reference for dynamic event injection (BEFORE initializeAccountsForQueue)
-	// Note: Main loop uses pre-sorted array for initial events, but checks eventQueue for injected events
-	se.eventQueue = eventQueue
+	var sortedEvents []*QueuedEvent
+	if sharedSortedEvents != nil {
+		// PERF: Reuse pre-sorted events from MC runner (skip PreprocessAndPopulateQueue)
+		sortedEvents = sharedSortedEvents
+		// Create fresh empty queue for dynamic event injection only
+		se.eventQueue = NewEventPriorityQueueWithCapacity(64)
+	} else {
+		// Normal path: build and sort events
+		eventQueue := PreprocessAndPopulateQueue(input)
+		simLogVerbose("🔍 [QUEUE-SIZE-DEBUG] Event queue contains %d events for %d months", eventQueue.Len(), input.MonthsToRun)
+		sortedEvents = eventQueue.ToSortedSlice()
+		simLogVerbose("🚀 [PERF] Pre-sorted %d events for fast iteration", len(sortedEvents))
+		eventQueue.Clear()
+		se.eventQueue = eventQueue
+	}
 
 	// Initialize accounts with proper structure (now eventQueue is available)
 	accounts = se.initializeAccountsForQueue(accounts)
@@ -1429,10 +1444,12 @@ func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accoun
 	simLogVerbose("🏦 [QUEUE-INIT] Starting simulation with: Cash=$%.0f, Taxable=$%.0f, TaxDeferred=$%.0f, Roth=$%.0f",
 		accounts.Cash, accounts.Taxable.TotalValue, accounts.TaxDeferred.TotalValue, accounts.Roth.TotalValue)
 
-	// Validate queue integrity
-	queueIssues := ValidateQueueIntegrity(eventQueue)
-	if len(queueIssues) > 0 {
+	// Validate queue integrity (only for non-shared events path)
+	if !shared {
+		queueIssues := ValidateQueueIntegrity(se.eventQueue)
+		if len(queueIssues) > 0 {
 			simLogVerbose("⚠️ [QUEUE-VALIDATION] Issues: %v", queueIssues)
+		}
 	}
 
 	// Initialize system event handler
@@ -1466,6 +1483,9 @@ func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accoun
 		if eventIndex < len(sortedEvents) && (se.eventQueue.IsEmpty() || sortedEvents[eventIndex].MonthOffset <= se.eventQueue.Peek().MonthOffset) {
 			// Process next pre-sorted event
 			queuedEvent = sortedEvents[eventIndex]
+			if !shared {
+				sortedEvents[eventIndex] = nil // PERF: Allow GC to collect released events
+			}
 			eventIndex++
 		} else if !se.eventQueue.IsEmpty() {
 			// Process next injected event (rebalancing, tax strategies, etc.)
@@ -1505,12 +1525,6 @@ func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accoun
 
 			// Save previous month's data
 			if currentMonthData != nil {
-				// NOTE: Debt payments are handled by SYSTEM_DEBT_PAYMENT event (priority 50)
-				// Do NOT call ProcessDebtPayments here - it would double-count payments
-
-				// Calculate final net worth for the month
-				currentMonthData.NetWorth = se.calculateNetWorth(accounts)
-
 				// PERF: Track incremental metrics for MC (avoids need to iterate MonthlyData later)
 				cash := accounts.Cash
 				if cash < se.minCash {
@@ -1521,89 +1535,86 @@ func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accoun
 					se.cashFloorBreachedMonth = currentMonth
 				}
 
-				// PERF: Only deep copy accounts if tracking monthly data (skip for MC)
+				// PERF: Skip all monthly snapshot construction in MC mode
+				// calculateNetWorth, deepCopy, flows copy, tax fields — none read in MC
 				if se.trackMonthlyData {
+					currentMonthData.NetWorth = se.calculateNetWorth(accounts)
 					currentMonthData.Accounts = se.deepCopyAccounts(accounts)
+
+					// Copy monthly flows to monthly data
+					currentMonthData.IncomeThisMonth = se.currentMonthFlows.IncomeThisMonth
+					currentMonthData.EmploymentIncomeThisMonth = se.currentMonthFlows.EmploymentIncomeThisMonth
+					currentMonthData.ExpensesThisMonth = se.currentMonthFlows.ExpensesThisMonth
+					currentMonthData.ContributionsToInvestmentsThisMonth = se.currentMonthFlows.ContributionsToInvestmentsThisMonth
+					currentMonthData.DividendsReceivedThisMonth = se.currentMonthFlows.DividendsReceivedThisMonth
+					currentMonthData.DebtPaymentsPrincipalThisMonth = se.currentMonthFlows.DebtPaymentsPrincipalThisMonth
+					currentMonthData.DebtPaymentsInterestThisMonth = se.currentMonthFlows.DebtPaymentsInterestThisMonth
+					currentMonthData.InterestIncomeThisMonth = se.currentMonthFlows.InterestIncomeThisMonth
+					currentMonthData.TaxWithheldThisMonth = se.currentMonthFlows.TaxWithheldThisMonth
+					currentMonthData.DivestmentProceedsThisMonth = se.currentMonthFlows.DivestmentProceedsThisMonth
+
+					// Copy granular tracking data
+					currentMonthData.SalaryIncomeThisMonth = se.currentMonthFlows.SalaryIncomeThisMonth
+					currentMonthData.BonusIncomeThisMonth = se.currentMonthFlows.BonusIncomeThisMonth
+					currentMonthData.RSUIncomeThisMonth = se.currentMonthFlows.RSUIncomeThisMonth
+					currentMonthData.HousingExpensesThisMonth = se.currentMonthFlows.HousingExpensesThisMonth
+					currentMonthData.TransportationExpensesThisMonth = se.currentMonthFlows.TransportationExpensesThisMonth
+					currentMonthData.FoodExpensesThisMonth = se.currentMonthFlows.FoodExpensesThisMonth
+					currentMonthData.OtherExpensesThisMonth = se.currentMonthFlows.OtherExpensesThisMonth
+
+					// Copy contribution breakdown by account type
+					currentMonthData.ContributionsTaxableThisMonth = se.currentMonthFlows.ContributionsTaxableThisMonth
+					currentMonthData.ContributionsTaxDeferredThisMonth = se.currentMonthFlows.ContributionsTaxDeferredThisMonth
+					currentMonthData.ContributionsRothThisMonth = se.currentMonthFlows.ContributionsRothThisMonth
+
+					// Copy YTD tax tracking fields
+					currentMonthData.OrdinaryIncomeForTaxYTD = se.ordinaryIncomeYTD
+					currentMonthData.STCGForTaxYTD = se.shortTermCapitalGainsYTD
+					currentMonthData.LTCGForTaxYTD = se.longTermCapitalGainsYTD
+					currentMonthData.QualifiedDividendIncomeYTD = se.qualifiedDividendsYTD
+					currentMonthData.OrdinaryDividendIncomeYTD = se.ordinaryDividendsYTD
+					currentMonthData.InterestIncomeYTD = se.interestIncomeYTD
+					currentMonthData.ItemizedDeductibleInterestPaidYTD = se.itemizedDeductibleInterestYTD
+					currentMonthData.PreTaxContributionsYTD = se.preTaxContributionsYTD
+					currentMonthData.TaxWithholdingYTD = se.taxWithholdingYTD
+
+					// If December, populate annual tax breakdown fields from last tax calculation
+					if (currentMonth+1)%12 == 0 && se.lastTaxCalculationResults != nil {
+						tr := se.lastTaxCalculationResults
+						setFloatPtr := func(dst **float64, v float64) {
+							val := v
+							*dst = &val
+						}
+						setFloatPtr(&currentMonthData.TaxPaidAnnual, tr.TotalTax)
+						setFloatPtr(&currentMonthData.FederalIncomeTaxAnnual, tr.FederalIncomeTax)
+						setFloatPtr(&currentMonthData.StateIncomeTaxAnnual, tr.StateIncomeTax)
+						setFloatPtr(&currentMonthData.CapitalGainsTaxShortTermAnnual, 0)
+						setFloatPtr(&currentMonthData.CapitalGainsTaxLongTermAnnual, tr.CapitalGainsTax)
+						setFloatPtr(&currentMonthData.AlternativeMinimumTaxAnnual, tr.AlternativeMinimumTax)
+						setFloatPtr(&currentMonthData.EffectiveTaxRateAnnual, tr.EffectiveRate)
+						setFloatPtr(&currentMonthData.MarginalTaxRateAnnual, tr.MarginalRate)
+						setFloatPtr(&currentMonthData.AdjustedGrossIncomeAnnual, tr.AdjustedGrossIncome)
+						setFloatPtr(&currentMonthData.TaxableIncomeAnnual, tr.TaxableIncome)
+						setFloatPtr(&currentMonthData.SocialSecurityTaxAnnual, tr.SocialSecurityTax)
+						setFloatPtr(&currentMonthData.MedicareTaxAnnual, tr.MedicareTax)
+						setFloatPtr(&currentMonthData.AdditionalMedicareTaxAnnual, tr.AdditionalMedicareTax)
+						setFloatPtr(&currentMonthData.TotalFICATaxAnnual, tr.TotalFICATax)
+						if se.lastRMDAmount > 0 {
+							setFloatPtr(&currentMonthData.RMDAmountAnnual, se.lastRMDAmount)
+						}
+					}
+
+					monthlyDataList = append(monthlyDataList, *currentMonthData)
 				}
-
-            // Copy monthly flows to monthly data - THIS WAS MISSING!
-            currentMonthData.IncomeThisMonth = se.currentMonthFlows.IncomeThisMonth
-            currentMonthData.EmploymentIncomeThisMonth = se.currentMonthFlows.EmploymentIncomeThisMonth
-            currentMonthData.ExpensesThisMonth = se.currentMonthFlows.ExpensesThisMonth
-            currentMonthData.ContributionsToInvestmentsThisMonth = se.currentMonthFlows.ContributionsToInvestmentsThisMonth
-            currentMonthData.DividendsReceivedThisMonth = se.currentMonthFlows.DividendsReceivedThisMonth
-            currentMonthData.DebtPaymentsPrincipalThisMonth = se.currentMonthFlows.DebtPaymentsPrincipalThisMonth
-            currentMonthData.DebtPaymentsInterestThisMonth = se.currentMonthFlows.DebtPaymentsInterestThisMonth
-            currentMonthData.InterestIncomeThisMonth = se.currentMonthFlows.InterestIncomeThisMonth
-            currentMonthData.TaxWithheldThisMonth = se.currentMonthFlows.TaxWithheldThisMonth
-            currentMonthData.DivestmentProceedsThisMonth = se.currentMonthFlows.DivestmentProceedsThisMonth
-
-				// Copy granular tracking data
-				currentMonthData.SalaryIncomeThisMonth = se.currentMonthFlows.SalaryIncomeThisMonth
-				currentMonthData.BonusIncomeThisMonth = se.currentMonthFlows.BonusIncomeThisMonth
-				currentMonthData.RSUIncomeThisMonth = se.currentMonthFlows.RSUIncomeThisMonth
-            currentMonthData.HousingExpensesThisMonth = se.currentMonthFlows.HousingExpensesThisMonth
-            currentMonthData.TransportationExpensesThisMonth = se.currentMonthFlows.TransportationExpensesThisMonth
-            currentMonthData.FoodExpensesThisMonth = se.currentMonthFlows.FoodExpensesThisMonth
-            currentMonthData.OtherExpensesThisMonth = se.currentMonthFlows.OtherExpensesThisMonth
-
-			// Copy contribution breakdown by account type
-			currentMonthData.ContributionsTaxableThisMonth = se.currentMonthFlows.ContributionsTaxableThisMonth
-			currentMonthData.ContributionsTaxDeferredThisMonth = se.currentMonthFlows.ContributionsTaxDeferredThisMonth
-			currentMonthData.ContributionsRothThisMonth = se.currentMonthFlows.ContributionsRothThisMonth
-
-			// Copy YTD tax tracking fields
-			currentMonthData.OrdinaryIncomeForTaxYTD = se.ordinaryIncomeYTD
-			currentMonthData.STCGForTaxYTD = se.shortTermCapitalGainsYTD
-			currentMonthData.LTCGForTaxYTD = se.longTermCapitalGainsYTD
-			currentMonthData.QualifiedDividendIncomeYTD = se.qualifiedDividendsYTD
-			currentMonthData.OrdinaryDividendIncomeYTD = se.ordinaryDividendsYTD
-			currentMonthData.InterestIncomeYTD = se.interestIncomeYTD
-			currentMonthData.ItemizedDeductibleInterestPaidYTD = se.itemizedDeductibleInterestYTD
-			currentMonthData.PreTaxContributionsYTD = se.preTaxContributionsYTD
-			currentMonthData.TaxWithholdingYTD = se.taxWithholdingYTD
-
-            // If December, populate annual tax breakdown fields from last tax calculation
-            if (currentMonth+1)%12 == 0 && se.lastTaxCalculationResults != nil {
-                tr := se.lastTaxCalculationResults
-                // Allocate pointers and assign
-                setFloatPtr := func(dst **float64, v float64) {
-                    val := v
-                    *dst = &val
-                }
-                // Total tax (including IRMAA premiums already added in ProcessAnnualTaxes)
-                setFloatPtr(&currentMonthData.TaxPaidAnnual, tr.TotalTax)
-                // Federal/state/cap gains/AMT
-                setFloatPtr(&currentMonthData.FederalIncomeTaxAnnual, tr.FederalIncomeTax)
-                setFloatPtr(&currentMonthData.StateIncomeTaxAnnual, tr.StateIncomeTax)
-                setFloatPtr(&currentMonthData.CapitalGainsTaxShortTermAnnual, 0) // STCG accounted as ordinary in this model
-                setFloatPtr(&currentMonthData.CapitalGainsTaxLongTermAnnual, tr.CapitalGainsTax)
-                setFloatPtr(&currentMonthData.AlternativeMinimumTaxAnnual, tr.AlternativeMinimumTax)
-                setFloatPtr(&currentMonthData.EffectiveTaxRateAnnual, tr.EffectiveRate)
-                setFloatPtr(&currentMonthData.MarginalTaxRateAnnual, tr.MarginalRate)
-                setFloatPtr(&currentMonthData.AdjustedGrossIncomeAnnual, tr.AdjustedGrossIncome)
-                setFloatPtr(&currentMonthData.TaxableIncomeAnnual, tr.TaxableIncome)
-                // FICA breakdown
-                setFloatPtr(&currentMonthData.SocialSecurityTaxAnnual, tr.SocialSecurityTax)
-                setFloatPtr(&currentMonthData.MedicareTaxAnnual, tr.MedicareTax)
-                setFloatPtr(&currentMonthData.AdditionalMedicareTaxAnnual, tr.AdditionalMedicareTax)
-                setFloatPtr(&currentMonthData.TotalFICATaxAnnual, tr.TotalFICATax)
-                // RMD amount tracked for year
-                if se.lastRMDAmount > 0 {
-                    setFloatPtr(&currentMonthData.RMDAmountAnnual, se.lastRMDAmount)
-                }
-            }
-
-            // PERF: Only append monthly data if tracking enabled (skip for MC)
-            if se.trackMonthlyData {
-                monthlyDataList = append(monthlyDataList, *currentMonthData)
-            }
 
 				// PHASE 2: Validate share-based accounting integrity after each month
 				// This ensures no legacy dollar-based holdings creep in during simulation
-				if err := ValidateAccountsIntegrity(&accounts); err != nil {
+				// PERF: Skip in MC mode — validation is safety logic, not financial math
+				if se.trackMonthlyData {
+					if err := ValidateAccountsIntegrity(&accounts); err != nil {
 						simLogVerbose("❌ [VALIDATION-ERROR] Month %d: %v", currentMonth, err)
-					// Log error but continue simulation to identify all issues
+						// Log error but continue simulation to identify all issues
+					}
 				}
 
 				// Bankruptcy is now handled by SystemEventFinancialHealthCheck
@@ -1647,18 +1658,27 @@ func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accoun
 				// Year-end bankruptcy check
 				bankruptcyMonth = currentMonth
 				bankruptcyTrigger = err.Error()
+				if !shared {
+					releaseQueuedEvent(queuedEvent)
+				}
 				break
 			}
 			simLogVerbose("❌ [ERROR] Processing event %s: %v", queuedEvent.Event.ID, err)
 		}
+
+		// PERF: Return processed event to pool (only when events are NOT shared across MC paths)
+		if !shared {
+			releaseQueuedEvent(queuedEvent)
+		}
 	}
 
 	// Save the final month's data if it was created
-        if currentMonthData != nil {
-            currentMonthData.NetWorth = se.calculateNetWorth(accounts)
-            currentMonthData.Accounts = se.deepCopyAccounts(accounts)
+	// PERF: Skip all snapshot work in MC mode — only finalNetWorth (computed below) matters
+	if currentMonthData != nil && se.trackMonthlyData {
+		currentMonthData.NetWorth = se.calculateNetWorth(accounts)
+		currentMonthData.Accounts = se.deepCopyAccounts(accounts)
 
-		// Copy monthly flows to monthly data for final month too
+		// Copy monthly flows for final month
 		currentMonthData.IncomeThisMonth = se.currentMonthFlows.IncomeThisMonth
 		currentMonthData.EmploymentIncomeThisMonth = se.currentMonthFlows.EmploymentIncomeThisMonth
 		currentMonthData.ExpensesThisMonth = se.currentMonthFlows.ExpensesThisMonth
@@ -1669,22 +1689,16 @@ func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accoun
 		currentMonthData.InterestIncomeThisMonth = se.currentMonthFlows.InterestIncomeThisMonth
 		currentMonthData.TaxWithheldThisMonth = se.currentMonthFlows.TaxWithheldThisMonth
 		currentMonthData.DivestmentProceedsThisMonth = se.currentMonthFlows.DivestmentProceedsThisMonth
-
-		// Copy granular tracking data for final month
 		currentMonthData.SalaryIncomeThisMonth = se.currentMonthFlows.SalaryIncomeThisMonth
 		currentMonthData.BonusIncomeThisMonth = se.currentMonthFlows.BonusIncomeThisMonth
 		currentMonthData.RSUIncomeThisMonth = se.currentMonthFlows.RSUIncomeThisMonth
 		currentMonthData.HousingExpensesThisMonth = se.currentMonthFlows.HousingExpensesThisMonth
 		currentMonthData.TransportationExpensesThisMonth = se.currentMonthFlows.TransportationExpensesThisMonth
 		currentMonthData.FoodExpensesThisMonth = se.currentMonthFlows.FoodExpensesThisMonth
-            currentMonthData.OtherExpensesThisMonth = se.currentMonthFlows.OtherExpensesThisMonth
-
-		// Copy contribution breakdown by account type for final month
+		currentMonthData.OtherExpensesThisMonth = se.currentMonthFlows.OtherExpensesThisMonth
 		currentMonthData.ContributionsTaxableThisMonth = se.currentMonthFlows.ContributionsTaxableThisMonth
 		currentMonthData.ContributionsTaxDeferredThisMonth = se.currentMonthFlows.ContributionsTaxDeferredThisMonth
 		currentMonthData.ContributionsRothThisMonth = se.currentMonthFlows.ContributionsRothThisMonth
-
-		// Copy YTD tax tracking fields for final month
 		currentMonthData.OrdinaryIncomeForTaxYTD = se.ordinaryIncomeYTD
 		currentMonthData.STCGForTaxYTD = se.shortTermCapitalGainsYTD
 		currentMonthData.LTCGForTaxYTD = se.longTermCapitalGainsYTD
@@ -1695,45 +1709,41 @@ func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accoun
 		currentMonthData.PreTaxContributionsYTD = se.preTaxContributionsYTD
 		currentMonthData.TaxWithholdingYTD = se.taxWithholdingYTD
 
-            // If this is December, populate annual tax breakdown fields on the final month as well
-            if (currentMonth+1)%12 == 0 && se.lastTaxCalculationResults != nil {
-                tr := se.lastTaxCalculationResults
-                setFloatPtr := func(dst **float64, v float64) {
-                    val := v
-                    *dst = &val
-                }
-                setFloatPtr(&currentMonthData.TaxPaidAnnual, tr.TotalTax)
-                setFloatPtr(&currentMonthData.FederalIncomeTaxAnnual, tr.FederalIncomeTax)
-                setFloatPtr(&currentMonthData.StateIncomeTaxAnnual, tr.StateIncomeTax)
-                setFloatPtr(&currentMonthData.CapitalGainsTaxShortTermAnnual, 0)
-                setFloatPtr(&currentMonthData.CapitalGainsTaxLongTermAnnual, tr.CapitalGainsTax)
-                setFloatPtr(&currentMonthData.AlternativeMinimumTaxAnnual, tr.AlternativeMinimumTax)
-                setFloatPtr(&currentMonthData.EffectiveTaxRateAnnual, tr.EffectiveRate)
-                setFloatPtr(&currentMonthData.MarginalTaxRateAnnual, tr.MarginalRate)
-                setFloatPtr(&currentMonthData.AdjustedGrossIncomeAnnual, tr.AdjustedGrossIncome)
-                setFloatPtr(&currentMonthData.TaxableIncomeAnnual, tr.TaxableIncome)
-                setFloatPtr(&currentMonthData.SocialSecurityTaxAnnual, tr.SocialSecurityTax)
-                setFloatPtr(&currentMonthData.MedicareTaxAnnual, tr.MedicareTax)
-                setFloatPtr(&currentMonthData.AdditionalMedicareTaxAnnual, tr.AdditionalMedicareTax)
-                setFloatPtr(&currentMonthData.TotalFICATaxAnnual, tr.TotalFICATax)
-                if se.lastRMDAmount > 0 {
-                    setFloatPtr(&currentMonthData.RMDAmountAnnual, se.lastRMDAmount)
-                }
-            }
+		if (currentMonth+1)%12 == 0 && se.lastTaxCalculationResults != nil {
+			tr := se.lastTaxCalculationResults
+			setFloatPtr := func(dst **float64, v float64) {
+				val := v
+				*dst = &val
+			}
+			setFloatPtr(&currentMonthData.TaxPaidAnnual, tr.TotalTax)
+			setFloatPtr(&currentMonthData.FederalIncomeTaxAnnual, tr.FederalIncomeTax)
+			setFloatPtr(&currentMonthData.StateIncomeTaxAnnual, tr.StateIncomeTax)
+			setFloatPtr(&currentMonthData.CapitalGainsTaxShortTermAnnual, 0)
+			setFloatPtr(&currentMonthData.CapitalGainsTaxLongTermAnnual, tr.CapitalGainsTax)
+			setFloatPtr(&currentMonthData.AlternativeMinimumTaxAnnual, tr.AlternativeMinimumTax)
+			setFloatPtr(&currentMonthData.EffectiveTaxRateAnnual, tr.EffectiveRate)
+			setFloatPtr(&currentMonthData.MarginalTaxRateAnnual, tr.MarginalRate)
+			setFloatPtr(&currentMonthData.AdjustedGrossIncomeAnnual, tr.AdjustedGrossIncome)
+			setFloatPtr(&currentMonthData.TaxableIncomeAnnual, tr.TaxableIncome)
+			setFloatPtr(&currentMonthData.SocialSecurityTaxAnnual, tr.SocialSecurityTax)
+			setFloatPtr(&currentMonthData.MedicareTaxAnnual, tr.MedicareTax)
+			setFloatPtr(&currentMonthData.AdditionalMedicareTaxAnnual, tr.AdditionalMedicareTax)
+			setFloatPtr(&currentMonthData.TotalFICATaxAnnual, tr.TotalFICATax)
+			if se.lastRMDAmount > 0 {
+				setFloatPtr(&currentMonthData.RMDAmountAnnual, se.lastRMDAmount)
+			}
+		}
 
-            // PERF: Only append final month data if tracking enabled (skip for MC)
-            if se.trackMonthlyData {
-                monthlyDataList = append(monthlyDataList, *currentMonthData)
-            }
-        }
+		monthlyDataList = append(monthlyDataList, *currentMonthData)
+	}
 
 	// DEBUG: Log loop termination status
 	simLogVerbose("🔍 [SIMULATION-LOOP-END-DEBUG] Loop ended. Processed %d events, generated %d months of data, lastMonth: %d",
 		eventCounter, len(monthlyDataList), currentMonth)
 
 	// EDGE CASE: If no monthly data was generated at all (e.g., zero events), create initial month
-	// This ensures we always return at least one data point for the initial state
-	if len(monthlyDataList) == 0 {
+	// PERF: Only needed when tracking monthly data (MC mode doesn't use monthlyDataList)
+	if se.trackMonthlyData && len(monthlyDataList) == 0 {
 		simLogVerbose("🔧 [MONTHLY-DATA-FIX] No monthly data generated from events, creating initial month")
 		initialMonth := MonthlyDataSimulation{
 			MonthOffset: 0,
@@ -1809,8 +1819,10 @@ func (se *SimulationEngine) processQueuedEvent(
 	event := queuedEvent.Event
 
 	// Debug: Log all events being processed
+	if VERBOSE_DEBUG {
 		simLogVerbose("[WASM-QUEUE-DEBUG] Processing queued event: type='%s', amount=%.2f, month=%d",
 			event.Type, event.Amount, queuedEvent.MonthOffset)
+	}
 
 	// Check if it's a system event
 	if se.isSystemEvent(event.Type) {
@@ -1818,7 +1830,9 @@ func (se *SimulationEngine) processQueuedEvent(
 		return systemHandler.ProcessSystemEvent(event, accounts, queuedEvent.MonthOffset)
 	}
 
+	if VERBOSE_DEBUG {
 		simLogVerbose("[WASM-QUEUE-DEBUG] User event detected: type='%s', processing through event registry", event.Type)
+	}
 
 	// Process user event through the event registry
 	cashFlow := 0.0 // Legacy compatibility
@@ -1855,6 +1869,32 @@ func (se *SimulationEngine) isSystemEvent(eventType string) bool {
 	}
 }
 
+// PERF: Package-level map avoids re-creating 22-entry map on every call
+var investmentEventTypes = map[string]bool{
+	"CONTRIBUTION":                 true,
+	"WITHDRAWAL":                   true,
+	"ROTH_CONVERSION":              true,
+	"REBALANCE":                    true,
+	"SELL_ASSET":                   true,
+	"BUY_ASSET":                    true,
+	"TRANSFER_BETWEEN_ACCOUNTS":    true,
+	"TAX_LOSS_HARVESTING":          true,
+	"CAPITAL_GAINS_DISTRIBUTION":   true,
+	"EMPLOYER_MATCH":               true,
+	"DIVIDEND_REINVESTMENT":        true,
+	"PORTFOLIO_REBALANCE":          true,
+	"ASSET_ALLOCATION_CHANGE":      true,
+	"TAXABLE_ACCOUNT_CONTRIBUTION": true,
+	"TAX_DEFERRED_CONTRIBUTION":    true,
+	"ROTH_CONTRIBUTION":            true,
+	"HSA_CONTRIBUTION":             true,
+	"FIVE_TWO_NINE_CONTRIBUTION":   true,
+	"TAXABLE_WITHDRAWAL":           true,
+	"TAX_DEFERRED_WITHDRAWAL":      true,
+	"ROTH_WITHDRAWAL":              true,
+	"RMD":                          true,
+}
+
 // hasInvestmentRelatedEvents checks if the event queue contains any investment-related events
 // Investment events are those that involve moving money into/out of investment accounts
 // This is used to prevent auto-investing when user only has cash with no investment plan
@@ -1862,31 +1902,6 @@ func (se *SimulationEngine) hasInvestmentRelatedEvents() bool {
 	// Safety check: if eventQueue hasn't been initialized yet, return false
 	if se.eventQueue == nil || se.eventQueue.items == nil {
 		return false
-	}
-
-	investmentEventTypes := map[string]bool{
-		"CONTRIBUTION":                   true,
-		"WITHDRAWAL":                     true,
-		"ROTH_CONVERSION":                true,
-		"REBALANCE":                      true,
-		"SELL_ASSET":                     true,
-		"BUY_ASSET":                      true,
-		"TRANSFER_BETWEEN_ACCOUNTS":      true,
-		"TAX_LOSS_HARVESTING":            true,
-		"CAPITAL_GAINS_DISTRIBUTION":     true,
-		"EMPLOYER_MATCH":                 true,
-		"DIVIDEND_REINVESTMENT":          true,
-		"PORTFOLIO_REBALANCE":            true,
-		"ASSET_ALLOCATION_CHANGE":        true,
-		"TAXABLE_ACCOUNT_CONTRIBUTION":   true,
-		"TAX_DEFERRED_CONTRIBUTION":      true,
-		"ROTH_CONTRIBUTION":              true,
-		"HSA_CONTRIBUTION":               true,
-		"FIVE_TWO_NINE_CONTRIBUTION":     true,
-		"TAXABLE_WITHDRAWAL":             true,
-		"TAX_DEFERRED_WITHDRAWAL":        true,
-		"ROTH_WITHDRAWAL":                true,
-		"RMD":                            true,
 	}
 
 	for _, queuedEvent := range se.eventQueue.items {
@@ -2424,14 +2439,22 @@ func RunMonteCarloSimulation(input SimulationInput, numberOfRuns int) Simulation
 	cashFloor := input.Config.CashFloor
 
 	// PERF: Pre-compute Cholesky matrix and monthly parameters once for all paths
-	if input.Config.LiteMode {
-		if err := PrecomputeConfigParameters(&input.Config); err != nil {
-			return SimulationResults{
-				Success: false,
-				Error:   fmt.Sprintf("Failed to precompute config: %v", err),
-			}
-		}
+	if err := PrecomputeConfigParameters(&input.Config); err != nil {
+		// Non-fatal: config may be incomplete (sparse benchmark configs)
+		simLogVerbose("⚠️ [PERF] Failed to precompute config: %v", err)
 	}
+
+	// PERF: Create one engine and reuse across all paths
+	// NewSimulationEngine creates ~15 expensive calculator objects (TaxCalculator, RMDCalculator, etc.)
+	// ResetSimulationState() (called inside RunSingleSimulation) resets per-path state while preserving them
+	engine := NewSimulationEngine(input.Config)
+	engine.trackMonthlyData = false // MC mode: use incremental metrics
+
+	// PERF: Precompute static event schedule once for all paths
+	// System events, user events, strategy events are identical across paths (only RNG seed differs)
+	sharedQueue := PreprocessAndPopulateQueue(input)
+	sharedSortedEvents := sharedQueue.ToSortedSlice()
+	simLogVerbose("🚀 [PERF] Pre-sorted %d shared events for MC reuse", len(sharedSortedEvents))
 
 	// Storage for per-path metrics
 	pathMetrics := make([]MCPathMetrics, 0, numberOfRuns)
@@ -2451,10 +2474,19 @@ func RunMonteCarloSimulation(input SimulationInput, numberOfRuns int) Simulation
 			simLogVerbose("🔧 MONTE-CARLO: Run %d/%d", i+1, numberOfRuns)
 		}
 
-		// Use RunIsolatedPath for proper seed diversity and state isolation
-		result := RunIsolatedPath(input, i, IsolatedPathOptions{
-			TrackMonthlyData: false, // MC mode: use incremental metrics
-		})
+		// PERF: Reuse engine — update seed + deep-copy accounts (instead of RunIsolatedPath)
+		pathSeed := baseSeed + int64(i)
+		engine.config.RandomSeed = pathSeed
+
+		pathInput := input
+		pathInput.Config = engine.config
+		pathInput.InitialAccounts = deepCopyInputAccounts(input.InitialAccounts)
+
+		// Reset engine state for new path (preserves expensive calculators)
+		engine.ResetSimulationState()
+
+		// Run simulation with shared pre-sorted events (accounts initialized inside)
+		result := engine.runQueueSimulationLoopWithEvents(pathInput, pathInput.InitialAccounts, sharedSortedEvents, true)
 
 		// Track max months for breach time series
 		// CRITICAL FIX: In MC mode, MonthlyData is empty (trackMonthlyData=false)
@@ -2504,21 +2536,8 @@ func RunMonteCarloSimulation(input SimulationInput, numberOfRuns int) Simulation
 		result.MonthlyData = nil
 		result.FinancialStressEvents = nil
 
-		// PERF: Conditional GC based on memory pressure instead of fixed interval
-		// Check memory every 50 paths (not 10) to reduce ReadMemStats overhead in WASM
-		// Only force GC if heap usage is above threshold (50MB)
-		// This avoids expensive stop-the-world GC when memory is not under pressure
-		if (i+1)%50 == 0 {
-			var memStats runtime.MemStats
-			runtime.ReadMemStats(&memStats)
-			const gcThresholdMB = 50 * 1024 * 1024 // 50MB
-			if memStats.HeapInuse > gcThresholdMB {
-				runtime.GC()
-				if VERBOSE_DEBUG {
-					simLogVerbose("🧹 [GC] Forced GC at path %d (HeapInuse: %.1fMB)", i+1, float64(memStats.HeapInuse)/(1024*1024))
-				}
-			}
-		}
+		// PERF: Rely on Go's GOGC-based GC rather than manual ReadMemStats + forced GC.
+		// ReadMemStats is stop-the-world and expensive in the hot loop.
 
 		// Early termination if too many errors
 		if failedPaths > maxErrors {

@@ -147,7 +147,7 @@ func (e *FullEngine) RunFullSimulation(params FullSimulationParams) (*FullSimula
 		return &FullSimulationResult{
 			Success: false,
 			Error:   payload.PlanProjection.Summary.PlanHealth.KeyRisks[0],
-		}, fmt.Errorf(payload.PlanProjection.Summary.PlanHealth.KeyRisks[0])
+		}, fmt.Errorf("%s", payload.PlanProjection.Summary.PlanHealth.KeyRisks[0])
 	}
 
 	// Convert payload to our result format

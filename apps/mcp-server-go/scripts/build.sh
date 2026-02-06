@@ -7,8 +7,14 @@ cd "$(dirname "$0")/.."
 
 echo "Building AreumFire MCP Server..."
 
+PGO_FLAG=""
+if [ -f "default.pgo" ]; then
+    echo "Using Profile-Guided Optimization (default.pgo found)"
+    PGO_FLAG="-pgo=default.pgo"
+fi
+
 # Build for current platform
-go build -v -o server ./cmd/server
+go build -v $PGO_FLAG -o server ./cmd/server
 
 echo "Build complete: ./server"
 echo ""

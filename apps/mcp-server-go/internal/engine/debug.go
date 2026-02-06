@@ -1,16 +1,10 @@
+//go:build !debug
+
 package engine
 
-import (
-	"fmt"
-	"os"
-)
+// VERBOSE_DEBUG controls debug output — const false enables dead-code elimination
+const VERBOSE_DEBUG = false
 
-// VERBOSE_DEBUG controls debug output
-var VERBOSE_DEBUG = os.Getenv("VERBOSE_DEBUG") == "true"
-
-// DebugPrintf prints debug messages when VERBOSE_DEBUG is enabled
-func DebugPrintf(format string, args ...interface{}) {
-	if VERBOSE_DEBUG {
-		fmt.Printf(format, args...)
-	}
-}
+// DebugPrintf is a no-op when VERBOSE_DEBUG is false
+// The compiler eliminates all `if VERBOSE_DEBUG { ... }` blocks at compile time
+func DebugPrintf(format string, args ...interface{}) {}
