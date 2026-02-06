@@ -683,12 +683,17 @@
       border: 0;
     }
 
+    .copy-summary-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      margin-right: auto;
+    }
     .copy-summary-btn {
       position: relative;
       width: 18px;
       height: 18px;
       padding: 0;
-      margin-left: var(--space-2);
       font-size: 0;
       color: var(--color-text-tertiary);
       background: transparent;
@@ -700,6 +705,7 @@
       align-items: center;
       justify-content: center;
       vertical-align: middle;
+      flex-shrink: 0;
     }
     .copy-summary-btn::before {
       content: '';
@@ -735,6 +741,16 @@
     .copy-summary-btn.copied::before,
     .copy-summary-btn.copied::after {
       border-color: var(--color-success);
+    }
+    .copied-toast {
+      font-size: var(--font-size-2xs);
+      color: var(--color-success);
+      opacity: 0;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .copied-toast.visible {
+      opacity: 1;
     }
 
     /* Hide hint on touch devices (where it's redundant) */
@@ -777,6 +793,9 @@
     .traj-row.long-horizon .traj-bar-p50 {
       width: 4px;
       border-radius: 2px;
+    }
+    .traj-row.long-horizon .traj-bar-range {
+      opacity: 0.5;
     }
 
     .traj-long-horizon-note {
@@ -1237,13 +1256,15 @@
       padding-top: var(--space-3);
       border-top: 1px solid var(--color-border-subtle);
       display: flex;
-      gap: var(--space-3);
-      flex-wrap: wrap;
+      gap: var(--space-2);
       align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
     }
 
     .footer-advanced {
       display: inline;
+      flex-shrink: 0;
     }
 
     .footer-advanced summary {
@@ -1268,7 +1289,7 @@
 
     .footer-advanced-content {
       display: inline;
-      margin-left: var(--space-2);
+      margin-left: var(--space-1);
     }
 
     .footer-advanced-content span + span::before {
@@ -1759,13 +1780,17 @@
 
     <!-- Footer -->
     <div class="footer" id="footer">
+      <span class="copy-summary-wrap">
+        <button id="copy-summary-btn" class="copy-summary-btn" title="Copy summary" aria-label="Copy summary"><span class="sr-only">Copy summary</span></button>
+        <span id="copied-toast" class="copied-toast">Copied!</span>
+      </span>
       <span id="run-id" title="Simulation ID — use this to reference or share this run">—</span>
-      <span>through Age <span id="horizon-age">—</span></span>
-      <button id="copy-summary-btn" class="copy-summary-btn" title="Copy summary" aria-label="Copy summary"><span class="sr-only">Copy summary</span></button>
+      <span>·</span>
+      <span>Age <span id="horizon-age">—</span></span>
+      <span>·</span>
       <details class="footer-advanced">
-        <summary>Advanced</summary>
+        <summary><span id="paths-run">100</span> paths</summary>
         <div class="footer-advanced-content">
-          <span><span id="paths-run">100</span> paths</span>
           <span>Seed: <span id="seed">—</span></span>
         </div>
       </details>
@@ -2345,9 +2370,9 @@
         }
 
         // Floor values at 0 (Option A: no negative display)
-        const p10Raw = pt.p10 || pt.p50 * 0.7 || 0;
+        const p10Raw = (pt.p10 != null ? pt.p10 : pt.p50 * 0.7) || 0;
         const p50Raw = pt.p50 || 0;
-        const p75Raw = pt.p75 || pt.p50 * 1.5 || 0;
+        const p75Raw = (pt.p75 != null ? pt.p75 : pt.p50 * 1.5) || 0;
 
         const p10 = Math.max(0, p10Raw);
         const p50 = Math.max(0, p50Raw);
@@ -2392,7 +2417,7 @@
         // After age 65: show only P50 marker (long-horizon uncertainty)
         // Before age 65: show P10→P50 range bar with P50 marker
         const rangeWidth = Math.max(0, pct50 - pct10);
-        const showRange = age < LONG_HORIZON_AGE;
+        const showRange = true;
 
         html += '<div class="' + rowClass + '" data-age="' + age + '" data-year="' + yearOffset + '" ' +
           'role="button" tabindex="0" aria-label="' + ariaLabel + '" title="' + tooltipText + '">' +
@@ -2417,7 +2442,7 @@
       const hasLongHorizon = sortedAges.some(a => a >= LONG_HORIZON_AGE);
       if (hasLongHorizon && !constraintMarkerShown) {
         html += '<div class="traj-long-horizon-note">' +
-          'After 65, range bars are hidden because outcome spread becomes very wide. Only the median is shown. Tap any row for full percentiles.' +
+          'After 65, bars are dimmed because outcome spread becomes very wide. Tap any row for full percentiles.' +
         '</div>';
       }
 
@@ -2451,11 +2476,25 @@
     function buildMilestones(d, age) {
       const ms = {};
       const m2a = m => age + Math.floor(m / 12);
-      if (d.incomeChange?.newAnnualIncome === 0) {
-        ms[m2a(d.incomeChange.monthOffset)] = d.incomeChange.description || 'Retirement';
-      }
-      if (d.socialSecurity) {
-        ms[d.socialSecurity.claimingAge] = 'Social Security';
+
+      // Primary: read from schedule.scheduledEvents (present in lean payload)
+      const events = d.schedule?.scheduledEvents;
+      if (events && events.length > 0) {
+        for (const e of events) {
+          if (e.type === 'income' && e.change === '$0') {
+            ms[e.age] = e.label || 'Retirement';
+          } else if (e.type === 'social_security') {
+            ms[e.age] = 'Social Security';
+          }
+        }
+      } else {
+        // Fallback: legacy payload fields
+        if (d.incomeChange?.newAnnualIncome === 0) {
+          ms[m2a(d.incomeChange.monthOffset)] = d.incomeChange.description || 'Retirement';
+        }
+        if (d.socialSecurity) {
+          ms[d.socialSecurity.claimingAge] = 'Social Security';
+        }
       }
       return ms;
     }
@@ -2769,6 +2808,31 @@
       const events = data.firstMonthEvents?.[age];
 
       if (!events || events.length === 0) {
+        // Fallback: construct annual summary from annualSnapshot
+        const snaps = data.annualSnapshots || [];
+        const snap = snaps.find(s => s.age === age) || snaps.find(s => Math.abs(s.age - age) <= 1);
+        if (snap) {
+          const income = snap.totalIncome ?? snap.contributions ?? 0;
+          const expenses = snap.totalExpenses ?? snap.withdrawals ?? 0;
+          const start = snap.startBalance || 0;
+          const end = snap.endBalance || 0;
+          const growth = snap.investmentGrowth ?? (end - start - income + expenses);
+          const pct = snap.returnPct ? (Math.abs(snap.returnPct) > 1 ? snap.returnPct : snap.returnPct * 100) : 0;
+
+          let html = '<div class="event-detail-month">Year ' + year + ' — Annual Summary</div>';
+          html += '<div class="event-card"><div class="event-card-name">Income</div>' +
+            '<div class="event-card-flow"><span>' + fmtFull(income) + '</span>' +
+            '<span class="event-card-delta positive">+' + fmtFull(income) + '</span></div></div>';
+          html += '<div class="event-card"><div class="event-card-name">Expenses</div>' +
+            '<div class="event-card-flow"><span>' + fmtFull(expenses) + '</span>' +
+            '<span class="event-card-delta negative">\u2212' + fmtFull(expenses) + '</span></div></div>';
+          html += '<div class="event-card"><div class="event-card-name">Market returns (' + pct.toFixed(1) + '%)</div>' +
+            '<div class="event-card-flow"><span>' + fmtFull(Math.abs(growth)) + '</span>' +
+            '<span class="event-card-delta ' + (growth >= 0 ? 'positive' : 'negative') + '">' +
+            (growth >= 0 ? '+' : '\u2212') + fmtFull(Math.abs(growth)) + '</span></div></div>';
+          html += '<div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-2); font-style: italic;">Annual summary shown (monthly event trace not available for this year)</div>';
+          return html;
+        }
         return '<div class="event-detail-empty">Event detail not available for this year.</div>';
       }
 
@@ -2798,75 +2862,68 @@
       const inspector = document.getElementById('inspector');
       const year = (data.startYear || 2024) + yearOffset;
 
-      document.getElementById('inspector-title').innerHTML = 'Age ' + age + ' — What happens this year<div style="font-size: var(--font-size-2xs); font-weight: normal; color: var(--color-text-muted); margin-top: 2px;">One simulated path (example, not typical)</div>';
-
-      // Find snapshot
-      const snaps = data.annualSnapshots || [];
-      // Debug: log what we're looking for and what we have
-      console.log('[Inspector] Looking for age:', age, 'Available ages:', snaps.map(s => s.age));
-      const snap = snaps.find(s => s.age === age) || snaps.find(s => Math.abs(s.age - age) <= 1);
-      console.log('[Inspector] Found snap:', snap ? 'yes' : 'no', snap?.age);
+      document.getElementById('inspector-title').innerHTML = 'Age ' + age + ' — Typical outcomes';
 
       const ledger = document.getElementById('ledger');
       const withdrawalsSection = document.getElementById('withdrawals-section');
       const accountsSection = document.getElementById('accounts-section');
 
+      // Always look up trajectory P50/P10 for the headline
+      const trajectory = data.netWorthTrajectory || data.mc?.netWorthTrajectory || [];
+      const currentAge = data.inputs?.currentAge || 35;
+      const monthOffset = (age - currentAge) * 12;
+      let pt = null;
+      let minDiff = Infinity;
+      trajectory.forEach(p => {
+        const diff = Math.abs((p.monthOffset || p.month || 0) - monthOffset);
+        if (diff < minDiff) { minDiff = diff; pt = p; }
+      });
+
+      const p10 = Math.max(0, pt ? (pt.p10 != null ? pt.p10 : 0) : 0);
+      const p50 = Math.max(0, pt ? (pt.p50 || 0) : 0);
+      const p75 = Math.max(0, pt ? (pt.p75 != null ? pt.p75 : 0) : 0);
+      const isConstrained = pt ? (pt.p50 || 0) <= 0 : false;
+
+      // Primary: P50/P10 headline (matches trajectory bar)
+      let ledgerHtml = '<div class="minimal-ledger">' +
+        '<div class="minimal-ledger-row" style="font-weight: 500; color: var(--color-text-tertiary); font-size: var(--font-size-2xs); text-transform: uppercase; letter-spacing: 0.3px; padding-bottom: var(--space-2);">Net Worth at Age ' + age + '</div>' +
+        '<div class="minimal-ledger-row total"><span>Typical (P50)</span><span>' + (isConstrained ? '$0 ⚠️' : fmt(p50)) + '</span></div>' +
+        '<div class="minimal-ledger-row"><span>Harder scenarios (P10)</span><span>' + fmt(p10) + '</span></div>';
+      if (p75 > 0 && !isConstrained) {
+        ledgerHtml += '<div class="minimal-ledger-row"><span>Stronger markets (P75)</span><span>' + fmt(p75) + '</span></div>';
+      }
+      if (isConstrained) {
+        ledgerHtml += '<div style="margin-top: var(--space-2); padding: var(--space-2); background: rgba(217, 115, 13, 0.1); border-radius: 4px; font-size: var(--font-size-2xs); color: #d9730d;">Assets depleted — spending exceeded available resources.</div>';
+      }
+      ledgerHtml += '</div>';
+
+      // Secondary: exemplar path details (one example path)
+      const snaps = data.annualSnapshots || [];
+      const snap = snaps.find(s => s.age === age) || snaps.find(s => Math.abs(s.age - age) <= 1);
+
       if (snap) {
-        // Summary header (start → delta → end)
-        const startVal = snap.startBalance || 0;
-        const endVal = snap.endBalance || 0;
-        const summaryHtml = renderInspectorSummary(startVal, endVal);
-
-        // Minimal ledger with accounts inline under End
-        ledger.innerHTML = summaryHtml + renderMinimalLedger(snap);
-
-        // Stacked accounts bar (new visual)
-        accountsSection.innerHTML = renderStackedAccounts(snap);
-
-        // Add "Show the math" collapsible with first-month events
-        withdrawalsSection.innerHTML = '<details class="event-detail-toggle">' +
-          '<summary>Show the math (January events)</summary>' +
-          '<div class="event-detail-content">' + renderFirstMonthEvents(age, year) + '</div>' +
+        ledgerHtml += '<details class="event-detail-toggle" style="margin-top: var(--space-3);">' +
+          '<summary>One example path (year breakdown)</summary>' +
+          '<div class="event-detail-content">' +
+            renderMinimalLedger(snap) +
+          '</div>' +
         '</details>';
-
+        accountsSection.innerHTML = renderStackedAccounts(snap);
       } else {
-        // Fallback: use trajectory data when snapshot is missing
-        const trajectory = data.netWorthTrajectory || data.mc?.netWorthTrajectory || [];
-        const currentAge = data.inputs?.currentAge || 35;
-        const monthOffset = (age - currentAge) * 12;
-
-        // Find closest trajectory point
-        let pt = null;
-        let minDiff = Infinity;
-        trajectory.forEach(p => {
-          const diff = Math.abs((p.monthOffset || p.month || 0) - monthOffset);
-          if (diff < minDiff) { minDiff = diff; pt = p; }
-        });
-
-        if (pt) {
-          // Show trajectory percentiles when snapshot is missing (two-tier: P10 and P50 only)
-          // Floor at 0 - negative net worth shows as constraint
-          const p10Raw = pt.p10 || 0;
-          const p50Raw = pt.p50 || 0;
-          const p10 = Math.max(0, p10Raw);
-          const p50 = Math.max(0, p50Raw);
-          const isConstrained = p50Raw <= 0;
-
-          ledger.innerHTML =
-            '<div class="minimal-ledger">' +
-              '<div class="minimal-ledger-row" style="font-weight: 500; color: var(--color-text-tertiary); font-size: var(--font-size-2xs); text-transform: uppercase; letter-spacing: 0.3px; padding-bottom: var(--space-2);">Net Worth at This Age</div>' +
-              '<div class="minimal-ledger-row total"><span>Typical outcome</span><span>' + (isConstrained ? '$0 ⚠️' : fmt(p50)) + '</span></div>' +
-              '<div class="minimal-ledger-row"><span>Harder scenarios</span><span>' + fmt(p10) + '</span></div>' +
-              (isConstrained ? '<div style="margin-top: var(--space-2); padding: var(--space-2); background: rgba(217, 115, 13, 0.1); border-radius: 4px; font-size: var(--font-size-2xs); color: #d9730d;">Assets depleted — spending exceeded available resources. Paths showing $0 have exhausted all funds.</div>' : '') +
-              '<div style="margin-top: var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--color-border-subtle); font-size: var(--font-size-2xs); color: var(--color-text-tertiary);">' +
-                'Detailed cash flow not available for this year.' +
-              '</div>' +
-            '</div>';
-        } else {
-          ledger.innerHTML = '<div class="minimal-ledger"><div class="minimal-ledger-row"><span>No data available for this year</span></div></div>';
-        }
-        withdrawalsSection.innerHTML = '';
         accountsSection.innerHTML = '';
+      }
+
+      ledger.innerHTML = ledgerHtml;
+
+      // Show the math (from exemplar path events or annual summary fallback)
+      const mathHtml = renderFirstMonthEvents(age, year);
+      if (mathHtml && !mathHtml.includes('event-detail-empty')) {
+        withdrawalsSection.innerHTML = '<details class="event-detail-toggle">' +
+          '<summary>Show the math</summary>' +
+          '<div class="event-detail-content">' + mathHtml + '</div>' +
+        '</details>';
+      } else {
+        withdrawalsSection.innerHTML = '';
       }
 
       inspector.classList.add('visible');
@@ -2991,7 +3048,7 @@
           const bar = '▓'.repeat(Math.max(1, barLen));
           rows.push({
             age,
-            p10: fmt(pt.p10 || 0),
+            p10: fmt(pt.p10 != null ? pt.p10 : 0),
             p50: fmt(p50),
             bar
           });
@@ -3046,14 +3103,15 @@
 
     async function copySummaryToClipboard() {
       const btn = document.getElementById('copy-summary-btn');
+      const toast = document.getElementById('copied-toast');
       const summary = generateAsciiSummary();
 
       const showCopied = () => {
         btn.classList.add('copied');
-        btn.title = 'Copied!';
+        toast.classList.add('visible');
         setTimeout(() => {
           btn.classList.remove('copied');
-          btn.title = 'Copy summary to clipboard';
+          toast.classList.remove('visible');
         }, 2000);
       };
 

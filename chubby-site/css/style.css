@@ -680,35 +680,65 @@ p { color: var(--text-secondary); }
 .prompt-chip-action {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 0;
-  border-radius: 0;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 6px;
   border: none;
-  font-size: 0.7rem;
   color: var(--text-tertiary);
   background: transparent;
-  white-space: nowrap;
-  position: relative;
-}
-
-.prompt-chip-action .copy-state {
-  display: none;
-  color: var(--text-primary);
-  font-size: 0.7rem;
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.prompt-chip-action.copied .copy-state {
-  display: inline;
+  transition: color 0.15s ease;
+  flex-shrink: 0;
 }
 
 .prompt-chip-action .copy-icon {
-  font-size: 0.8rem;
-  color: var(--text-tertiary);
-  line-height: 1;
+  display: block;
+  transition: opacity 0.15s ease;
+}
+
+.prompt-chip-action .copy-check {
+  display: none;
+  color: var(--accent-green);
+}
+
+.prompt-chip-action.copied .copy-icon {
+  display: none;
+}
+
+.prompt-chip-action.copied .copy-check {
+  display: block;
+}
+
+.prompt-chip:hover .prompt-chip-action {
+  color: var(--text-secondary);
+}
+
+/* Test prompt box with copy button */
+.test-prompt-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px dashed var(--border-light);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #f5f7fa;
+  max-width: 720px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.test-prompt-box:hover {
+  border-color: var(--border-medium);
+}
+
+.test-prompt-box:hover .prompt-chip-action {
+  color: var(--text-secondary);
+}
+
+.test-prompt-text {
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  line-height: 1.5;
 }
 
 .prompt-chip:hover {
@@ -733,32 +763,7 @@ p { color: var(--text-secondary); }
   border: 0;
 }
 
-/* Copy button */
-.copy-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-1) var(--space-2);
-  background: transparent;
-  border: 1px solid var(--border-light);
-  border-radius: 4px;
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: var(--font-sans);
-}
-
-.copy-btn:hover {
-  border-color: var(--text-tertiary);
-  color: var(--text-secondary);
-}
-
-.copy-btn.copied {
-  background: transparent;
-  border-color: var(--border-medium);
-  color: var(--text-primary);
-}
+/* Copy button - styles moved to .prompt-chip-action */
 
 /* ============================================
    Code Blocks

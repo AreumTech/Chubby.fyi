@@ -1391,6 +1391,9 @@ type SimulationResult struct {
 	MinCash                float64 `json:"minCash,omitempty"`                // Minimum cash observed (-1 if not tracked)
 	MinCashMonth           int     `json:"minCashMonth,omitempty"`           // Month when minimum cash occurred
 	CashFloorBreachedMonth int     `json:"cashFloorBreachedMonth,omitempty"` // Month when cash breached floor (-1 if never)
+
+	// Year-end net worth checkpoints for cross-sectional exemplar path selection
+	YearEndNetWorth []float64 `json:"-"` // Not serialized — internal use only
 }
 
 // FinancialStressEvent tracks significant financial stress events during simulation
@@ -1484,6 +1487,7 @@ type MCPathMetrics struct {
 	CashFloorBreached bool
 	IsBankrupt        bool
 	BankruptcyMonth   int
+	YearEndNetWorth   []float64 // Net worth at each year-end checkpoint (for exemplar selection)
 }
 
 // MCBreachProbability tracks cumulative first-breach probability over time

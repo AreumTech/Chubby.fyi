@@ -133,6 +133,7 @@ type SimulationEngine struct {
 	minCashMonth          int     // Month when minimum cash occurred
 	cashFloorBreachedMonth int     // Month when cash first breached floor (-1 if never)
 	trackMonthlyData      bool    // Whether to store full monthly snapshots (true for deterministic, false for MC)
+	yearEndNetWorth       []float64 // Year-end net worth checkpoints for exemplar selection
 
 	// Simple bankruptcy tracking (no recovery - bankruptcy is terminal)
 	// Removed recovery and timeline tracking - bankruptcy ends simulation path
@@ -360,6 +361,7 @@ func (se *SimulationEngine) ResetSimulationState() {
 	se.minCash = math.MaxFloat64
 	se.minCashMonth = -1
 	se.cashFloorBreachedMonth = -1
+	se.yearEndNetWorth = make([]float64, 0, 50)
 	// Note: trackMonthlyData is NOT reset here - it persists across paths
 
 	se.ResetMarketPrices() // Reset market prices for new simulation path
@@ -1521,6 +1523,11 @@ func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accoun
 					se.cashFloorBreachedMonth = currentMonth
 				}
 
+				// Capture year-end net worth for cross-sectional exemplar selection
+				if (currentMonth+1)%12 == 0 {
+					se.yearEndNetWorth = append(se.yearEndNetWorth, currentMonthData.NetWorth)
+				}
+
 				// PERF: Only deep copy accounts if tracking monthly data (skip for MC)
 				if se.trackMonthlyData {
 					currentMonthData.Accounts = se.deepCopyAccounts(accounts)
@@ -1775,6 +1782,7 @@ func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accoun
 		MinCash:                se.minCash,
 		MinCashMonth:           se.minCashMonth,
 		CashFloorBreachedMonth: se.cashFloorBreachedMonth,
+		YearEndNetWorth:        se.yearEndNetWorth,
 	}
 	return result
 }
@@ -2513,6 +2521,7 @@ func RunMonteCarloSimulation(input SimulationInput, numberOfRuns int) Simulation
 		// This allows GC to reclaim ~50KB per month × months per path
 		result.MonthlyData = nil
 		result.FinancialStressEvents = nil
+		result.YearEndNetWorth = nil
 
 		// PERF: Conditional GC based on memory pressure instead of fixed interval
 		// Check memory every 50 paths (not 10) to reduce ReadMemStats overhead in WASM
@@ -2591,7 +2600,7 @@ func RunMonteCarloSimulation(input SimulationInput, numberOfRuns int) Simulation
 			PathIndex:          m.PathIndex,
 			PathSeed:           m.PathSeed,
 			TerminalWealth:     m.TerminalWealth,
-			SelectionCriterion: "median_terminal_wealth",
+			SelectionCriterion: "median_trajectory",
 		}
 	}
 
@@ -2783,6 +2792,7 @@ func extractPathMetrics(result SimulationResult, pathIndex int, pathSeed int64, 
 		metrics.CashFloorBreached = result.CashFloorBreachedMonth >= 0
 		metrics.RunwayMonths = result.CashFloorBreachedMonth
 		metrics.TerminalWealth = result.FinalNetWorth
+		metrics.YearEndNetWorth = result.YearEndNetWorth
 	} else {
 		// Fall back to iterating MonthlyData (deterministic mode or legacy)
 		for _, month := range result.MonthlyData {
@@ -2807,25 +2817,75 @@ func extractPathMetrics(result SimulationResult, pathIndex int, pathSeed int64, 
 	return metrics
 }
 
-// selectExemplarPath finds the path closest to median terminal wealth
+// selectExemplarPath finds the path closest to cross-sectional P50 at all year-end checkpoints.
+// This avoids selecting a path that passes through extreme values mid-trajectory even if it
+// ends near the median terminal wealth.
 func selectExemplarPath(pathMetrics []MCPathMetrics) int {
 	if len(pathMetrics) == 0 {
 		return 0
 	}
-	// Sort copy to find median value
-	sorted := make([]MCPathMetrics, len(pathMetrics))
-	copy(sorted, pathMetrics)
-	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].TerminalWealth < sorted[j].TerminalWealth
-	})
-	medianWealth := sorted[len(sorted)/2].TerminalWealth
-	// Find original index with closest terminal wealth
-	for i, m := range pathMetrics {
-		if m.TerminalWealth == medianWealth {
-			return i
+
+	// Determine max number of year-end checkpoints across all paths
+	maxCheckpoints := 0
+	for _, m := range pathMetrics {
+		if len(m.YearEndNetWorth) > maxCheckpoints {
+			maxCheckpoints = len(m.YearEndNetWorth)
 		}
 	}
-	return len(pathMetrics) / 2
+
+	// Fallback: if no year-end data, use terminal wealth
+	if maxCheckpoints == 0 {
+		sorted := make([]float64, len(pathMetrics))
+		for i, m := range pathMetrics {
+			sorted[i] = m.TerminalWealth
+		}
+		sort.Float64s(sorted)
+		medianWealth := sorted[len(sorted)/2]
+		bestIdx, bestDist := 0, math.MaxFloat64
+		for i, m := range pathMetrics {
+			dist := math.Abs(m.TerminalWealth - medianWealth)
+			if dist < bestDist {
+				bestDist = dist
+				bestIdx = i
+			}
+		}
+		return bestIdx
+	}
+
+	// Compute cross-sectional P50 at each year-end checkpoint
+	p50s := make([]float64, maxCheckpoints)
+	for cp := 0; cp < maxCheckpoints; cp++ {
+		var vals []float64
+		for _, m := range pathMetrics {
+			if cp < len(m.YearEndNetWorth) {
+				vals = append(vals, m.YearEndNetWorth[cp])
+			}
+		}
+		if len(vals) == 0 {
+			continue
+		}
+		sort.Float64s(vals)
+		p50s[cp] = vals[len(vals)/2]
+	}
+
+	// Score each path: sum of squared relative deviations from cross-sectional P50
+	bestIdx, bestScore := 0, math.MaxFloat64
+	for i, m := range pathMetrics {
+		score := 0.0
+		for cp := 0; cp < maxCheckpoints; cp++ {
+			if cp >= len(m.YearEndNetWorth) || p50s[cp] < 1000 {
+				continue // skip if path ended early or P50 near-zero (bankrupt)
+			}
+			ratio := m.YearEndNetWorth[cp]/p50s[cp] - 1.0
+			score += ratio * ratio
+		}
+		if score < bestScore {
+			bestScore = score
+			bestIdx = i
+		}
+	}
+
+	return bestIdx
 }
 
 // calculateBreachTimeSeries builds cumulative first-breach probability by month

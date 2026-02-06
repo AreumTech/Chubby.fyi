@@ -162,31 +162,42 @@ function extractFirstMonthEvents(deterministicResult, startYear, currentAge) {
     return {};
   }
 
-  // Group events by year (using month 0-11 of each year = first month)
+  // Group events by year — prefer January (month 0), fallback to first available month
   const eventsByAge = {};
+  const fallbackByAge = {}; // first available month's events when January is missing
 
   for (const entry of eventTrace) {
     const monthOffset = entry.monthOffset ?? entry.MonthOffset ?? 0;
     const yearOffset = Math.floor(monthOffset / 12);
     const monthInYear = monthOffset % 12;
-
-    // Only include first month (January) of each year
-    if (monthInYear !== 0) continue;
-
     const age = currentAge + yearOffset;
 
-    if (!eventsByAge[age]) {
-      eventsByAge[age] = [];
-    }
-
-    // Lean event structure for minimal payload
-    eventsByAge[age].push({
+    const evt = {
       n: entry.eventName || entry.EventName || '',           // name
       t: entry.eventType || entry.EventType || '',           // type
       d: Math.round(entry.amount || entry.Amount || 0),      // delta amount
       cb: Math.round(entry.cashBefore || entry.CashBefore || 0),   // cash before
       ca: Math.round(entry.cashAfter || entry.CashAfter || 0),     // cash after
-    });
+    };
+
+    if (monthInYear === 0) {
+      // January event — primary
+      if (!eventsByAge[age]) eventsByAge[age] = [];
+      eventsByAge[age].push(evt);
+    } else if (!fallbackByAge[age]) {
+      // First non-January event for this year — fallback
+      fallbackByAge[age] = { month: monthInYear, events: [evt] };
+    } else if (fallbackByAge[age].month === monthInYear) {
+      // Same month as existing fallback — accumulate
+      fallbackByAge[age].events.push(evt);
+    }
+  }
+
+  // Fill gaps: for any age with no January events, use fallback
+  for (const age of Object.keys(fallbackByAge)) {
+    if (!eventsByAge[age]) {
+      eventsByAge[age] = fallbackByAge[age].events;
+    }
   }
 
   return eventsByAge;

@@ -1058,10 +1058,16 @@ func convertTestCaseToSimulationInput(rawInput map[string]interface{}) (Simulati
 		case "TAX_EFFICIENT":
 			// Cash → Taxable → Tax-deferred → Roth (minimizes lifetime taxes)
 			input.WithdrawalStrategy = WithdrawalSequenceTaxEfficient
-		case "PROPORTIONAL", "CASH_FIRST":
-			// Cash first, then proportional from other accounts
+		case "PROPORTIONAL":
+			// Proportional from all accounts (maintains allocation)
+			input.WithdrawalStrategy = WithdrawalSequenceProportional
+		case "CASH_FIRST":
+			// Cash first, then proportional from investment accounts
 			input.WithdrawalStrategy = WithdrawalSequenceCashFirst
-		case "ROTH_FIRST", "TAX_DEFERRED_FIRST":
+		case "ROTH_FIRST":
+			// Roth → Taxable → Tax-deferred → Cash
+			input.WithdrawalStrategy = WithdrawalSequenceRothFirst
+		case "TAX_DEFERRED_FIRST":
 			// Cash → Tax-deferred → Taxable → Roth (preserves Roth for last)
 			input.WithdrawalStrategy = WithdrawalSequenceTaxDeferredFirst
 		case "TAX_DEFERRED":
