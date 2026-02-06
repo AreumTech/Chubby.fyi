@@ -1,31 +1,25 @@
-# Claude Custom Connector for AreumFire
+# Claude Connector for Chubby
 
-This guide explains how to connect AreumFire's Monte Carlo financial simulation to Claude via Settings > Connectors.
+This guide explains how to connect Chubby's Monte Carlo financial simulation to Claude via Settings > Connectors.
 
 ## Quick Start
 
-### For Claude.ai Users
+**Requirements:** Claude Pro/Max/Team/Enterprise with Connectors enabled.
 
-1. Go to **Settings > Connectors > Add custom connector**
-2. Enter the MCP server URL:
+**Notes:**
+- Mobile: you can use connectors on mobile, but you must add them on web/desktop first.
+
+### Add the Connector (Claude Web or Desktop)
+
+1. Open Claude → **Settings > Connectors**
+2. Click **Add connector**
+3. Enter the MCP server URL:
    - Production: `https://mcp.chubby.fyi/mcp`
-   - Local dev: `http://localhost:8000/mcp` (requires tunnel)
-3. Name it "AreumFire" (or any name you prefer)
-4. Click **Add**
+   - Local dev: use a tunnel URL (see Local Development)
+4. Name it "Chubby" (or any name you prefer)
+5. Click **Add**, then toggle it **On**
 
-### For Claude Desktop Users
-
-Add to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "areumfire": {
-      "url": "https://mcp.chubby.fyi/mcp"
-    }
-  }
-}
-```
+> Note: Remote MCP servers are added via **Settings > Connectors** (not `claude_desktop_config.json`).
 
 ## Usage
 
@@ -154,18 +148,13 @@ Server starts on `http://localhost:8000`.
 ### Testing with Claude Desktop
 
 1. Start the MCP server locally
-2. Add to `claude_desktop_config.json`:
-   ```json
-   {
-     "mcpServers": {
-       "areumfire-dev": {
-         "url": "http://localhost:8000/mcp"
-       }
-     }
-   }
+2. Start a tunnel:
+   ```bash
+   npm run chatgpt:tunnel
    ```
-3. Restart Claude Desktop
-4. Test with: "Run a simulation with $500k assets"
+3. Copy the tunnel URL (e.g., `https://xxxx.ngrok-free.app/mcp`)
+4. Add it via **Settings > Connectors > Add connector**
+5. Test with: "Run a simulation with $500k assets"
 
 ### Testing with Claude.ai (Remote)
 
@@ -174,7 +163,7 @@ Server starts on `http://localhost:8000`.
    npm run chatgpt:tunnel
    ```
 2. Copy the ngrok URL (e.g., `https://xxxx.ngrok-free.app`)
-3. Add as custom connector in Claude.ai Settings
+3. Add as a connector in Claude Settings
 4. Test with a simulation request
 
 ### Verifying Privacy

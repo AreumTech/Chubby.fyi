@@ -305,9 +305,20 @@ app.post('/simulate', async (req, res) => {
     }
 
     // Extract Bronze params from confirmedChanges
-    // DEBUG: Log incoming request
-    console.error(`📥 Incoming packetBuildRequest keys: ${Object.keys(packetBuildRequest).join(', ')}`);
-    console.error(`   confirmedChanges: ${packetBuildRequest.confirmedChanges ? packetBuildRequest.confirmedChanges.length + ' items' : 'none'}`);
+    // DEBUG: Log incoming request with caller info
+    const callerInfo = {
+      ip: req.ip || req.socket?.remoteAddress || 'unknown',
+      userAgent: req.get('User-Agent') || 'none',
+      origin: req.get('Origin') || 'none',
+      referer: req.get('Referer') || 'none',
+    };
+    const timestamp = new Date().toISOString();
+    console.error(`[SIM] ────────────────────────────────────────────`);
+    console.error(`[SIM] 📥 ${timestamp}`);
+    console.error(`[SIM]    keys: ${Object.keys(packetBuildRequest).join(', ')}`);
+    console.error(`[SIM]    caller: ${callerInfo.ip} | UA: ${callerInfo.userAgent?.slice(0, 50)}`);
+    console.error(`[SIM]    origin: ${callerInfo.origin} | referer: ${callerInfo.referer}`);
+    console.error(`[SIM]    confirmedChanges: ${packetBuildRequest.confirmedChanges ? packetBuildRequest.confirmedChanges.length + ' items' : 'none'}`);
     if (packetBuildRequest.confirmedChanges) {
       packetBuildRequest.confirmedChanges.forEach((c, i) => {
         console.error(`   [${i}] fieldPath=${JSON.stringify(c.fieldPath)} newValue=${c.newValue}`);

@@ -15,10 +15,12 @@ export const WIDGET_TEMPLATE_URI = `ui://widget/simulation-summary-${WIDGET_VERS
  * Includes response guidelines and design context.
  */
 export const TOOL_DESCRIPTION =
-  'Run deterministic Monte Carlo financial simulation. Returns outcome distributions (P10/P50/P75), not recommendations. ' +
-  'Answers "what tends to happen under these assumptions?" — never "what should I do?"' +
+  'Use this when the user wants a Monte Carlo projection of "what tends to happen under these assumptions" (retirement, spending changes, big purchases). ' +
+  'Do NOT use for recommendations, advice, or "what should I do?" decisions. ' +
+  'If required inputs are missing (assets, spending, age, income), ask the user before calling. ' +
+  'If seed/start year are missing, set seed = Date.now() and startYear = current calendar year.' +
   '\n\nCRITICAL RESPONSE GUIDELINES (you MUST follow these when presenting results):' +
-  '\n- SHOW the artifact (widget) and let it speak for itself' +
+  '\n- SHOW the embedded widget if present; otherwise surface the visualization link from tool output' +
   '\n- DO NOT add evaluative language ("good position", "on track", "elite", "wealthy", "safe", "likely")' +
   '\n- DO NOT give advice or rules of thumb (no "4% rule", no "you could retire at X")' +
   '\n- DO NOT make predictions ("you will", "you\'re likely to")' +
@@ -69,27 +71,34 @@ export const TOOL_INPUT_SCHEMA = {
   properties: {
     investableAssets: {
       type: 'number',
-      description: 'Total investable assets in dollars',
+      description:
+        'Total investable assets in dollars. If missing, ask: "How much do you have invested today (excluding home equity)?"',
+      minimum: 0,
     },
     annualSpending: {
       type: 'number',
-      description: 'Annual spending in dollars',
+      description: 'Annual spending in dollars. If missing, ask: "What is your annual spending?"',
+      minimum: 0,
     },
     currentAge: {
       type: 'number',
-      description: 'Current age in years. Simulation projects to maxAge (default: 80, configurable up to 100).',
+      description:
+        'Current age in years. Simulation projects to maxAge (default: 80, configurable up to 100). If missing, ask: "What is your current age?"',
+      minimum: 0,
     },
     expectedIncome: {
       type: 'number',
-      description: 'Annual GROSS income (pre-tax) in dollars. Use 0 for retirement scenarios.',
+      description:
+        'Annual GROSS income (pre-tax) in dollars. Use 0 for retirement scenarios. If missing, ask: "What is your current gross annual income (0 if retired)?"',
+      minimum: 0,
     },
     seed: {
       type: 'number',
-      description: 'Random seed for deterministic replay. Use Date.now() for unique runs.',
+      description: 'Random seed for deterministic replay. If not provided, set to Date.now().',
     },
     startYear: {
       type: 'number',
-      description: 'Simulation start year (e.g., 2026)',
+      description: 'Simulation start year (e.g., 2026). If not provided, use the current year.',
     },
     mcPaths: {
       type: 'number',
@@ -630,6 +639,7 @@ export const TOOL_ANNOTATIONS = {
   readOnlyHint: true, // Computation only, no side effects
   destructiveHint: false,
   openWorldHint: false, // No external API calls
+  idempotentHint: true,
 } as const;
 
 /**
