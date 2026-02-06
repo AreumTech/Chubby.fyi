@@ -20,7 +20,7 @@ export const formatCurrencyShort = (value?: number | null, currency: string = 'U
   if (absVal >= 1e9) return `${sign}${currencySymbol}${(absVal / 1e9).toFixed(1)}B${currencySuffix}`;
   if (absVal >= 1e6) return `${sign}${currencySymbol}${(absVal / 1e6).toFixed(1)}M${currencySuffix}`;
   if (absVal >= 1e3) return `${sign}${currencySymbol}${(absVal / 1e3).toFixed(0)}K${currencySuffix}`;
-  return `${sign}${currencySymbol}${Math.round(value).toLocaleString()}${currencySuffix}`;
+  return `${sign}${currencySymbol}${Math.round(absVal).toLocaleString()}${currencySuffix}`;
 };
 
 export const formatPercentage = (value?: number | null, decimals: number = 1): string => {
@@ -56,12 +56,13 @@ export const escapeHTML = (str?: string | number | null): string => {
     return p.innerHTML;
   } else {
     // Fallback: simple replace for <, >, &, ", '
-    return text.replace(/[&<>"]/g, function (c) {
+    return text.replace(/[&<>"']/g, function (c) {
       switch (c) {
         case '&': return '&amp;';
         case '<': return '&lt;';
         case '>': return '&gt;';
         case '"': return '&quot;';
+        case '\'': return '&#39;';
         default: return c;
       }
     });
