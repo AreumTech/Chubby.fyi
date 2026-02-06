@@ -188,9 +188,13 @@
       <h2>Learn More</h2>
       <p style="font-size: 0.875rem; color: var(--text-tertiary); margin-bottom: var(--space-3);">Asset location is a planning concept. Chubby simulates outcomes but doesn't prescribe allocations.</p>
       <button class="try-prompt" data-copy="try-prompt" style="opacity: 0.6;">
-        <span class="try-prompt-text" id="try-prompt">Try: "I'm 40 with $600k across accounts, retiring at 60. Compare 70/30 vs 60/40 allocation."</span>
-        <span class="copy-btn"><span class="copy-icon">⧉</span><span class="copy-state">Copied</span></span>
+        <span class="try-prompt-text">Try: "I'm 40 with $600k across accounts, retiring at 60. Compare 70/30 vs 60/40 allocation."</span>
+        <span class="prompt-chip-action copy-btn">
+          <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <svg class="copy-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        </span>
       </button>
+      <span id="try-prompt" class="visually-hidden">Try: "I'm 40 with $600k across accounts, retiring at 60. Compare 70/30 vs 60/40 allocation."</span>
     </article>
   </main>
 

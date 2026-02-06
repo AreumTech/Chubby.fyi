@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     button.addEventListener('click', async function(e) {
       e.preventDefault();
 
-      const targetId = (this.closest('.prompt-chip') || this.closest('.try-prompt'))?.getAttribute('data-copy');
+      const targetId = (this.closest('.prompt-chip') || this.closest('.try-prompt') || this.closest('.test-prompt-box'))?.getAttribute('data-copy');
       const targetElement = document.getElementById(targetId);
 
       if (!targetElement) {
@@ -26,10 +26,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Visual feedback
         this.classList.add('copied');
 
-        // Reset after 0.8 seconds
+        // Reset after 1.5 seconds
         setTimeout(() => {
           this.classList.remove('copied');
-        }, 800);
+        }, 1500);
 
       } catch (err) {
         console.error('Failed to copy:', err);
@@ -61,7 +61,7 @@ function fallbackCopy(text, button) {
 
       setTimeout(() => {
         button.classList.remove('copied');
-      }, 800);
+      }, 1500);
     }
   } catch (err) {
     console.error('Fallback copy failed:', err);

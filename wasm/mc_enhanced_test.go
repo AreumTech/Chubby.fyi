@@ -273,8 +273,8 @@ func TestExemplarPathReference(t *testing.T) {
 		t.Fatal("ExemplarPath is nil")
 	}
 
-	if r.ExemplarPath.SelectionCriterion != "median_terminal_wealth" {
-		t.Errorf("SelectionCriterion incorrect: expected 'median_terminal_wealth', got '%s'",
+	if r.ExemplarPath.SelectionCriterion != "median_trajectory" {
+		t.Errorf("SelectionCriterion incorrect: expected 'median_trajectory', got '%s'",
 			r.ExemplarPath.SelectionCriterion)
 	}
 
