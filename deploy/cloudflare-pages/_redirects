@@ -1,0 +1,10 @@
+# Cloudflare Pages redirects
+# https://developers.cloudflare.com/pages/configuration/redirects/
+
+# SPA fallback: serve index.html for client-side routes
+# (Pages does this by default, but explicit is better)
+/app/*    /index.html    200
+/test-harness    /index.html    200
+
+# Viewer shortcut (widget.chubby.fyi/viewer → viewer.html)
+/viewer   /viewer.html   200
