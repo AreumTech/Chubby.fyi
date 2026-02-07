@@ -15,18 +15,15 @@ npm run dev
 # → http://localhost:5180/test-harness
 ```
 
-### Connect to ChatGPT/Claude
+### Use with ChatGPT or Claude
 
-```bash
-cd apps/mcp-server
-npm install
-npm run chatgpt:tunnel
-# → Creates ngrok tunnel and prints the MCP URL
-```
+Add `https://api.chubby.fyi/mcp` as an MCP server in ChatGPT Actions or Claude connectors. No auth required.
 
-Add the printed URL (e.g., `https://xxxx.ngrok.io/mcp`) to your ChatGPT or Claude MCP settings.
+Then ask: *"I'm 35, make $150k, spend $50k, have $800k saved. Can I retire at 55?"*
 
-Requires Node.js 18+, Go 1.21+, and [ngrok](https://ngrok.com/) installed.
+### Local development
+
+Requires Node.js 18+ and Go 1.22+.
 
 ## Project Structure
 
