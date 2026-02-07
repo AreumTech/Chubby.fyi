@@ -310,7 +310,7 @@ const resourceTemplates: ResourceTemplate[] = [
 function createMcpServer(): Server {
   const server = new Server(
     {
-      name: 'areumfire-mcp-server',
+      name: 'chubby-mcp-server',
       version: '1.0.0',
     },
     {
@@ -886,6 +886,7 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
     res.writeHead(200).end(JSON.stringify({
       name: 'chubby-mcp-server',
       version: '1.0.0',
+      description: 'Chubby — Monte Carlo financial simulation',
       status: 'ok'
     }));
     return;

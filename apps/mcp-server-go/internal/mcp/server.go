@@ -255,7 +255,7 @@ func (s *Server) handleInitialize(req *JSONRPCRequest) *JSONRPCResponse {
 				"resources": map[string]interface{}{},
 			},
 			"serverInfo": map[string]interface{}{
-				"name":    "areumfire-mcp-server",
+				"name":    "chubby-mcp-server",
 				"version": "1.0.0",
 			},
 		},

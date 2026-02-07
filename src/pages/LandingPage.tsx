@@ -17,9 +17,7 @@ import { AppHeader } from '@/components/layout/AppHeader';
  * BrandName - Consistent brand styling throughout the landing page
  */
 const BrandName: React.FC = () => (
-  <span className="font-semibold">
-    Areum<span className="text-areum-accent">Fire</span>
-  </span>
+  <span className="font-semibold">Chubby</span>
 );
 
 /**
@@ -230,7 +228,7 @@ export const LandingPage: React.FC = () => {
               <ol className="space-y-3 text-sm-areum text-areum-text-secondary">
                 <li>1. Go to ChatGPT Apps → Create/Edit GPT</li>
                 <li>2. Add Connector (MCP Server)</li>
-                <li>3. URL: <Mono className="text-areum-accent">https://mcp.chubby.fyi/mcp</Mono></li>
+                <li>3. URL: <Mono className="text-areum-accent">https://api.chubby.fyi/mcp</Mono></li>
                 <li>4. Auth: None</li>
               </ol>
               <a
@@ -252,7 +250,7 @@ export const LandingPage: React.FC = () => {
               <ol className="space-y-3 text-sm-areum text-areum-text-secondary">
                 <li>1. Open Claude Desktop or claude.ai</li>
                 <li>2. Settings → Connectors → Add custom</li>
-                <li>3. URL: <Mono className="text-areum-accent">https://mcp.chubby.fyi/mcp</Mono></li>
+                <li>3. URL: <Mono className="text-areum-accent">https://api.chubby.fyi/mcp</Mono></li>
                 <li>4. Enable and start chatting</li>
               </ol>
               <a

@@ -35,9 +35,9 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"name":         "areumfire-mcp-server",
+		"name":         "chubby-mcp-server",
 		"version":      "1.0.0",
-		"description":  "AreumFire Monte Carlo financial simulation",
+		"description":  "Chubby — Monte Carlo financial simulation",
 		"mcp_endpoint": "/mcp",
 	})
 }
@@ -86,7 +86,7 @@ func main() {
 		http.HandleFunc(path, corsMiddleware(handleOAuthDiscovery))
 	}
 
-	log.Printf("AreumFire MCP Server (Go) listening on :%s", port)
+	log.Printf("Chubby MCP Server (Go) listening on :%s", port)
 	log.Printf("Endpoints:")
 	log.Printf("  GET  /                 - Server info (ChatGPT discovery)")
 	log.Printf("  GET  /mcp              - SSE stream for MCP")
