@@ -1,4 +1,4 @@
-# systemd service for Chubby MCP Server (Go binary)
+# systemd service for Chubby MCP Server (Node.js)
 #
 # Install:
 #   cp deploy/hetzner/systemd/chubby-mcp.service /etc/systemd/system/
@@ -6,30 +6,25 @@
 #   systemctl enable --now chubby-mcp
 
 [Unit]
-Description=Chubby MCP Server
-After=network-online.target
+Description=Chubby MCP Server (Node.js)
+After=network-online.target chubby-sim.service
 Wants=network-online.target
+Requires=chubby-sim.service
 
 [Service]
 Type=simple
 User=chubby
 Group=chubby
-WorkingDirectory=/opt/chubby
-
-# --- Go binary (default, recommended) ---
-ExecStart=/opt/chubby/server
+WorkingDirectory=/opt/chubby/apps/mcp-server
+ExecStart=/usr/bin/node dist/server.js
 Environment=PORT=8080
-
-# --- Node.js alternative (uncomment if using Node.js server) ---
-# ExecStart=/usr/bin/node /opt/chubby/node/dist/server.js
-# Environment=PORT=8080
-# Environment=NODE_ENV=production
-# Environment=WIDGET_VIEWER_URL=https://widget.chubby.fyi
+Environment=NODE_ENV=production
+Environment=SIMULATION_SERVICE_URL=http://localhost:3002
 
 Restart=always
 RestartSec=3
 
-# Resource limits: hard cap to prevent runaway costs
+# Resource limits
 MemoryMax=512M
 MemoryHigh=384M
 CPUQuota=200%
@@ -40,7 +35,7 @@ NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
-ReadOnlyPaths=/opt/chubby
+ReadWritePaths=/opt/chubby
 
 # Logging
 StandardOutput=journal

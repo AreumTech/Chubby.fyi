@@ -3,13 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>AreumFire Simulation Summary</title>
+  <title>Chubby Simulation Summary</title>
   <style>
     /* =========================================================================
      * CSS Custom Properties - Aligned with OpenAI Apps SDK UI
      * ========================================================================= */
+    /* Keep document canvas neutral - don't trigger UA dark canvas painting */
+    html {
+      color-scheme: normal;
+      background: transparent;
+    }
+
     :root {
-      color-scheme: light dark;
 
       /* =====================================================================
        * Typography Scale (Apps SDK aligned)
@@ -32,13 +37,18 @@
       --space-6: 24px;
 
       /* =====================================================================
-       * Radius Scale (OpenAI Apps SDK aligned - 16px+ for cards)
+       * Radius Scale (OpenAI Apps SDK aligned)
+       * From reference/apps-sdk-ui/src/styles/variables-semantic.css
        * ===================================================================== */
-      --radius-xs: 6px;
-      --radius-sm: 8px;
-      --radius-md: 12px;
-      --radius-lg: 16px;
-      --radius-xl: 20px;
+      --radius-2xs: 2px;
+      --radius-xs: 4px;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --radius-xl: 12px;
+      --radius-2xl: 16px;
+      --radius-3xl: 20px;
+      --radius-4xl: 24px;
 
       /* =====================================================================
        * Control Sizes (touch targets)
@@ -66,11 +76,15 @@
       --color-text: var(--gray-1000);
       --color-text-secondary: var(--gray-500);
       --color-text-tertiary: var(--gray-400);
+      --color-text-muted: var(--gray-400);
 
       /* Surfaces */
       --color-surface: var(--gray-0);
       --color-surface-secondary: var(--gray-50);
       --color-surface-elevated: light-dark(#f5f5f5, #1a1a1a);
+      --color-background: var(--color-surface);
+      --color-surface-hover: light-dark(#f1f1f1, #1f1f1f);
+      --color-surface-active: light-dark(#e8e8e8, #262626);
 
       /* Borders - using alpha */
       --color-border: light-dark(rgba(13,13,13,0.1), rgba(255,255,255,0.1));
@@ -80,12 +94,17 @@
       --color-positive: light-dark(#2d8a4e, #6db88a);
       --color-negative: light-dark(#9a6458, #c4897c);
       --color-link: light-dark(#0285ff, #60a5fa);
+      --color-success: light-dark(#2d8a4e, #6db88a);
 
       /* Trajectory bands - distinct visual layers */
       --color-bar-p50: var(--gray-700);
       --color-bar-p75: light-dark(#c5c5c5, #4a4a4a);
       --color-bar-p10: light-dark(#a0a0a0, #656565);
       --color-bar-bg: light-dark(#ededed, #252525);
+
+      /* Negative net worth - visual indicator */
+      --color-bar-negative: light-dark(#e8d4d0, #3d2a27);
+      --color-bar-negative-border: var(--color-negative);
 
       /* Focus ring */
       --focus-ring: 0 0 0 2px var(--color-link);
@@ -95,6 +114,7 @@
       --color-account-taxable: var(--color-link);
       --color-account-tax-deferred: light-dark(#7c3aed, #a78bfa);
       --color-account-roth: var(--color-positive);
+
     }
 
     /* Fallback for older browsers */
@@ -111,18 +131,25 @@
       --color-text: #0d0d0d;
       --color-text-secondary: #5d5d5d;
       --color-text-tertiary: #8f8f8f;
+      --color-text-muted: #8f8f8f;
       --color-surface: #ffffff;
       --color-surface-secondary: #f9f9f9;
       --color-surface-elevated: #f5f5f5;
+      --color-background: #ffffff;
+      --color-surface-hover: #f1f1f1;
+      --color-surface-active: #e8e8e8;
       --color-border: rgba(13,13,13,0.1);
       --color-border-subtle: rgba(13,13,13,0.06);
       --color-positive: #2d8a4e;
       --color-negative: #9a6458;
       --color-link: #0285ff;
+      --color-success: #2d8a4e;
       --color-bar-p50: #303030;
       --color-bar-p75: #c5c5c5;
       --color-bar-p10: #a0a0a0;
       --color-bar-bg: #ededed;
+      --color-bar-negative: #e8d4d0;
+      --color-bar-negative-border: #9a6458;
       --focus-ring: 0 0 0 2px #0285ff;
       --color-account-cash: #8f8f8f;
       --color-account-taxable: #0285ff;
@@ -143,18 +170,25 @@
       --color-text: #ffffff;
       --color-text-secondary: #5d5d5d;
       --color-text-tertiary: #414141;
+      --color-text-muted: #414141;
       --color-surface: #0d0d0d;
       --color-surface-secondary: #131313;
       --color-surface-elevated: #1a1a1a;
+      --color-background: #0d0d0d;
+      --color-surface-hover: #1f1f1f;
+      --color-surface-active: #262626;
       --color-border: rgba(255,255,255,0.1);
       --color-border-subtle: rgba(255,255,255,0.08);
       --color-positive: #6db88a;
       --color-negative: #c4897c;
       --color-link: #60a5fa;
+      --color-success: #6db88a;
       --color-bar-p50: #afafaf;
       --color-bar-p75: #4a4a4a;
       --color-bar-p10: #656565;
       --color-bar-bg: #252525;
+      --color-bar-negative: #3d2a27;
+      --color-bar-negative-border: #c4897c;
       --focus-ring: 0 0 0 2px #60a5fa;
       --color-account-cash: #414141;
       --color-account-taxable: #60a5fa;
@@ -173,7 +207,9 @@
       font-size: var(--font-size-sm);
       line-height: 1.5;
       color: var(--color-text);
-      background: var(--color-surface);
+      color-scheme: light dark; /* Enable light-dark() inside body subtree */
+      background: transparent;
+      margin: 0;
     }
 
     .widget {
@@ -186,6 +222,11 @@
       width: 100%;
       max-width: 100%; /* Fill container width - host handles constraints */
       box-sizing: border-box;
+      /* Rounded card styling */
+      border-radius: var(--radius-3xl); /* 20px */
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
     /* Display mode variations */
@@ -251,7 +292,7 @@
       margin-bottom: var(--space-4);
       padding: var(--space-3) var(--space-4);
       background: var(--color-surface-secondary);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-xl);
       border: 1px solid var(--color-border-subtle);
     }
 
@@ -311,29 +352,51 @@
     }
 
     .duration-saturated-headline {
-      font-weight: 500;
+      font-size: 15px;
+      font-weight: 600;
       color: var(--color-text);
       margin-bottom: var(--space-2);
     }
 
     .duration-saturated-details {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      font-size: var(--font-size-xs);
+      font-size: var(--font-size-sm);
       color: var(--color-text-secondary);
+      margin-bottom: var(--space-2);
     }
 
-    .duration-saturated-details li {
-      display: flex;
-      align-items: baseline;
-      gap: var(--space-2);
+    .duration-horizon-note {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin-top: var(--space-3);
+      padding-top: var(--space-2);
+      border-top: 1px solid var(--color-border-subtle);
+      line-height: 1.5;
+    }
+
+    .duration-outcome-line {
       padding: var(--space-1) 0;
     }
 
-    .duration-saturated-details li::before {
-      content: '•';
+    .duration-saturated-assets {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
+    .duration-multiplier {
+      font-size: var(--font-size-xs);
       color: var(--color-text-tertiary);
+      margin-top: var(--space-1);
+    }
+
+    .duration-outcome-note {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin-top: var(--space-2);
+      padding-top: var(--space-2);
+      border-top: 1px solid var(--color-border-subtle);
     }
 
     .duration-note {
@@ -345,12 +408,20 @@
       line-height: 1.4;
     }
 
+    .duration-cause {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      margin-top: var(--space-2);
+      padding-top: var(--space-2);
+      border-top: 1px solid var(--color-border-subtle);
+    }
+
     /* =========================================================================
      * SCENARIO - Starting point + Events
      * ========================================================================= */
     .scenario {
       background: var(--color-surface-secondary);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-xl);
       margin-bottom: var(--space-4);
       overflow: hidden;
     }
@@ -402,8 +473,8 @@
       align-items: center;
       gap: var(--space-2);
       font-size: var(--font-size-xs);
-      min-height: var(--control-2xl); /* 44px touch target */
-      padding: var(--space-2) 0;
+      min-height: 28px;
+      padding: var(--space-1) 0;
     }
 
     .event-icon {
@@ -428,6 +499,16 @@
       font-weight: 500;
     }
 
+    .events-empty {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+      padding: var(--space-2) 0;
+    }
+
+    .events-empty-note {
+      color: var(--color-text-tertiary);
+    }
+
     /* =========================================================================
      * TRAJECTORY - Bands showing P10/P50/P75
      * ========================================================================= */
@@ -447,11 +528,11 @@
     .traj-row {
       display: flex;
       align-items: center;
-      gap: var(--space-2);
-      min-height: var(--control-2xl); /* 44px touch target */
-      padding: var(--space-2) var(--space-2);
+      gap: var(--space-1);
+      min-height: 24px;
+      padding: 2px var(--space-2);
       cursor: pointer;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-md);
       margin: 0 calc(-1 * var(--space-2));
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
@@ -483,20 +564,20 @@
       flex: 1;
       height: var(--space-4);
       background: var(--color-bar-bg);
-      border-radius: var(--radius-xs);
+      border-radius: var(--radius-sm);
       position: relative;
       overflow: visible; /* Allow P10 marker to show fully */
     }
 
-    /* Boxplot style: single bar showing P10→P75 range */
+    /* Boxplot style: P10→P75 range (full uncertainty band) */
     .traj-bar-range {
       position: absolute;
       height: 100%;
       background: var(--color-bar-p75);
-      border-radius: var(--radius-xs);
+      border-radius: var(--radius-sm);
     }
 
-    /* P50 marker (vertical line showing median within the range) */
+    /* P50 marker (vertical line showing median within the P10→P75 range) */
     .traj-bar-p50 {
       position: absolute;
       height: 100%;
@@ -556,7 +637,8 @@
 
     .traj-milestone-text {
       font-size: var(--font-size-2xs);
-      color: var(--color-text-tertiary);
+      font-weight: 500;
+      color: var(--color-text-secondary);
       white-space: nowrap;
     }
 
@@ -591,11 +673,151 @@
       font-style: italic;
     }
 
+    .traj-horizon-note {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+      margin-top: var(--space-2);
+      padding: var(--space-2);
+      background: rgba(0, 0, 0, 0.03);
+      border-radius: 4px;
+      line-height: 1.4;
+    }
+
+    /* Screen reader only - visually hidden but accessible */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .copy-summary-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      margin-right: auto;
+    }
+    .copy-summary-btn {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      font-size: 0;
+      color: var(--color-text-tertiary);
+      background: transparent;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .copy-summary-btn::before {
+      content: '';
+      width: 8px;
+      height: 10px;
+      border: 1.5px solid currentColor;
+      border-radius: 1.5px;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+    }
+    .copy-summary-btn::after {
+      content: '';
+      width: 8px;
+      height: 10px;
+      border: 1.5px solid currentColor;
+      border-radius: 1.5px;
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      background: var(--color-background);
+    }
+    .copy-summary-btn:hover {
+      background: var(--color-surface-hover);
+      color: var(--color-text-secondary);
+    }
+    .copy-summary-btn:active {
+      background: var(--color-surface-active);
+    }
+    .copy-summary-btn.copied {
+      color: var(--color-success);
+    }
+    .copy-summary-btn.copied::before,
+    .copy-summary-btn.copied::after {
+      border-color: var(--color-success);
+    }
+    .copied-toast {
+      font-size: var(--font-size-2xs);
+      color: var(--color-success);
+      opacity: 0;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .copied-toast.visible {
+      opacity: 1;
+    }
+
     /* Hide hint on touch devices (where it's redundant) */
     @media (hover: none) {
       .traj-hint {
         display: none;
       }
+    }
+
+    /* Constraint milestone marker */
+    .traj-constraint-marker {
+      font-size: var(--font-size-xs);
+      color: var(--color-negative);
+      padding: var(--space-2) 0;
+      margin: var(--space-2) 0;
+      border-top: 1px solid var(--color-bar-negative-border);
+      border-bottom: 1px solid var(--color-bar-negative-border);
+      background: var(--color-bar-negative);
+    }
+
+    .traj-constraint-note {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+      margin-top: var(--space-2);
+      padding: var(--space-2) 0;
+    }
+
+    /* Event marker on trajectory bar */
+    .traj-event-marker {
+      position: absolute;
+      top: -3px;
+      width: 6px;
+      height: 6px;
+      background: var(--color-link);
+      border-radius: 50%;
+      z-index: 3;
+      transform: translateX(-3px);
+      pointer-events: none;
+    }
+
+    /* Spending annotation */
+    .traj-spending {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-muted);
+      min-width: 48px;
+      text-align: right;
+    }
+
+    .traj-scale-note {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-muted);
+      margin-top: var(--space-2);
+      padding: var(--space-1) var(--space-2);
+      font-style: italic;
     }
 
 
@@ -604,7 +826,7 @@
      * ========================================================================= */
     .inspector {
       background: var(--color-surface-secondary);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-xl);
       padding: var(--space-3) var(--space-4);
       margin-bottom: var(--space-4);
       display: none;
@@ -640,7 +862,7 @@
       align-items: center;
       justify-content: center;
       margin: calc(-1 * var(--space-2));
-      border-radius: var(--radius-xs);
+      border-radius: var(--radius-sm);
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
     }
@@ -720,7 +942,7 @@
       padding: var(--space-2) var(--space-3);
       margin-bottom: var(--space-2);
       background: var(--color-surface-elevated);
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-md);
     }
 
     .inspector-summary-start,
@@ -792,7 +1014,7 @@
      * ========================================================================= */
     .minimal-ledger {
       background: var(--color-surface-elevated);
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-md);
       padding: var(--space-2) var(--space-3);
       font-size: var(--font-size-xs);
     }
@@ -852,7 +1074,7 @@
     .accounts-stack-bar {
       display: flex;
       height: 12px;
-      border-radius: var(--radius-xs);
+      border-radius: var(--radius-sm);
       overflow: hidden;
       background: var(--color-bar-bg);
     }
@@ -873,6 +1095,94 @@
       gap: var(--space-2) var(--space-3);
       margin-top: var(--space-2);
       font-size: var(--font-size-2xs);
+    }
+
+    /* =========================================================================
+     * Onboarding (missing inputs)
+     * ========================================================================= */
+    .input-panel {
+      background: var(--color-surface-secondary);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+    }
+
+    .input-title {
+      font-size: var(--font-size-md);
+      font-weight: 600;
+      margin-bottom: var(--space-1);
+    }
+
+    .input-subtitle {
+      color: var(--color-text-muted);
+      font-size: var(--font-size-sm);
+      margin-bottom: var(--space-3);
+    }
+
+    .input-form {
+      display: grid;
+      gap: var(--space-3);
+    }
+
+    .input-row {
+      display: grid;
+      gap: var(--space-1);
+    }
+
+    .input-label {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+
+    .input-control {
+      height: var(--control-lg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 0 var(--space-3);
+      background: var(--color-surface);
+      color: var(--color-text);
+      font-size: var(--font-size-sm);
+    }
+
+    .input-control:focus {
+      outline: none;
+      border-color: var(--color-link);
+      box-shadow: var(--focus-ring);
+    }
+
+    .input-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-top: var(--space-2);
+      flex-wrap: wrap;
+    }
+
+    .input-button {
+      height: var(--control-lg);
+      padding: 0 var(--space-4);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+      background: var(--color-text);
+      color: var(--color-surface);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .input-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .input-helper {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-muted);
+    }
+
+    .input-error {
+      font-size: var(--font-size-xs);
+      color: var(--color-negative);
+      margin-top: var(--space-2);
     }
 
     .accounts-legend-item {
@@ -941,14 +1251,14 @@
       flex: 1;
       height: var(--space-2);
       background: var(--color-bar-bg);
-      border-radius: var(--radius-xs);
+      border-radius: var(--radius-sm);
       overflow: hidden;
     }
 
     .account-bar {
       height: 100%;
       background: var(--color-bar-p50);
-      border-radius: var(--radius-xs);
+      border-radius: var(--radius-sm);
     }
 
     .account-pct {
@@ -959,20 +1269,84 @@
     }
 
     /* =========================================================================
-     * ASSUMPTIONS - Minimal
+     * ASSUMPTIONS - Collapsible
      * ========================================================================= */
-    .assumptions {
-      font-size: var(--font-size-xs);
-      color: var(--color-text-tertiary);
+    .assumptions-details {
       margin-bottom: var(--space-3);
     }
 
-    .assumptions span {
+    .assumptions-details summary {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      cursor: pointer;
+      list-style: none;
+      padding: var(--space-2) 0;
+    }
+
+    .assumptions-details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .assumptions-summary {
       display: inline;
     }
 
-    .assumptions span + span::before {
+    .assumptions-summary span {
+      display: inline;
+    }
+
+    .assumptions-summary span + span::before {
       content: " · ";
+    }
+
+    .assumptions-details summary::after {
+      content: ' ▸';
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-tertiary);
+      margin-left: var(--space-1);
+    }
+
+    .assumptions-details[open] summary::after {
+      content: ' ▾';
+    }
+
+    .assumptions-expanded {
+      padding: var(--space-3);
+      background: var(--color-surface-secondary);
+      border-radius: var(--radius-md);
+      margin-top: var(--space-2);
+    }
+
+    .assumptions-section {
+      margin-bottom: var(--space-3);
+    }
+
+    .assumptions-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .assumptions-section-title {
+      font-size: var(--font-size-2xs);
+      font-weight: 600;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: var(--space-1);
+    }
+
+    .assumptions-section-content {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+      line-height: 1.5;
+    }
+
+    .assumptions-section-content ul {
+      margin: var(--space-1) 0 0 var(--space-4);
+      padding: 0;
+    }
+
+    .assumptions-section-content li {
+      margin-bottom: var(--space-1);
     }
 
     /* =========================================================================
@@ -984,8 +1358,44 @@
       padding-top: var(--space-3);
       border-top: 1px solid var(--color-border-subtle);
       display: flex;
-      gap: var(--space-3);
-      flex-wrap: wrap;
+      gap: var(--space-2);
+      align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .footer-advanced {
+      display: inline;
+      flex-shrink: 0;
+    }
+
+    .footer-advanced summary {
+      cursor: pointer;
+      list-style: none;
+      display: inline;
+      color: var(--color-link);
+    }
+
+    .footer-advanced summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .footer-advanced summary::after {
+      content: ' ▸';
+      font-size: 8px;
+    }
+
+    .footer-advanced[open] summary::after {
+      content: ' ▾';
+    }
+
+    .footer-advanced-content {
+      display: inline;
+      margin-left: var(--space-1);
+    }
+
+    .footer-advanced-content span + span::before {
+      content: " · ";
     }
 
     /* =========================================================================
@@ -1026,7 +1436,7 @@
     details.collapsible summary:focus-visible {
       outline: none;
       box-shadow: var(--focus-ring);
-      border-radius: var(--radius-xs);
+      border-radius: var(--radius-sm);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1053,7 +1463,7 @@
 
     .skeleton {
       background: var(--color-surface-elevated);
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-md);
       animation: shimmer 1.5s ease-in-out infinite;
     }
 
@@ -1138,9 +1548,240 @@
 
       /* Smaller touch targets acceptable in landscape (more horizontal space) */
       .traj-row {
-        min-height: var(--control-lg);
+        min-height: 24px;
       }
     }
+
+    /* Compact mode - add class="compact" to .widget for tighter spacing */
+    .widget.compact .event {
+      min-height: 22px;
+      padding: 1px 0;
+    }
+    .widget.compact .traj-row {
+      min-height: 20px;
+      padding: 1px var(--space-2);
+    }
+    .widget.compact .duration {
+      margin-bottom: var(--space-2);
+      padding-bottom: var(--space-2);
+    }
+    .widget.compact .scenario {
+      margin-bottom: var(--space-2);
+    }
+    .widget.compact .trajectory {
+      margin-bottom: var(--space-2);
+    }
+    .widget.compact .traj-title {
+      margin-bottom: var(--space-1);
+    }
+    .widget.compact .traj-legend {
+      margin-top: var(--space-1);
+      gap: var(--space-2);
+    }
+
+    /* Ultra-compact mode - maximum density */
+    .widget.ultra-compact .event {
+      min-height: 18px;
+      padding: 0;
+      gap: var(--space-1);
+    }
+    .widget.ultra-compact .traj-row {
+      min-height: 16px;
+      padding: 0 var(--space-1);
+      gap: var(--space-1);
+    }
+    .widget.ultra-compact .traj-bar-container {
+      height: 10px;
+    }
+    .widget.ultra-compact .duration {
+      margin-bottom: var(--space-1);
+      padding-bottom: var(--space-1);
+      padding: var(--space-2);
+    }
+    .widget.ultra-compact .scenario {
+      margin-bottom: var(--space-1);
+      padding: var(--space-2);
+    }
+    .widget.ultra-compact .trajectory {
+      margin-bottom: var(--space-1);
+    }
+    .widget.ultra-compact .traj-title {
+      margin-bottom: 2px;
+      font-size: var(--font-size-xs);
+    }
+    .widget.ultra-compact .traj-legend {
+      margin-top: 2px;
+      gap: var(--space-1);
+    }
+    .widget.ultra-compact .traj-age {
+      width: 24px;
+      font-size: 10px;
+    }
+    .widget.ultra-compact .traj-value {
+      width: 48px;
+      font-size: 10px;
+    }
+    .widget.ultra-compact .scenario-title,
+    .widget.ultra-compact .duration-label {
+      font-size: var(--font-size-xs);
+    }
+    .widget.ultra-compact .start-grid {
+      gap: var(--space-1);
+    }
+    .widget.ultra-compact .events-list {
+      gap: 0;
+    }
+
+    /* =========================================================================
+     * EVENT DETAIL - "Show the math" collapsible section
+     * ========================================================================= */
+    .event-detail-toggle {
+      margin-top: var(--space-3);
+      border-top: 1px solid var(--color-border-subtle);
+      padding-top: var(--space-2);
+    }
+
+    .event-detail-toggle summary {
+      font-size: var(--font-size-xs);
+      color: var(--color-link);
+      cursor: pointer;
+      list-style: none;
+      padding: var(--space-2) 0;
+      user-select: none;
+    }
+
+    .event-detail-toggle summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .event-detail-toggle summary::before {
+      content: '▸ ';
+      font-size: var(--font-size-2xs);
+    }
+
+    .event-detail-toggle[open] summary::before {
+      content: '▾ ';
+    }
+
+    .event-detail-content {
+      padding-top: var(--space-2);
+    }
+
+    .event-detail-month {
+      font-size: var(--font-size-2xs);
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-bottom: var(--space-2);
+    }
+
+    .event-card {
+      background: var(--color-surface-elevated);
+      border-left: 3px solid var(--color-link);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: var(--space-2) var(--space-3);
+      margin-bottom: var(--space-2);
+      font-size: var(--font-size-xs);
+    }
+
+    .event-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .event-card-name {
+      font-weight: 500;
+      color: var(--color-text);
+      margin-bottom: var(--space-1);
+    }
+
+    .event-card-flow {
+      display: flex;
+      justify-content: space-between;
+      color: var(--color-text-secondary);
+    }
+
+    .event-card-delta {
+      font-weight: 500;
+    }
+
+    .event-card-delta.positive {
+      color: var(--color-positive);
+    }
+
+    .event-card-delta.negative {
+      color: var(--color-negative);
+    }
+
+    .event-detail-empty {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-tertiary);
+      font-style: italic;
+      padding: var(--space-2) 0;
+    }
+
+    /* =========================================================================
+     * MONTHLY TRACE - Compact month-by-month event timeline
+     * ========================================================================= */
+    .monthly-trace {
+      font-family: 'SF Mono', 'Menlo', 'Monaco', 'Consolas', monospace;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .monthly-trace-month {
+      margin-bottom: var(--space-2);
+    }
+
+    .monthly-trace-month-header {
+      font-weight: 600;
+      color: var(--color-text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 10px;
+      padding: var(--space-1) 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+      margin-bottom: 2px;
+    }
+
+    .monthly-trace-event {
+      display: flex;
+      justify-content: space-between;
+      padding: 1px 0;
+      gap: var(--space-2);
+    }
+
+    .monthly-trace-name {
+      color: var(--color-text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .monthly-trace-delta {
+      font-weight: 500;
+      white-space: nowrap;
+      text-align: right;
+      min-width: 70px;
+    }
+
+    .monthly-trace-delta.positive {
+      color: var(--color-positive);
+    }
+
+    .monthly-trace-delta.negative {
+      color: var(--color-negative);
+    }
+
+    .monthly-trace-balance {
+      color: var(--color-text-muted);
+      white-space: nowrap;
+      text-align: right;
+      min-width: 70px;
+    }
+
   </style>
 </head>
 <body>
@@ -1148,7 +1789,7 @@
     <!-- Loading State -->
     <div class="loading-state">
       <div class="header">
-        <span class="header-brand">AreumFire</span>
+        <span class="header-brand">Chubby</span>
         <span class="header-tag">Educational simulation</span>
       </div>
       <div class="loading-message" aria-live="polite">
@@ -1185,7 +1826,7 @@
     <div class="content-state">
     <!-- Header -->
     <div class="header">
-      <span class="header-brand">AreumFire</span>
+      <span class="header-brand">Chubby</span>
       <span class="header-tag">Educational simulation</span>
     </div>
 
@@ -1230,25 +1871,30 @@
 
     <!-- Trajectory -->
     <div class="trajectory" id="trajectory-section">
-      <div class="traj-title">Net Worth Trajectory</div>
+      <div class="traj-title">Simulated Outcomes Over Time</div>
+      <div class="traj-explanation" id="traj-explanation" style="display: none; font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: var(--space-2);"></div>
       <div id="trajectory-bars"></div>
       <div class="traj-legend">
-        <div class="traj-legend-item"><span class="traj-legend-swatch range"></span> P10–P75 range</div>
-        <div class="traj-legend-item"><span class="traj-legend-swatch p50"></span> P50 median</div>
+        <div class="traj-legend-item" title="10th to 75th percentile: the range from pessimistic (P10) to optimistic (P75)"><span class="traj-legend-swatch range"></span> Pessimistic (P10) → Optimistic (P75)</div>
+        <div class="traj-legend-item" title="50th percentile (median): half of simulated scenarios end above this value, half below"><span class="traj-legend-swatch p50"></span> Typical (P50)</div>
       </div>
-      <div class="traj-hint">Click any row to inspect that year</div>
+      <div class="traj-legend-note" style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: var(--space-2);" title="Each age shows percentiles across all simulated paths at that point. This is not one continuous 'typical path' over time — each age is an independent cross-section of outcomes.">Percentiles recalculated at each age</div>
+      <div class="traj-hint">Tap an age to see the math</div>
+      <div id="traj-horizon-note" class="traj-horizon-note" style="display: none;"></div>
     </div>
 
     <!-- Survival - Hidden by default (redundant with Plan Duration header) -->
     <!-- <div class="survival" id="survival-section" style="display: none;">
-      <div class="survival-title" title="Share of simulated futures where assets remain above $0 while baseline spending continues.">
-        Futures Still Funded <span class="survival-info">ⓘ</span>
+      <div class="survival-title">Futures Still Funded</div>
+      <div class="survival-anchor" style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: var(--space-2);">
+        % of simulated futures where assets remain above $0 at each age.
+        Funded means baseline spending is sustained without depleting investment assets.
       </div>
       <div id="survival-bars"></div>
     </div> -->
 
     <!-- Year Inspector -->
-    <div class="inspector" id="inspector" role="dialog" aria-labelledby="inspector-title">
+    <div class="inspector" id="inspector" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="inspector-title">
       <div class="inspector-header">
         <span class="inspector-title" id="inspector-title">Year 2035 (Age 60)</span>
         <button class="inspector-close" id="inspector-close" aria-label="Close inspector" type="button">×</button>
@@ -1258,18 +1904,62 @@
       <div id="accounts-section"></div>
     </div>
 
-    <!-- Assumptions -->
-    <div class="assumptions" id="assumptions">
-      <span>~7% returns</span>
-      <span>~2.5% inflation</span>
-      <span>No tax</span>
-    </div>
+    <!-- Assumptions (collapsible) -->
+    <details class="collapsible assumptions-details" id="assumptions-details">
+      <summary>
+        <span class="assumptions-summary" id="assumptions-summary">
+          <span>Stocks 7% / Bonds 4%</span>
+          <span>~2.5% inflation</span>
+          <span>Taxes: not modeled</span>
+        </span>
+      </summary>
+      <div class="assumptions-expanded" id="assumptions-expanded">
+        <div class="assumptions-section">
+          <div class="assumptions-section-title">Returns Model (nominal)</div>
+          <div class="assumptions-section-content">
+            <ul>
+              <li>Equities: ~7% mean annual return, ~18% volatility</li>
+              <li>Bonds: ~4% mean annual return, ~6% volatility</li>
+            </ul>
+            <div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-2);">
+              Higher volatility means a wider spread between "Harder" and "Optimistic" outcomes over time.
+            </div>
+            <div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-1); font-style: italic;">
+              These are long-run illustrative assumptions — not a prediction of future performance.
+            </div>
+          </div>
+        </div>
+        <div class="assumptions-section">
+          <div class="assumptions-section-title">Inflation</div>
+          <div class="assumptions-section-content">
+            ~2.5% annual inflation applied to spending
+          </div>
+        </div>
+        <div class="assumptions-section">
+          <div class="assumptions-section-title">Withdrawal Order</div>
+          <div class="assumptions-section-content">
+            Taxable → Tax-deferred → Roth (standard sequence)
+          </div>
+        </div>
+      </div>
+    </details>
 
     <!-- Footer -->
     <div class="footer" id="footer">
-      <span id="run-id">—</span>
-      <span><span id="paths-run">100</span> paths</span>
-      <span>Seed: <span id="seed">—</span></span>
+      <span class="copy-summary-wrap">
+        <button id="copy-summary-btn" class="copy-summary-btn" title="Copy summary" aria-label="Copy summary"><span class="sr-only">Copy summary</span></button>
+        <span id="copied-toast" class="copied-toast">Copied!</span>
+      </span>
+      <span id="run-id" title="Simulation ID — use this to reference or share this run">—</span>
+      <span>·</span>
+      <span>Age <span id="horizon-age">—</span></span>
+      <span>·</span>
+      <details class="footer-advanced">
+        <summary><span id="paths-run">100</span> paths</summary>
+        <div class="footer-advanced-content">
+          <span>Seed: <span id="seed">—</span></span>
+        </div>
+      </details>
     </div>
     </div><!-- end content-state -->
   </div>
@@ -1281,8 +1971,9 @@
 
     function applyTheme(theme) {
       document.documentElement.setAttribute('data-theme', theme || 'light');
-      document.documentElement.style.colorScheme = theme || 'light';
-      console.log('[AreumFire Widget] Theme:', theme);
+      // Don't set colorScheme on html - keep it 'normal' to avoid UA canvas painting
+      // color-scheme is set on body via CSS, which inherits to the widget subtree
+      console.log('[Chubby Widget] Theme:', theme);
     }
 
     function detectTheme() {
@@ -1319,7 +2010,7 @@
       const validModes = ['inline', 'pip', 'fullscreen'];
       const m = validModes.includes(mode) ? mode : 'inline';
       widget.setAttribute('data-display-mode', m);
-      console.log('[AreumFire Widget] Display mode:', m);
+      console.log('[Chubby Widget] Display mode:', m);
     }
 
     function detectDisplayMode() {
@@ -1353,7 +2044,7 @@
       // Apply max-height to prevent internal scrolling (per OpenAI guidelines)
       widget.style.maxHeight = maxHeight + 'px';
       widget.style.overflowY = 'auto';
-      console.log('[AreumFire Widget] Max height:', maxHeight);
+      console.log('[Chubby Widget] Max height:', maxHeight);
     }
 
     function detectMaxHeight() {
@@ -1378,16 +2069,22 @@
 
     function fmt(v) {
       if (v == null) return '—';
-      if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
-      if (v >= 1e3) return '$' + Math.round(v / 1e3) + 'K';
-      return '$' + Math.round(v);
+      // Handle negative values with proper K/M suffix
+      const sign = v < 0 ? '-' : '';
+      const abs = Math.abs(v);
+      if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(1) + 'M';
+      if (abs >= 1e3) return sign + '$' + Math.round(abs / 1e3) + 'K';
+      return sign + '$' + Math.round(abs);
     }
 
     function fmtYr(v) {
       if (v == null) return '—';
-      if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
-      if (v >= 1e3) return '$' + Math.round(v / 1e3) + 'K';
-      return '$' + Math.round(v);
+      // Handle negative values with proper K/M suffix
+      const sign = v < 0 ? '-' : '';
+      const abs = Math.abs(v);
+      if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(1) + 'M';
+      if (abs >= 1e3) return sign + '$' + Math.round(abs / 1e3) + 'K';
+      return sign + '$' + Math.round(abs);
     }
 
     function fmtSigned(v) {
@@ -1404,6 +2101,8 @@
     // =========================================================================
 
     let data = null;
+    let durationConstraintAge = null; // Set by renderDuration, used by renderTrajectory for consistency
+    let durationConstraintPct = null; // Depleted %, single source of truth for header + trajectory marker
 
     // =========================================================================
     // Render: Duration
@@ -1411,7 +2110,7 @@
 
     function getMedianEndingAssets(d) {
       // Try mc.finalNetWorthP50
-      if (d.mc?.finalNetWorthP50) return d.mc.finalNetWorthP50;
+      if (d.mc?.finalNetWorthP50 != null) return d.mc.finalNetWorthP50;
 
       // Try last trajectory point
       const trajectory = d.netWorthTrajectory || d.mc?.netWorthTrajectory || [];
@@ -1430,6 +2129,49 @@
       return 0;
     }
 
+    function getP10EndingAssets(d) {
+      // Try mc.finalNetWorthP10
+      if (d.mc?.finalNetWorthP10 != null) return d.mc.finalNetWorthP10;
+
+      // Try last trajectory point
+      const trajectory = d.netWorthTrajectory || d.mc?.netWorthTrajectory || [];
+      if (trajectory.length > 0) {
+        const last = trajectory[trajectory.length - 1];
+        // Use P10 if available, otherwise estimate from P50
+        return last.p10 || (last.p50 * 0.55) || 0;
+      }
+
+      return 0;
+    }
+
+    // Find the first age where a constraint marker would fire (pctPathsFunded < 50%)
+    // Returns { age, pctDepleted } or null if no constraint fires
+    function getFirstConstraintAge(d) {
+      const trajectory = d.netWorthTrajectory || d.mc?.netWorthTrajectory || [];
+      const currentAge = d.inputs?.currentAge || 35;
+
+      for (const pt of trajectory) {
+        const pctPathsFunded = pt.pctPathsFunded ?? pt.survivalRate;
+        const p50 = pt.p50 || 0;
+
+        // Same logic as renderTrajectory: constraint fires when funded < 50% or p50 <= 0
+        const isConstrained = pctPathsFunded !== undefined
+          ? pctPathsFunded < 0.5
+          : p50 <= 0;
+
+        if (isConstrained) {
+          const monthOffset = pt.monthOffset || pt.month || 0;
+          const age = currentAge + Math.floor(monthOffset / 12);
+          const pctDepleted = pctPathsFunded !== undefined
+            ? Math.round((1 - pctPathsFunded) * 100)
+            : null;
+          return { age, pctDepleted };
+        }
+      }
+
+      return null;
+    }
+
     function renderDuration(d) {
       const pd = d.planDuration;
       const horizonMonths = d.inputs?.horizonMonths || 360;
@@ -1444,9 +2186,10 @@
         laterAge = pd.laterOutcomesAge;
         saturated = pd.horizonSaturated;
       } else {
-        const runwayP10 = d.mc?.runwayP10 ?? horizonMonths;
-        const runwayP50 = d.mc?.runwayP50 ?? horizonMonths;
-        const runwayP75 = d.mc?.runwayP75 ?? d.mc?.runwayP90 ?? horizonMonths;
+        // Support both new names (runwayP*Months) and deprecated names (runwayP*) for backward compatibility
+        const runwayP10 = d.mc?.runwayP10Months ?? d.mc?.runwayP10 ?? horizonMonths;
+        const runwayP50 = d.mc?.runwayP50Months ?? d.mc?.runwayP50 ?? horizonMonths;
+        const runwayP75 = d.mc?.runwayP75Months ?? d.mc?.runwayP75 ?? d.mc?.runwayP90 ?? horizonMonths;
         mostAge = currentAge + Math.floor(runwayP50 / 12);
         earlierAge = currentAge + Math.floor(runwayP10 / 12);
         laterAge = currentAge + Math.floor(runwayP75 / 12);
@@ -1456,38 +2199,140 @@
       // Additional saturation detection:
       // 1. If all three ages are identical or nearly identical (within 2 years),
       //    no meaningful constraint was observed - treat as saturated
-      // 2. If ever-breach probability is very low (<5%), effectively saturated
+      // 2. If spending constraint probability is very low (<5%), effectively saturated
       const agesIdentical = Math.abs(mostAge - earlierAge) <= 2 && Math.abs(mostAge - laterAge) <= 2;
-      const lowBreachProb = (d.mc?.everBreachProbability ?? 1) < 0.05;
+      const lowConstraintProb = (d.mc?.everBreachProbability ?? 1) < 0.05;
 
-      if (!saturated && (agesIdentical || lowBreachProb)) {
+      if (!saturated && (agesIdentical || lowConstraintProb)) {
         saturated = true;
-        console.log('[AreumFire Widget] Detected effective saturation:',
-          { agesIdentical, lowBreachProb, mostAge, earlierAge, laterAge });
+        console.log('[Chubby Widget] Detected effective saturation:',
+          { agesIdentical, lowConstraintProb, mostAge, earlierAge, laterAge });
       }
 
+      // Get DOM elements for mode switching
+      const durationSection = document.getElementById('duration-section');
+      const labelEl = durationSection.querySelector('.duration-label');
+      const questionEl = durationSection.querySelector('.duration-question');
       const answerEl = document.getElementById('duration-answer');
       const noteEl = document.getElementById('duration-note');
 
-      if (saturated) {
-        // Saturated: plan lasts through horizon
-        const endingAssets = getMedianEndingAssets(d);
+      // Get ending assets to check if "saturated" is meaningful
+      const p50Assets = getMedianEndingAssets(d);
+      const annualSpending = d.inputs?.annualSpending || 0;
+
+      // Check if a constraint marker will appear in the trajectory
+      // This prevents saying "stays funded" when trajectory shows a constraint warning
+      const firstConstraint = getFirstConstraintAge(d);
+
+      // If technically saturated but ending with near-zero assets, show constrained view instead
+      // "Near-zero" = less than 1 year of spending or less than $10k
+      const nearZeroThreshold = Math.max(annualSpending, 10000);
+
+      // NOT effectively saturated if:
+      // 1. P50 assets at end are near-zero, OR
+      // 2. A constraint marker will fire in the trajectory
+      const effectivelySaturated = saturated && p50Assets > nearZeroThreshold && !firstConstraint;
+
+      // Store constraint age + pct for renderTrajectory to use (single source of truth)
+      if (firstConstraint) {
+        durationConstraintAge = firstConstraint.age;
+        durationConstraintPct = firstConstraint.pctDepleted;
+      } else if (!effectivelySaturated && !saturated) {
+        durationConstraintAge = mostAge;
+        durationConstraintPct = null;
+      } else {
+        durationConstraintAge = null;
+        durationConstraintPct = null;
+      }
+
+      if (effectivelySaturated) {
+        // MODE: Plan Duration (saturated case)
+        // Different header and framing when plan never runs out
+        labelEl.textContent = 'Plan Duration';
+        questionEl.style.display = 'none'; // No question needed - statement mode
+
+        // Calculate spending multiplier (pure arithmetic, not advice)
+        const spendingMultiple = annualSpending > 0 ? Math.round(p50Assets / annualSpending) : null;
+        const multiplierLine = spendingMultiple ?
+          '<div class="duration-multiplier">Ending assets / current annual spending: ' + spendingMultiple + '</div>' : '';
+
         answerEl.innerHTML =
           '<div class="duration-saturated">' +
-            'This plan funds baseline spending through Age ' + horizonAge + '.' +
-            '<br>~' + fmt(endingAssets) + ' remaining in a typical outcome.' +
+            '<div class="duration-saturated-headline" title="Assets remain positive across all simulated paths through the end of the simulation window.">Assets remain above $0 through Age ' + horizonAge + ' (simulation horizon)</div>' +
+            '<div class="duration-saturated-details">(end of simulation)</div>' +
+            '<div class="duration-saturated-assets">' +
+              '<span title="Half of simulated outcomes are better, half are worse">Typical assets at that age: <strong>~' + fmt(p50Assets) + '</strong></span>' +
+              multiplierLine +
+            '</div>' +
+            '<div class="duration-horizon-note">' +
+              'The simulation stops at Age ' + horizonAge + '. Outcomes beyond are not modeled.' +
+            '</div>' +
+          '</div>';
+        noteEl.style.display = 'none';
+      } else if (saturated && firstConstraint) {
+        // MODE: Constraint within saturated horizon
+        // P50 runway reaches horizon, but a significant portion of paths hit constraint earlier
+        labelEl.textContent = 'Plan Duration';
+        questionEl.style.display = 'none';
+
+        const constraintNote = firstConstraint.pctDepleted
+          ? 'In ' + firstConstraint.pctDepleted + '% of scenarios, assets are depleted by Age ' + firstConstraint.age + '.'
+          : 'In most scenarios, assets are depleted by Age ' + firstConstraint.age + '.';
+
+        answerEl.innerHTML =
+          '<div class="duration-saturated">' +
+            '<div class="duration-saturated-headline" title="Funded means baseline spending is sustained without depleting investment assets. Median path reaches horizon, but many paths deplete earlier.">Plan reaches Age ' + horizonAge + ' in favorable scenarios</div>' +
+            '<div class="duration-saturated-details" style="color: var(--color-warning, #d97706);" title="Depleted means investment assets have been exhausted and baseline spending can no longer be sustained.">' + constraintNote + '</div>' +
+            '<div class="duration-saturated-assets">' +
+              '<span title="Half of simulated outcomes are better, half are worse">Typical ending assets: <strong>~' + fmt(p50Assets) + '</strong></span>' +
+            '</div>' +
+          '</div>';
+        noteEl.style.display = 'none';
+      } else if (saturated && p50Assets <= nearZeroThreshold) {
+        // MODE: Marginal Coverage (technically saturated but ending near $0)
+        // Show a more nuanced message
+        labelEl.textContent = 'Plan Duration';
+        questionEl.style.display = 'none';
+
+        answerEl.innerHTML =
+          '<div class="duration-saturated">' +
+            '<div class="duration-saturated-headline" title="Funded means baseline spending is sustained without depleting investment assets. Assets last through the simulation but are nearly depleted.">This plan reaches Age ' + horizonAge + ' with minimal reserves</div>' +
+            '<div class="duration-saturated-details">(end of simulation)</div>' +
+            '<div class="duration-saturated-assets">' +
+              '<span title="Half of simulated outcomes are better, half are worse">Typical assets at that age: <strong>~' + fmt(p50Assets) + '</strong></span>' +
+            '</div>' +
+            '<div class="duration-horizon-note" style="color: var(--color-warning, #d97706);">' +
+              'Assets are nearly exhausted by horizon. Consider reducing spending or extending income.' +
+            '</div>' +
           '</div>';
         noteEl.style.display = 'none';
       } else {
-        // Constrained: plan runs out at some point
+        // MODE: Plan Duration (constrained case)
+        // Show the question for constrained scenarios
+        labelEl.textContent = 'Plan Duration';
+        questionEl.style.display = 'block';
+        questionEl.textContent = 'When does this plan run out?';
+
+        // Build causal explanation based on available data
+        let causalNote = '';
+        if (d.incomeChange && d.incomeChange.newAnnualIncome === 0) {
+          const incomeStopAge = currentAge + Math.floor(d.incomeChange.monthOffset / 12);
+          causalNote = '<div class="duration-cause">Why: Spending exceeds portfolio returns after income stops at Age ' + incomeStopAge + '.</div>';
+        } else if (d.inputs?.expectedIncome === 0) {
+          causalNote = '<div class="duration-cause">Why: No income — spending draws down assets.</div>';
+        }
+
         answerEl.innerHTML =
-          '<ul class="duration-outcomes">' +
-            '<li class="typical">Around <span class="age">Age ' + mostAge + '</span> in a typical outcome</li>' +
-            '<li>As early as <span class="age">Age ' + earlierAge + '</span> in harder scenarios (~10%)</li>' +
-            '<li>As late as <span class="age">Age ' + laterAge + '</span> in stronger outcomes (~25%)</li>' +
-          '</ul>';
-        noteEl.style.display = 'block';
-        noteEl.textContent = 'After this point, the money runs out at current spending levels.';
+          '<div class="duration-constrained">' +
+            '<div class="duration-saturated-headline">This plan runs out around:</div>' +
+            '<ul class="duration-outcomes">' +
+              '<li class="typical" title="Half of simulated outcomes last longer, half run out sooner"><span class="age">Age ' + mostAge + '</span> in a typical outcome</li>' +
+              '<li title="In 10% of simulated paths, assets are depleted by this age"><span class="age">Age ' + earlierAge + '</span> in harder scenarios</li>' +
+            '</ul>' +
+            '<div class="duration-note" title="Funded means baseline spending is sustained without depleting investment assets.">After this, baseline spending would become unsustainable.</div>' +
+            causalNote +
+          '</div>';
+        noteEl.style.display = 'none';
       }
     }
 
@@ -1512,13 +2357,18 @@
         document.getElementById('start-spending').textContent = fmtYr(inp.annualSpending);
       }
 
-      // Events
+      // Events - always show section, with explicit message when empty
       const eventsEl = document.getElementById('events');
       const eventsSection = document.getElementById('events-section');
-      let events = sch?.scheduledEvents || buildEvents(d);
+      const horizonMonths = d.inputs?.horizonMonths || 360;
+      const horizonAge = (d.inputs?.currentAge || 35) + Math.floor(horizonMonths / 12);
 
+      // Filter events to only show those within simulation horizon (defense in depth)
+      let events = (sch?.scheduledEvents || buildEvents(d))
+        .filter(e => e.age <= horizonAge);
+
+      eventsSection.style.display = 'block';
       if (events.length > 0) {
-        eventsSection.style.display = 'block';
         eventsEl.innerHTML = events.map(e =>
           '<div class="event">' +
             '<span class="event-icon">' + (e.icon || '📅') + '</span>' +
@@ -1528,7 +2378,11 @@
           '</div>'
         ).join('');
       } else {
-        eventsSection.style.display = 'none';
+        eventsEl.innerHTML =
+          '<div class="events-empty">' +
+            'No future changes scheduled.<br>' +
+            '<span class="events-empty-note">(Income and spending assumed constant)</span>' +
+          '</div>';
       }
     }
 
@@ -1587,7 +2441,7 @@
     }
 
     // =========================================================================
-    // Render: Trajectory with P10/P50/P75 bands
+    // Render: Trajectory with P10→P75 bar + P50 marker
     // =========================================================================
 
     function renderTrajectory(d) {
@@ -1595,6 +2449,7 @@
       const horizonMonths = d.inputs?.horizonMonths || 360;
       const endAge = currentAge + Math.floor(horizonMonths / 12);
       const trajectory = d.netWorthTrajectory || d.mc?.netWorthTrajectory || [];
+      const explanationEl = document.getElementById('traj-explanation');
 
       // If no trajectory data, show placeholder message
       if (trajectory.length === 0) {
@@ -1602,10 +2457,45 @@
           '<div style="padding: var(--space-4); text-align: center; color: var(--color-text-muted); font-size: var(--font-size-sm);">' +
           'Trajectory data not available. Run with more MC paths.' +
           '</div>';
+        explanationEl.style.display = 'none';
         return;
       }
 
+      // Detect phase and provide driver-aware explanation
+      const firstPoint = trajectory[0];
+      const lastPoint = trajectory[trajectory.length - 1];
+      const startAssets = firstPoint?.p50 || d.inputs?.investableAssets || 0;
+      const endAssets = lastPoint?.p50 || 0;
+      const annualSpending = d.inputs?.annualSpending || 0;
+      const annualIncome = d.inputs?.expectedIncome || d.inputs?.annualIncome || 0;
+
+      // Determine phase: accumulation (saving) vs decumulation (spending down)
+      const isAccumulating = annualIncome > annualSpending;
+      const assetsGrow = endAssets > startAssets;
+
+      // Show phase-appropriate explanation
+      if (assetsGrow && annualSpending > 0) {
+        if (isAccumulating) {
+          explanationEl.textContent = 'This scenario is in accumulation: modeled income exceeds spending, so assets rise from ongoing contributions. Market returns add uncertainty.';
+        } else {
+          explanationEl.textContent = 'Assets grow because expected investment returns exceed withdrawals.';
+        }
+        explanationEl.style.display = 'block';
+      } else if (!assetsGrow && annualSpending > annualIncome) {
+        explanationEl.textContent = 'This scenario is in decumulation: spending exceeds modeled income, so withdrawals fund the gap. Market returns drive how quickly assets change.';
+        explanationEl.style.display = 'block';
+      } else {
+        explanationEl.style.display = 'none';
+      }
+
       const milestones = buildMilestones(d, currentAge);
+
+      // Build event marker map: age → event description (for dot markers on bars)
+      const eventMarkers = {};
+      const schedEvents = d.schedule?.scheduledEvents || buildEvents(d);
+      for (const e of schedEvents) {
+        eventMarkers[e.age] = e.label || e.change || 'Event';
+      }
 
       // Sample ages - use 10yr intervals for long horizons (>50yr) to keep ≤7 rows
       const horizonYears = endAge - currentAge;
@@ -1623,16 +2513,25 @@
 
       const sortedAges = [...ages].sort((a, b) => a - b);
 
-      // Find max for scaling
-      let maxVal = 0;
+      // Find max for scaling - use P75 since the bar now spans P10→P75
+      let maxP75 = 0;
+      let firstConstraintAge = null; // Age when median first hits 0
       trajectory.forEach(pt => {
-        const v = pt.p75 || pt.p50 || 0;
-        if (v > maxVal) maxVal = v;
+        const p75 = (pt.p75 != null ? pt.p75 : (pt.p50 || 0) * 1.5) || 0;
+        if (p75 > maxP75) maxP75 = p75;
+        // Detect first constraint (when P50 goes to 0 or below)
+        const p50 = pt.p50 || 0;
+        if (firstConstraintAge === null && p50 <= 0) {
+          const monthOffset = pt.monthOffset || pt.month || 0;
+          firstConstraintAge = currentAge + Math.floor(monthOffset / 12);
+        }
       });
-      if (maxVal === 0) maxVal = 1;
+      // Scale to P75 max + 10% padding
+      const maxVal = maxP75 > 0 ? maxP75 * 1.1 : 1;
 
       let html = '';
       let lastMilestone = null;
+      let constraintMarkerShown = false;
 
       sortedAges.forEach(age => {
         const yearOffset = age - currentAge;
@@ -1652,29 +2551,99 @@
           lastMilestone = milestones[age];
         }
 
-        const p10 = pt.p10 || pt.p50 * 0.7 || 0;
-        const p50 = pt.p50 || 0;
-        const p75 = pt.p75 || pt.p50 * 1.3 || 0;
+        // Floor values at 0 (Option A: no negative display)
+        const p10Raw = (pt.p10 != null ? pt.p10 : pt.p50 * 0.7) || 0;
+        const p50Raw = pt.p50 || 0;
+        const p75Raw = (pt.p75 != null ? pt.p75 : pt.p50 * 1.5) || 0;
 
+        const p10 = Math.max(0, p10Raw);
+        const p50 = Math.max(0, p50Raw);
+        const p75 = Math.max(0, p75Raw);
+
+        // Pct paths funded: % of paths still funded at this age
+        // Support both new name (pctPathsFunded) and deprecated name (survivalRate) for backward compatibility
+        const pctPathsFunded = pt.pctPathsFunded ?? pt.survivalRate;
+
+        // Detect constraint: use pctPathsFunded if available, else fall back to P50 check
+        // Constraint = funded < 50% (most paths have hit constraint)
+        const isConstrained = pctPathsFunded !== undefined
+          ? pctPathsFunded < 0.5
+          : p50Raw <= 0;
+
+        // Once constraint is hit, show marker and stop - no point showing $0 repeatedly
+        if (isConstrained) {
+          if (!constraintMarkerShown) {
+            // Use durationConstraintAge + durationConstraintPct (from renderDuration)
+            // as single source of truth to avoid % mismatch between header and trajectory
+            const markerAge = durationConstraintAge || age;
+            const depletedPct = durationConstraintPct;
+            const depletedText = depletedPct !== null
+              ? '⚠️ In ' + depletedPct + '% of scenarios, assets depleted by Age ' + markerAge
+              : '⚠️ In most scenarios, assets depleted by Age ' + markerAge;
+            html += '<div class="traj-constraint-marker">' + depletedText + '</div>';
+            constraintMarkerShown = true;
+          }
+          return; // Skip rendering $0 rows
+        }
+
+        // Scale to percentage
         const pct10 = Math.round((p10 / maxVal) * 100);
-        const pct50 = Math.round((p50 / maxVal) * 100);
-        const pct75 = Math.round((p75 / maxVal) * 100);
+        const pct50 = Math.min(100, Math.round((p50 / maxVal) * 100));
+        const pct75 = Math.min(100, Math.round((p75 / maxVal) * 100));
 
-        const ariaLabel = 'Age ' + age + ', median net worth ' + fmt(p50) + '. Click to view details.';
-        // Boxplot visualization:
-        // [empty: 0→P10] [range bar: P10→P75] with P50 marker inside
+        const rowClass = 'traj-row';
+
+        // Tooltip shows all three scenarios
+        const tooltipText = 'Age ' + age + ': Harder ' + fmt(p10) + ' · Typical ' + fmt(p50) + ' · Optimistic ' + fmt(p75);
+        const ariaLabel = 'Age ' + age + ', median net worth ' + fmt(p50) + '. Press Enter or tap to view details.';
+
+        // Show P10→P75 range bar with P50 marker inside
         const rangeWidth = Math.max(0, pct75 - pct10);
-        html += '<div class="traj-row" data-age="' + age + '" data-year="' + yearOffset + '" ' +
-          'role="button" tabindex="0" aria-label="' + ariaLabel + '">' +
+        const showRange = true;
+
+        // Event marker dot (if this age has a scheduled event)
+        let eventMarkerHtml = '';
+        if (eventMarkers[age]) {
+          eventMarkerHtml = '<div class="traj-event-marker" style="left:' + pct50 + '%" title="' + eventMarkers[age] + '"></div>';
+        }
+
+        // Spending annotation (if spending data available on trajectory point)
+        let spendingHtml = '';
+        const spendingP50 = pt.spendingP50;
+        if (spendingP50 != null && spendingP50 > 0) {
+          spendingHtml = '<span class="traj-spending" aria-hidden="true" title="Typical annual spending at this age">' + fmtYr(spendingP50) + '/yr</span>';
+        }
+
+        // Tooltip - include spending if available
+        let fullTooltip = tooltipText;
+        if (spendingP50 != null && spendingP50 > 0) {
+          fullTooltip += ' · Spending ~' + fmtYr(spendingP50) + '/yr';
+        }
+        if (eventMarkers[age]) {
+          fullTooltip += ' · Event: ' + eventMarkers[age];
+        }
+
+        html += '<div class="' + rowClass + '" data-age="' + age + '" data-year="' + yearOffset + '" ' +
+          'role="button" tabindex="0" aria-label="' + ariaLabel + '" title="' + fullTooltip + '">' +
           '<span class="traj-age" aria-hidden="true">' + age + '</span>' +
           '<div class="traj-bar-container" aria-hidden="true">' +
-            '<div class="traj-bar-range" style="left:' + pct10 + '%; width:' + rangeWidth + '%"></div>' +
+            (showRange ? '<div class="traj-bar-range" style="left:' + pct10 + '%; width:' + rangeWidth + '%"></div>' : '') +
             '<div class="traj-bar-p50" style="left:' + pct50 + '%"></div>' +
+            eventMarkerHtml +
           '</div>' +
           '<span class="traj-value" aria-hidden="true">' + fmt(p50) + '</span>' +
-          '<span class="traj-inspect" aria-hidden="true" title="Inspect year">ⓘ</span>' +
+          spendingHtml +
+          '<span class="traj-inspect" aria-hidden="true" title="Tap to inspect">ⓘ</span>' +
         '</div>';
       });
+
+      // Add explanatory note if assets depleted
+      if (constraintMarkerShown) {
+        html += '<div class="traj-constraint-note">' +
+          'After this point, paths continue on fixed income only (e.g., Social Security). ' +
+          'No spending reduction is modeled.' +
+        '</div>';
+      }
 
       document.getElementById('trajectory-bars').innerHTML = html;
 
@@ -1691,16 +2660,40 @@
           }
         });
       });
+
+      // Show late-horizon uncertainty note if trajectory extends to age 70+
+      const horizonNote = document.getElementById('traj-horizon-note');
+      if (endAge >= 70) {
+        horizonNote.style.display = 'block';
+        horizonNote.textContent = 'Note: Uncertainty naturally widens over long horizons. The spread between outcomes at age ' +
+          endAge + ' reflects compounding variability, not model error.';
+      } else {
+        horizonNote.style.display = 'none';
+      }
     }
 
     function buildMilestones(d, age) {
       const ms = {};
       const m2a = m => age + Math.floor(m / 12);
-      if (d.incomeChange?.newAnnualIncome === 0) {
-        ms[m2a(d.incomeChange.monthOffset)] = d.incomeChange.description || 'Retirement';
-      }
-      if (d.socialSecurity) {
-        ms[d.socialSecurity.claimingAge] = 'Social Security';
+
+      // Primary: read from schedule.scheduledEvents (present in lean payload)
+      const events = d.schedule?.scheduledEvents;
+      if (events && events.length > 0) {
+        for (const e of events) {
+          if (e.type === 'income' && e.change === '$0') {
+            ms[e.age] = e.label || 'Retirement';
+          } else if (e.type === 'social_security') {
+            ms[e.age] = 'Social Security';
+          }
+        }
+      } else {
+        // Fallback: legacy payload fields
+        if (d.incomeChange?.newAnnualIncome === 0) {
+          ms[m2a(d.incomeChange.monthOffset)] = d.incomeChange.description || 'Retirement';
+        }
+        if (d.socialSecurity) {
+          ms[d.socialSecurity.claimingAge] = 'Social Security';
+        }
       }
       return ms;
     }
@@ -2003,7 +2996,35 @@
     // Format full number (not abbreviated)
     function fmtFull(n) {
       if (n == null || isNaN(n)) return '$0';
-      return '$' + Math.round(n).toLocaleString('en-US');
+      // Handle negative values properly
+      const sign = n < 0 ? '-' : '';
+      const abs = Math.abs(Math.round(n));
+      return sign + '$' + abs.toLocaleString('en-US');
+    }
+
+    // Render first-month events for "show the math" (compact monospace layout)
+    function renderShowTheMath(age, year) {
+      const events = data.firstMonthEvents?.[age];
+      if (!events || events.length === 0) return null;
+
+      let html = '<div class="monthly-trace">';
+      html += '<div class="monthly-trace-month">';
+      html += '<div class="monthly-trace-month-header">January ' + year + '</div>';
+
+      for (const evt of events) {
+        const delta = evt.d || 0;
+        const deltaClass = delta >= 0 ? 'positive' : 'negative';
+        const deltaSign = delta >= 0 ? '+' : '\u2212';
+        const deltaAbs = Math.abs(delta);
+        html += '<div class="monthly-trace-event">' +
+          '<span class="monthly-trace-name">' + (evt.n || 'Event') + '</span>' +
+          '<span class="monthly-trace-delta ' + deltaClass + '">' + deltaSign + '$' + deltaAbs.toLocaleString('en-US') + '</span>' +
+          '<span class="monthly-trace-balance">$' + Math.max(0, evt.ca).toLocaleString('en-US') + '</span>' +
+        '</div>';
+      }
+
+      html += '</div></div>';
+      return html;
     }
 
     function showInspector(age, yearOffset) {
@@ -2012,70 +3033,301 @@
       const inspector = document.getElementById('inspector');
       const year = (data.startYear || 2024) + yearOffset;
 
-      document.getElementById('inspector-title').textContent = 'Year ' + year + ' (Age ' + age + ') — Median Path';
-
-      // Find snapshot
-      const snaps = data.annualSnapshots || [];
-      const snap = snaps.find(s => s.age === age) || snaps.find(s => Math.abs(s.age - age) <= 1);
+      document.getElementById('inspector-title').innerHTML = 'Age ' + age + ' — Outcome range';
 
       const ledger = document.getElementById('ledger');
       const withdrawalsSection = document.getElementById('withdrawals-section');
       const accountsSection = document.getElementById('accounts-section');
 
+      // Always look up trajectory P50/P10 for the headline
+      const trajectory = data.netWorthTrajectory || data.mc?.netWorthTrajectory || [];
+      const currentAge = data.inputs?.currentAge || 35;
+      const monthOffset = (age - currentAge) * 12;
+      let pt = null;
+      let minDiff = Infinity;
+      trajectory.forEach(p => {
+        const diff = Math.abs((p.monthOffset || p.month || 0) - monthOffset);
+        if (diff < minDiff) { minDiff = diff; pt = p; }
+      });
+
+      const p10 = Math.max(0, pt ? (pt.p10 != null ? pt.p10 : 0) : 0);
+      const p50 = Math.max(0, pt ? (pt.p50 || 0) : 0);
+      const p75 = Math.max(0, pt ? (pt.p75 != null ? pt.p75 : 0) : 0);
+      const isConstrained = pt ? (pt.p50 || 0) <= 0 : false;
+
+      // Primary: P50/P10 headline (matches trajectory bar)
+      let ledgerHtml = '<div class="minimal-ledger">' +
+        '<div class="minimal-ledger-row" style="font-weight: 500; color: var(--color-text-tertiary); font-size: var(--font-size-2xs); text-transform: uppercase; letter-spacing: 0.3px; padding-bottom: var(--space-2);">Net Worth at Age ' + age + '</div>' +
+        '<div class="minimal-ledger-row total"><span>Typical (P50)</span><span>' + (isConstrained ? '$0 ⚠️' : fmt(p50)) + '</span></div>' +
+        '<div class="minimal-ledger-row"><span>Harder scenarios (P10)</span><span>' + fmt(p10) + '</span></div>';
+      if (p75 > 0 && !isConstrained) {
+        ledgerHtml += '<div class="minimal-ledger-row"><span>Stronger markets (P75)</span><span>' + fmt(p75) + '</span></div>';
+      }
+      if (isConstrained) {
+        ledgerHtml += '<div style="margin-top: var(--space-2); padding: var(--space-2); background: rgba(217, 115, 13, 0.1); border-radius: 4px; font-size: var(--font-size-2xs); color: #d9730d;">Assets depleted — spending exceeded available resources.</div>';
+      }
+      ledgerHtml += '</div>';
+
+      // Secondary: exemplar path details (one example path)
+      const snaps = data.annualSnapshots || [];
+      const snap = snaps.find(s => s.age === age) || snaps.find(s => Math.abs(s.age - age) <= 1);
+
       if (snap) {
-        // Summary header (start → delta → end)
-        const startVal = snap.startBalance || 0;
-        const endVal = snap.endBalance || 0;
-        const summaryHtml = renderInspectorSummary(startVal, endVal);
-
-        // Minimal ledger with accounts inline under End
-        ledger.innerHTML = summaryHtml + renderMinimalLedger(snap);
-
-        // Stacked accounts bar (new visual)
+        ledgerHtml += '<details class="event-detail-toggle" style="margin-top: var(--space-3);">' +
+          '<summary>One random example path — not the median</summary>' +
+          '<div class="event-detail-content">' +
+            renderMinimalLedger(snap) +
+          '</div>' +
+        '</details>';
         accountsSection.innerHTML = renderStackedAccounts(snap);
-        withdrawalsSection.innerHTML = '';
-
       } else {
-        // Fallback: use trajectory data when snapshot is missing
-        const trajectory = data.netWorthTrajectory || data.mc?.netWorthTrajectory || [];
-        const currentAge = data.inputs?.currentAge || 35;
-        const monthOffset = (age - currentAge) * 12;
-
-        // Find closest trajectory point
-        let pt = null;
-        let minDiff = Infinity;
-        trajectory.forEach(p => {
-          const diff = Math.abs((p.monthOffset || p.month || 0) - monthOffset);
-          if (diff < minDiff) { minDiff = diff; pt = p; }
-        });
-
-        if (pt) {
-          // Show trajectory percentiles when snapshot is missing
-          const p10 = pt.p10 || 0;
-          const p50 = pt.p50 || 0;
-          const p75 = pt.p75 || 0;
-
-          ledger.innerHTML =
-            '<div class="minimal-ledger">' +
-              '<div class="minimal-ledger-row" style="font-weight: 500; color: var(--color-text-tertiary); font-size: var(--font-size-2xs); text-transform: uppercase; letter-spacing: 0.3px; padding-bottom: var(--space-2);">Net Worth Distribution</div>' +
-              '<div class="minimal-ledger-row"><span>10th percentile (harder scenarios)</span><span>' + fmt(p10) + '</span></div>' +
-              '<div class="minimal-ledger-row total"><span>50th percentile (typical)</span><span>' + fmt(p50) + '</span></div>' +
-              '<div class="minimal-ledger-row"><span>75th percentile (stronger outcomes)</span><span>' + fmt(p75) + '</span></div>' +
-              '<div style="margin-top: var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--color-border-subtle); font-size: var(--font-size-2xs); color: var(--color-text-tertiary);">' +
-                'Detailed cash flow not available for this year. Full snapshots are kept for early and late years.' +
-              '</div>' +
-            '</div>';
-        } else {
-          ledger.innerHTML = '<div class="minimal-ledger"><div class="minimal-ledger-row"><span>No data available for this year</span></div></div>';
-        }
-        withdrawalsSection.innerHTML = '';
         accountsSection.innerHTML = '';
       }
 
-      inspector.classList.add('visible');
+      ledger.innerHTML = ledgerHtml;
 
-      // Scroll inspector into view
+      // Show the math (month-by-month event replay)
+      const mathHtml = renderShowTheMath(age, year);
+      if (mathHtml) {
+        withdrawalsSection.innerHTML = '<details class="event-detail-toggle">' +
+          '<summary>Show the math</summary>' +
+          '<div class="event-detail-content">' + mathHtml + '</div>' +
+        '</details>';
+      } else {
+        withdrawalsSection.innerHTML = '';
+      }
+
+      inspector.classList.add('visible');
+      inspector.setAttribute('aria-hidden', 'false');
+
+      // Track triggering element for focus return
+      inspector._triggerEl = document.activeElement;
+
+      // Scroll inspector into view, then focus close button
       inspector.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const closeBtn = document.getElementById('inspector-close');
+      if (closeBtn) closeBtn.focus();
+    }
+
+    function renderNeedsInput(payload) {
+      const root = document.getElementById('root');
+      if (!root) return;
+
+      const stateDraft = window.openai?.widgetState?.inputDraft || {};
+      const inputDraft = { ...(payload?.inputDraft || {}), ...stateDraft };
+      const missingFields = payload?.missingFields || [];
+      const labelMap = {
+        investableAssets: 'investable assets',
+        annualSpending: 'annual spending',
+        currentAge: 'current age',
+        expectedIncome: 'annual income (0 if retired)',
+      };
+      const missingText = missingFields.map((field) => labelMap[field] || field).join(', ');
+
+      root.classList.remove('is-loading');
+      root.innerHTML = `
+        <div class="header">
+          <span class="header-brand">Chubby</span>
+        </div>
+        <div class="input-panel">
+          <div class="input-title">Run a simulation</div>
+          <div class="input-subtitle">Add the missing basics and I’ll run the model.</div>
+          ${missingText ? `<div class="input-helper">Missing: ${missingText}</div>` : ''}
+          <form id="inputForm" class="input-form">
+            <div class="input-row">
+              <label class="input-label" for="input-investableAssets">Investable assets (USD)</label>
+              <input id="input-investableAssets" class="input-control" type="number" inputmode="decimal" step="any" min="0" placeholder="500000" value="${inputDraft.investableAssets ?? ''}">
+            </div>
+            <div class="input-row">
+              <label class="input-label" for="input-annualSpending">Annual spending (USD)</label>
+              <input id="input-annualSpending" class="input-control" type="number" inputmode="decimal" step="any" min="0" placeholder="60000" value="${inputDraft.annualSpending ?? ''}">
+              <div class="input-helper">Inflates automatically with modeled inflation (~2.5%/yr).</div>
+            </div>
+            <div class="input-row">
+              <label class="input-label" for="input-currentAge">Current age</label>
+              <input id="input-currentAge" class="input-control" type="number" inputmode="numeric" step="1" min="0" placeholder="35" value="${inputDraft.currentAge ?? ''}">
+            </div>
+            <div class="input-row">
+              <label class="input-label" for="input-expectedIncome">Annual gross income (USD)</label>
+              <input id="input-expectedIncome" class="input-control" type="number" inputmode="decimal" step="any" min="0" placeholder="120000" value="${inputDraft.expectedIncome ?? ''}">
+              <div class="input-helper">Before taxes. Use 0 if retired.</div>
+            </div>
+            <div class="input-actions">
+              <button id="inputSubmit" class="input-button" type="submit">Run simulation</button>
+              <div class="input-helper">Seed and start year are set automatically.</div>
+            </div>
+            <div id="inputError" class="input-error" style="display:none;"></div>
+          </form>
+        </div>
+      `;
+
+      const form = document.getElementById('inputForm');
+      const errorEl = document.getElementById('inputError');
+      const submitBtn = document.getElementById('inputSubmit');
+      const inputIds = ['investableAssets', 'annualSpending', 'currentAge', 'expectedIncome'];
+
+      inputIds.forEach((field) => {
+        const el = document.getElementById(`input-${field}`);
+        if (!el) return;
+        el.addEventListener('input', () => {
+          const nextDraft = {};
+          inputIds.forEach((key) => {
+            const fieldEl = document.getElementById(`input-${key}`);
+            if (fieldEl) nextDraft[key] = fieldEl.value;
+          });
+          if (window.openai?.setWidgetState) {
+            window.openai.setWidgetState({ inputDraft: nextDraft });
+          }
+        });
+      });
+
+      if (form) {
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          if (!window.openai?.callTool) {
+            if (errorEl) {
+              errorEl.textContent = 'Tool calls are unavailable in this environment.';
+              errorEl.style.display = 'block';
+            }
+            return;
+          }
+
+          const parseValue = (field) => {
+            const el = document.getElementById(`input-${field}`);
+            if (!el || el.value === '') return undefined;
+            const value = Number(el.value);
+            return Number.isNaN(value) ? undefined : value;
+          };
+
+          const args = {
+            investableAssets: parseValue('investableAssets'),
+            annualSpending: parseValue('annualSpending'),
+            currentAge: parseValue('currentAge'),
+            expectedIncome: parseValue('expectedIncome'),
+            seed: payload?.seed ?? Date.now(),
+            startYear: payload?.startYear ?? new Date().getFullYear(),
+          };
+
+          const missing = [];
+          if (!(args.investableAssets > 0)) missing.push('investable assets');
+          if (!(args.annualSpending > 0)) missing.push('annual spending');
+          if (!(args.currentAge > 0)) missing.push('current age');
+          if (!(args.expectedIncome >= 0)) missing.push('annual income');
+
+          if (missing.length > 0) {
+            if (errorEl) {
+              errorEl.textContent = `Please provide: ${missing.join(', ')}.`;
+              errorEl.style.display = 'block';
+            }
+            return;
+          }
+
+          if (errorEl) {
+            errorEl.style.display = 'none';
+          }
+          if (submitBtn) {
+            submitBtn.textContent = 'Running...';
+            submitBtn.setAttribute('disabled', 'true');
+          }
+
+          try {
+            await window.openai.callTool('run_simulation_packet', args);
+          } catch (err) {
+            if (errorEl) {
+              errorEl.textContent = 'Simulation failed to start. Please try again.';
+              errorEl.style.display = 'block';
+            }
+            if (submitBtn) {
+              submitBtn.textContent = 'Run simulation';
+              submitBtn.removeAttribute('disabled');
+            }
+          }
+        });
+      }
+    }
+
+    // =========================================================================
+    // Render: Assumptions (dynamic)
+    // =========================================================================
+
+    function renderAssumptions(d) {
+      // Tax mode
+      const tax = d.taxMode === 'NOT_APPLIED' ? 'Taxes: not modeled' :
+                  d.taxMode === 'SIMPLIFIED' ? 'Taxes: applied (simplified)' :
+                  d.taxMode === 'USER_DECLARED' ? 'User tax rates' :
+                  d.taxMode ? 'Taxes: ' + d.taxMode : 'Taxes: not modeled';
+
+      // Asset allocation from inputs
+      const alloc = d.inputs?.assetAllocation;
+      let allocLabel = 'Stocks 7% / Bonds 4%';
+      if (alloc) {
+        const stocks = alloc.stocks ?? alloc.equities ?? alloc.stock ?? null;
+        const bonds = alloc.bonds ?? alloc.fixedIncome ?? alloc.bond ?? null;
+        if (stocks != null && bonds != null) {
+          const sPct = Math.round(stocks * (stocks <= 1 ? 100 : 1));
+          const bPct = Math.round(bonds * (bonds <= 1 ? 100 : 1));
+          allocLabel = sPct + '% stocks / ' + bPct + '% bonds';
+        }
+      }
+
+      // Inflation
+      const inflRate = d.inputs?.inflationRate ?? d.inputs?.inflation ?? null;
+      const inflLabel = inflRate != null
+        ? '~' + (inflRate <= 1 ? (inflRate * 100).toFixed(1) : inflRate.toFixed(1)) + '% inflation'
+        : '~2.5% inflation';
+
+      // Summary line
+      document.getElementById('assumptions-summary').innerHTML =
+        '<span>' + allocLabel + '</span><span>' + inflLabel + '</span><span>' + tax + '</span>';
+
+      // Expanded section - update returns model
+      const expandedEl = document.getElementById('assumptions-expanded');
+      if (expandedEl) {
+        let expandedHtml = '<div class="assumptions-section">' +
+          '<div class="assumptions-section-title">Returns Model (nominal)</div>' +
+          '<div class="assumptions-section-content">' +
+            '<ul>' +
+              '<li>Equities: ~7% mean annual return, ~18% volatility</li>' +
+              '<li>Bonds: ~4% mean annual return, ~6% volatility</li>' +
+            '</ul>';
+        if (alloc) {
+          const stocks = alloc.stocks ?? alloc.equities ?? alloc.stock ?? null;
+          const bonds = alloc.bonds ?? alloc.fixedIncome ?? alloc.bond ?? null;
+          if (stocks != null && bonds != null) {
+            const sPct = Math.round(stocks * (stocks <= 1 ? 100 : 1));
+            const bPct = Math.round(bonds * (bonds <= 1 ? 100 : 1));
+            expandedHtml += '<div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-2);">' +
+              'Portfolio allocation: ' + sPct + '% equities, ' + bPct + '% bonds' +
+              (100 - sPct - bPct > 0 ? ', ' + (100 - sPct - bPct) + '% other' : '') + '.</div>';
+          }
+        }
+        expandedHtml += '<div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-2);">' +
+            'Higher volatility means a wider spread between "Harder" and "Optimistic" outcomes over time.' +
+          '</div>' +
+          '<div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-1); font-style: italic;">' +
+            'These are long-run illustrative assumptions — not a prediction of future performance.' +
+          '</div>' +
+          '</div></div>';
+
+        expandedHtml += '<div class="assumptions-section">' +
+          '<div class="assumptions-section-title">Inflation</div>' +
+          '<div class="assumptions-section-content">' + inflLabel + ' applied to spending</div>' +
+        '</div>';
+
+        expandedHtml += '<div class="assumptions-section">' +
+          '<div class="assumptions-section-title">Tax Treatment</div>' +
+          '<div class="assumptions-section-content">' + tax + '</div>' +
+        '</div>';
+
+        expandedHtml += '<div class="assumptions-section">' +
+          '<div class="assumptions-section-title">Withdrawal Order</div>' +
+          '<div class="assumptions-section-content">' +
+            'Taxable → Tax-deferred → Roth (standard sequence)' +
+          '</div>' +
+        '</div>';
+
+        expandedEl.innerHTML = expandedHtml;
+      }
     }
 
     // =========================================================================
@@ -2090,16 +3342,27 @@
       const source = raw._meta?.widgetData ? '_meta.widgetData (optimized)' :
                      raw.structuredContent ? 'structuredContent (legacy)' :
                      raw.result ? 'result' : 'raw';
-      console.log('[AreumFire Widget] Data source:', source);
-      console.log('[AreumFire Widget] Data received:', JSON.stringify(data, null, 2).slice(0, 2000));
+      console.log('[Chubby Widget] Data source:', source);
+      console.log('[Chubby Widget] Data received:', JSON.stringify(data, null, 2).slice(0, 2000));
+      // Debug: Log annualSnapshots and firstMonthEvents
+      console.log('[Chubby Widget] annualSnapshots:', data.annualSnapshots?.length || 0, 'entries');
+      console.log('[Chubby Widget] firstMonthEvents:', Object.keys(data.firstMonthEvents || {}).length, 'ages');
+      if (data.traceNote) {
+        console.warn('[Chubby Widget] traceNote:', data.traceNote.message);
+      }
+
+      if (data.needsInput) {
+        renderNeedsInput(data);
+        return;
+      }
 
       // Check for error response
       if (data.success === false || data.error) {
-        console.error('[AreumFire Widget] Error:', data.error);
+        console.error('[Chubby Widget] Error:', data.error);
         document.getElementById('root').classList.remove('is-loading');
         document.getElementById('root').innerHTML = `
           <div class="header">
-            <span class="header-brand">AreumFire</span>
+            <span class="header-brand">Chubby</span>
           </div>
           <div style="padding: var(--space-6); text-align: center;">
             <div style="font-size: var(--font-size-lg); color: var(--color-negative); margin-bottom: var(--space-3);">
@@ -2118,12 +3381,12 @@
 
       // Debug: Log trajectory data specifically
       const trajectory = data.netWorthTrajectory || data.mc?.netWorthTrajectory || [];
-      console.log('[AreumFire Widget] Trajectory points:', trajectory.length);
+      console.log('[Chubby Widget] Trajectory points:', trajectory.length);
       if (trajectory.length > 0) {
-        console.log('[AreumFire Widget] First point:', JSON.stringify(trajectory[0]));
-        console.log('[AreumFire Widget] Last point:', JSON.stringify(trajectory[trajectory.length - 1]));
+        console.log('[Chubby Widget] First point:', JSON.stringify(trajectory[0]));
+        console.log('[Chubby Widget] Last point:', JSON.stringify(trajectory[trajectory.length - 1]));
       } else {
-        console.warn('[AreumFire Widget] No trajectory data! Bars will show 0.');
+        console.warn('[Chubby Widget] No trajectory data! Bars will show 0.');
       }
 
       // Remove loading state
@@ -2133,16 +3396,140 @@
       renderScenario(data);
       renderTrajectory(data);
 
-      // Assumptions
-      const tax = data.taxMode === 'NOT_APPLIED' ? 'No tax' :
-                  data.taxMode === 'USER_DECLARED' ? 'User tax' : 'No tax';
-      document.getElementById('assumptions').innerHTML =
-        '<span>~7% returns</span><span>~2.5% inflation</span><span>' + tax + '</span>';
+      // Assumptions - dynamic from widgetData
+      renderAssumptions(data);
 
       // Footer
+      const horizonMonths = data.inputs?.horizonMonths || 360;
+      const horizonAgeVal = (data.inputs?.currentAge || 35) + Math.floor(horizonMonths / 12);
       document.getElementById('run-id').textContent = data.runId || '—';
+      document.getElementById('horizon-age').textContent = horizonAgeVal;
       document.getElementById('paths-run').textContent = data.pathsRun || 100;
       document.getElementById('seed').textContent = data.baseSeed || data.seed || '—';
+    }
+
+    // =========================================================================
+    // Copy Summary (ASCII-friendly)
+    // =========================================================================
+
+    function generateAsciiSummary() {
+      if (!data) return 'No simulation data available.';
+
+      const inp = data.inputs || {};
+      const mc = data.mc || {};
+      const sch = data.schedule || {};
+      const trajectory = data.netWorthTrajectory || mc.netWorthTrajectory || [];
+      const currentAge = inp.currentAge || 35;
+      const horizonMonths = inp.horizonMonths || 360;
+      const endAge = currentAge + Math.floor(horizonMonths / 12);
+
+      // Find max P50 for scaling bars
+      let maxP50 = 0;
+      trajectory.forEach(pt => {
+        const p50 = pt.p50 || 0;
+        if (p50 > maxP50) maxP50 = p50;
+      });
+      if (maxP50 === 0) maxP50 = 1;
+
+      // Build trajectory rows (P10/P50 with bar)
+      const rows = [];
+      for (let age = currentAge; age <= endAge; age += 5) {
+        const yearOffset = age - currentAge;
+        const monthOffset = yearOffset * 12;
+        let pt = null;
+        let minDiff = Infinity;
+        trajectory.forEach(p => {
+          const diff = Math.abs((p.monthOffset || p.month || 0) - monthOffset);
+          if (diff < minDiff) { minDiff = diff; pt = p; }
+        });
+        if (pt) {
+          const p50 = pt.p50 || 0;
+          const barLen = Math.round((p50 / maxP50) * 12);
+          const bar = '▓'.repeat(Math.max(1, barLen));
+          rows.push({
+            age,
+            p10: fmt(pt.p10 != null ? pt.p10 : 0),
+            p50: fmt(p50),
+            bar
+          });
+        }
+      }
+
+      // Plan duration text
+      const constraintProb = mc.constraintProbability || 0;
+      let durationText = 'Stays funded through Age ' + endAge;
+      if (constraintProb > 0.5) {
+        for (const row of rows) {
+          if (row.p50 === '$0') {
+            durationText = 'Runs out around Age ' + row.age;
+            break;
+          }
+        }
+      }
+
+      // Build plain-text output (no monospace dependency)
+      let lines = [
+        'PLAN DURATION',
+        durationText,
+        '',
+        'SCENARIO',
+        'Age ' + currentAge + ' · ' + fmt(inp.investableAssets) + ' · ' + fmtYr(inp.expectedIncome) + '/yr → ' + fmtYr(inp.annualSpending) + '/yr',
+      ];
+
+      // Events
+      const events = sch.scheduledEvents || [];
+      if (events.length > 0) {
+        lines.push('');
+        lines.push('EVENTS');
+        events.slice(0, 4).forEach(e => {
+          lines.push('· Age ' + e.age + ': ' + (e.label || ''));
+        });
+      }
+
+      // Trajectory with bar visualization
+      lines.push('');
+      lines.push('TRAJECTORY (P10–P75)');
+      rows.forEach(r => {
+        lines.push('Age ' + r.age + ': ' + r.p10 + '–' + r.p50 + ' ' + r.bar);
+      });
+
+      // Footer
+      lines.push('');
+      lines.push('seed: ' + (data.baseSeed || data.seed || '—') + ' · ' + (data.pathsRun || 100) + ' paths');
+      lines.push('chubby.finance');
+
+      return lines.join('\n');
+    }
+
+    async function copySummaryToClipboard() {
+      const btn = document.getElementById('copy-summary-btn');
+      const toast = document.getElementById('copied-toast');
+      const summary = generateAsciiSummary();
+
+      const showCopied = () => {
+        btn.classList.add('copied');
+        toast.classList.add('visible');
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          toast.classList.remove('visible');
+        }, 2000);
+      };
+
+      try {
+        await navigator.clipboard.writeText(summary);
+        showCopied();
+      } catch (err) {
+        // Fallback for older browsers
+        const textarea = document.createElement('textarea');
+        textarea.value = summary;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showCopied();
+      }
     }
 
     // =========================================================================
@@ -2150,14 +3537,42 @@
     // =========================================================================
 
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('inspector-close').addEventListener('click', () => {
-        document.getElementById('inspector').classList.remove('visible');
+      function closeInspector() {
+        const inspector = document.getElementById('inspector');
+        inspector.classList.remove('visible');
+        inspector.setAttribute('aria-hidden', 'true');
+        // Return focus to the row that opened the inspector
+        if (inspector._triggerEl) {
+          inspector._triggerEl.focus();
+          inspector._triggerEl = null;
+        }
+      }
+
+      document.getElementById('inspector-close').addEventListener('click', closeInspector);
+
+      // Escape key closes inspector
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          const inspector = document.getElementById('inspector');
+          if (inspector.classList.contains('visible')) {
+            e.preventDefault();
+            closeInspector();
+          }
+        }
       });
+
+      document.getElementById('copy-summary-btn').addEventListener('click', copySummaryToClipboard);
 
       if (window.openai?.toolOutput) init(window.openai.toolOutput);
 
       window.addEventListener('message', e => {
         if (e.data?.type === 'simulationResult') init(e.data.result);
+        if (e.data?.type === 'setVariant') {
+          const widget = document.getElementById('root');
+          widget.classList.remove('compact', 'ultra-compact');
+          if (e.data.variant === 'compact') widget.classList.add('compact');
+          if (e.data.variant === 'ultra') widget.classList.add('ultra-compact');
+        }
       });
 
       window.addEventListener('openai:set_globals', e => {

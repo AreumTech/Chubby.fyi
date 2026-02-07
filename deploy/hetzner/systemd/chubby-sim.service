@@ -1,0 +1,47 @@
+# systemd service for Chubby Simulation Service (WASM)
+#
+# Runs the WASM simulation engine as an HTTP service on port 3002.
+# The MCP server (chubby-mcp.service) calls this to run simulations.
+#
+# Install:
+#   cp deploy/hetzner/systemd/chubby-sim.service /etc/systemd/system/
+#   systemctl daemon-reload
+#   systemctl enable --now chubby-sim
+
+[Unit]
+Description=Chubby Simulation Service (WASM)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=chubby
+Group=chubby
+WorkingDirectory=/opt/chubby
+ExecStart=/usr/bin/node services/simulation-service/src/server.js
+Environment=PORT=3002
+Environment=NODE_ENV=production
+
+Restart=always
+RestartSec=3
+
+# Resource limits (WASM needs more memory)
+MemoryMax=1G
+MemoryHigh=768M
+CPUQuota=200%
+LimitNOFILE=4096
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/chubby
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=chubby-sim
+
+[Install]
+WantedBy=multi-user.target

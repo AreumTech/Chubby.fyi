@@ -2,118 +2,95 @@
 # Deploy/update Chubby MCP Server to Hetzner VPS
 #
 # Usage:
-#   ./deploy/hetzner/scripts/deploy.sh <server-ip> [--node]
+#   ./deploy/hetzner/scripts/deploy.sh <server-ip>
 #
-# Examples:
-#   ./deploy/hetzner/scripts/deploy.sh 1.2.3.4          # Deploy Go binary (default)
-#   ./deploy/hetzner/scripts/deploy.sh 1.2.3.4 --node   # Deploy Node.js server
+# Example:
+#   ./deploy/hetzner/scripts/deploy.sh 1.2.3.4
+#
+# Deploys:
+#   - Node.js MCP server (apps/mcp-server) on port 8080
+#   - Simulation service (services/simulation-service) with WASM on port 3002
 #
 # Prerequisites:
 #   - setup.sh has been run on the VPS
-#   - Go 1.22+ installed locally (for Go deploy)
-#   - SSH key configured for root@VPS
+#   - Node.js 18+ installed on VPS
+#   - SSH key configured for chubby@VPS
+#   - WASM built locally (npm run build:wasm)
 
 set -euo pipefail
 
-SERVER_IP="${1:?Usage: deploy.sh <server-ip> [--node]}"
-MODE="${2:-go}"
-SSH_USER="root"
+SERVER_IP="${1:?Usage: deploy.sh <server-ip>}"
+SSH_USER="chubby"
 REMOTE_DIR="/opt/chubby"
 
 echo "=== Deploying Chubby MCP Server to ${SERVER_IP} ==="
 
-if [ "$MODE" = "--node" ]; then
-    echo "--- Mode: Node.js ---"
+# Build MCP server locally
+echo "Building Node.js MCP server..."
+cd apps/mcp-server
+npm run build
+npm prune --omit=dev
+cd ../..
 
-    # Build MCP server locally
-    echo "Building Node.js MCP server..."
-    cd apps/mcp-server
-    npm ci
-    npm run build
-    cd ../..
-
-    # Upload Node.js server
-    echo "Uploading to ${SERVER_IP}..."
-    ssh ${SSH_USER}@${SERVER_IP} "mkdir -p ${REMOTE_DIR}/node"
-    rsync -avz --delete \
-        apps/mcp-server/dist/ \
-        ${SSH_USER}@${SERVER_IP}:${REMOTE_DIR}/node/dist/
-    rsync -avz --delete \
-        apps/mcp-server/public/ \
-        ${SSH_USER}@${SERVER_IP}:${REMOTE_DIR}/node/public/
-    scp apps/mcp-server/package.json ${SSH_USER}@${SERVER_IP}:${REMOTE_DIR}/node/
-
-    # Install production deps on server
-    ssh ${SSH_USER}@${SERVER_IP} "cd ${REMOTE_DIR}/node && npm ci --production"
-
-else
-    echo "--- Mode: Go binary ---"
-
-    # Detect target architecture
-    REMOTE_ARCH=$(ssh ${SSH_USER}@${SERVER_IP} "uname -m")
-    case "$REMOTE_ARCH" in
-        x86_64)  GOARCH="amd64" ;;
-        aarch64) GOARCH="arm64" ;;
-        *)       echo "Unknown arch: $REMOTE_ARCH"; exit 1 ;;
-    esac
-    echo "Target: linux/${GOARCH}"
-
-    # Cross-compile Go binary
-    echo "Building Go binary..."
-    cd apps/mcp-server-go
-
-    PGO_FLAG=""
-    if [ -f "default.pgo" ]; then
-        echo "Using PGO profile"
-        PGO_FLAG="-pgo=default.pgo"
-    fi
-
-    CGO_ENABLED=0 GOOS=linux GOARCH=${GOARCH} \
-        go build -ldflags="-w -s" ${PGO_FLAG} -o server ./cmd/server
-
-    cd ../..
-
-    # Upload binary
-    echo "Uploading to ${SERVER_IP}..."
-    scp apps/mcp-server-go/server ${SSH_USER}@${SERVER_IP}:${REMOTE_DIR}/server.new
-
-    # Atomic swap + restart
-    ssh ${SSH_USER}@${SERVER_IP} << 'REMOTE'
-        set -e
-        chown chubby:chubby /opt/chubby/server.new
-        chmod +x /opt/chubby/server.new
-        mv /opt/chubby/server.new /opt/chubby/server
-REMOTE
-
-    # Cleanup local build artifact
-    rm -f apps/mcp-server-go/server
+# Verify WASM exists
+if [ ! -f "public/pathfinder.wasm" ]; then
+    echo "ERROR: public/pathfinder.wasm not found. Run 'npm run build:wasm' first."
+    exit 1
 fi
+
+# Package everything
+echo "Packaging..."
+tar czf /tmp/chubby-deploy.tar.gz \
+    apps/mcp-server/dist/ \
+    apps/mcp-server/public/ \
+    apps/mcp-server/package.json \
+    apps/mcp-server/node_modules/ \
+    services/simulation-service/src/ \
+    services/simulation-service/package.json \
+    services/simulation-service/node_modules/ \
+    services/simulation-service/wasm_exec.js \
+    public/pathfinder.wasm \
+    public/wasm_exec.js \
+    public/config/
+
+# Upload and extract
+echo "Uploading to ${SERVER_IP}..."
+scp /tmp/chubby-deploy.tar.gz ${SSH_USER}@${SERVER_IP}:${REMOTE_DIR}/
+ssh ${SSH_USER}@${SERVER_IP} "cd ${REMOTE_DIR} && tar xzf chubby-deploy.tar.gz && rm chubby-deploy.tar.gz"
+rm /tmp/chubby-deploy.tar.gz
+
+# Upload systemd services
+echo "Uploading systemd services..."
+scp deploy/hetzner/systemd/chubby-sim.service ${SSH_USER}@${SERVER_IP}:/tmp/
+scp deploy/hetzner/systemd/chubby-mcp.service ${SSH_USER}@${SERVER_IP}:/tmp/
+ssh ${SSH_USER}@${SERVER_IP} "sudo mv /tmp/chubby-sim.service /tmp/chubby-mcp.service /etc/systemd/system/"
 
 # Upload nginx config
 echo "Uploading nginx config..."
-scp deploy/hetzner/nginx/api.chubby.fyi.conf \
-    ${SSH_USER}@${SERVER_IP}:/etc/nginx/sites-available/api.chubby.fyi
-
-# Upload systemd service
-echo "Uploading systemd service..."
-scp deploy/hetzner/systemd/chubby-mcp.service \
-    ${SSH_USER}@${SERVER_IP}:/etc/systemd/system/chubby-mcp.service
+scp deploy/hetzner/nginx/api.chubby.fyi.conf ${SSH_USER}@${SERVER_IP}:/tmp/
+ssh ${SSH_USER}@${SERVER_IP} "sudo mv /tmp/api.chubby.fyi.conf /etc/nginx/sites-available/api.chubby.fyi"
 
 # Reload and restart
 echo "Restarting services..."
 ssh ${SSH_USER}@${SERVER_IP} << 'REMOTE'
     set -e
-    nginx -t && systemctl reload nginx
-    systemctl daemon-reload
-    systemctl enable chubby-mcp
-    systemctl restart chubby-mcp
+    sudo nginx -t && sudo systemctl reload nginx
+    sudo systemctl daemon-reload
+    sudo systemctl enable chubby-sim chubby-mcp
+    sudo systemctl restart chubby-sim
     sleep 2
-    systemctl status chubby-mcp --no-pager
+    sudo systemctl restart chubby-mcp
+    sleep 2
+    echo "sim:  $(systemctl is-active chubby-sim)"
+    echo "mcp:  $(systemctl is-active chubby-mcp)"
     echo ""
-    echo "Health check:"
-    curl -s http://127.0.0.1:8080/health | jq .
+    echo "Health checks:"
+    curl -s http://localhost:3002/health | head -c 100
+    echo ""
+    curl -s http://localhost:8080/
+    echo ""
 REMOTE
 
 echo ""
 echo "=== Deploy complete ==="
-echo "Test: curl -s https://api.chubby.fyi/health | jq ."
+echo "Test: curl -s https://api.chubby.fyi/ | python3 -m json.tool"
