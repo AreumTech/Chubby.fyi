@@ -3,32 +3,26 @@
 #
 # CF Pages dashboard settings:
 #   Build command:    bash deploy/cloudflare-pages/build.sh
-#   Output directory: dist
-#   Environment variables:
-#     NODE_VERSION=20
-#     GO_VERSION=1.22
+#   Output directory: chubby-site
+#   Environment variables: (none needed)
 #
 # Custom domains (add in CF Pages dashboard):
-#   chubby.fyi        → primary SPA
+#   chubby.fyi        → primary site
 #   widget.chubby.fyi → viewer (same deploy, just an alias)
 
 set -euo pipefail
 
 echo "=== Cloudflare Pages Build ==="
 
-# 1) Install deps
-npm ci
+# chubby-site/ is already a complete static site — just copy extras into it
 
-# 2) Build SPA (includes WASM compilation + Vite build)
-npm run build
+# 1) Copy viewer files so widget.chubby.fyi/viewer works
+cp apps/mcp-server/public/viewer.html chubby-site/
+cp apps/mcp-server/public/pako.min.js chubby-site/
 
-# 3) Copy viewer files into dist/ so widget.chubby.fyi/viewer works
-cp apps/mcp-server/public/viewer.html dist/
-cp apps/mcp-server/public/pako.min.js dist/
+# 2) Copy CF Pages routing files
+cp deploy/cloudflare-pages/_headers chubby-site/
+cp deploy/cloudflare-pages/_redirects chubby-site/
 
-# 4) Copy CF Pages routing files into dist/
-cp deploy/cloudflare-pages/_headers dist/
-cp deploy/cloudflare-pages/_redirects dist/
-
-echo "=== Build complete. Output in dist/ ==="
-ls -lh dist/
+echo "=== Build complete. Output in chubby-site/ ==="
+ls -lh chubby-site/
