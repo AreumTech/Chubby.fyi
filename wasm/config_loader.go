@@ -976,13 +976,19 @@ func GetIndividualStockRiskPremium() float64 {
 
 // GetCashReturn returns the appropriate cash return rate based on cash type
 func GetCashReturn(inflationRate float64) float64 {
-
-
 	// Use money market rate as baseline, adjusted for inflation correlation
 	baseRate := assetReturnsConfig.CashEquivalents.MoneyMarketRate
-	inflationAdjustment := inflationRate * assetReturnsConfig.CashEquivalents.CorrelationWithInflation
+	correlation := assetReturnsConfig.CashEquivalents.CorrelationWithInflation
 
-	return baseRate + inflationAdjustment
+	// Apply defaults if config is not populated
+	// Historical money market monthly rate ~0.25% (3% annualized)
+	// Cash returns correlate ~0.7 with inflation historically
+	if baseRate == 0 && correlation == 0 {
+		baseRate = 0.0025       // ~3% annualized
+		correlation = 0.7
+	}
+
+	return baseRate + inflationRate*correlation
 }
 
 // REMOVED: GetRealEstateReturn function

@@ -224,6 +224,10 @@ type StochasticModelConfig struct {
 	// Cash floor for breach detection (default 0 means breach = going negative)
 	CashFloor float64 `json:"cashFloor,omitempty"` // End Cash < CashFloor triggers breach
 
+	// Tax threshold inflation rate — annual rate at which tax brackets/thresholds are indexed
+	// Defaults to 2.5% if not set (0). Set to 0.0 explicitly via -1 sentinel to disable.
+	TaxThresholdInflationRate float64 `json:"taxThresholdInflationRate,omitempty"`
+
 	// Performance optimization: LiteMode skips expensive features for Bronze tier
 	// - Skips GARCH volatility (uses constant volatility)
 	// - Skips tax lot tracking (tracks total values only)

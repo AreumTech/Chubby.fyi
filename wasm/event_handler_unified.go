@@ -179,12 +179,15 @@ func (h *UnifiedIncomeEventHandler) Process(event FinancialEvent, accounts *Acco
 	case "salary":
 		se.currentMonthFlows.SalaryIncomeThisMonth += event.Amount
 		se.currentMonthFlows.EmploymentIncomeThisMonth += event.Amount
+		se.employmentIncomeYTD += event.Amount
 	case "bonus":
 		se.currentMonthFlows.BonusIncomeThisMonth += event.Amount
 		se.currentMonthFlows.EmploymentIncomeThisMonth += event.Amount
+		se.employmentIncomeYTD += event.Amount
 	case "rsu":
 		se.currentMonthFlows.RSUIncomeThisMonth += event.Amount
 		se.currentMonthFlows.EmploymentIncomeThisMonth += event.Amount
+		se.employmentIncomeYTD += event.Amount
 	}
 
 	// PFOS-E: Register income with tax engine by taxProfile

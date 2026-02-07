@@ -16,7 +16,7 @@ func TestGrossUp_TaxesDisabled(t *testing.T) {
 	engine := NewSimulationEngine(StochasticModelConfig{})
 
 	// Case 1: TaxConfig is nil
-	engine.simulationInput = &SimulationInput{}
+	engine.simulationInput = &SimulationInput{InitialAge: 65}
 	accounts := &AccountHoldingsMonthEnd{Cash: 10000}
 
 	result := engine.grossUpForTaxes(5000, accounts)
@@ -26,6 +26,7 @@ func TestGrossUp_TaxesDisabled(t *testing.T) {
 
 	// Case 2: TaxConfig.Enabled is false
 	engine.simulationInput = &SimulationInput{
+		InitialAge: 65,
 		TaxConfig: &SimpleTaxConfig{Enabled: false},
 	}
 
@@ -39,6 +40,7 @@ func TestGrossUp_TaxesDisabled(t *testing.T) {
 func TestGrossUp_NoInvestmentAccounts(t *testing.T) {
 	engine := NewSimulationEngine(StochasticModelConfig{})
 	engine.simulationInput = &SimulationInput{
+		InitialAge: 65,
 		TaxConfig: &SimpleTaxConfig{
 			Enabled:          true,
 			EffectiveRate:    0.22,
@@ -64,6 +66,7 @@ func TestGrossUp_NoInvestmentAccounts(t *testing.T) {
 func TestGrossUp_OnlyTaxDeferredAvailable(t *testing.T) {
 	engine := NewSimulationEngine(StochasticModelConfig{})
 	engine.simulationInput = &SimulationInput{
+		InitialAge: 65,
 		TaxConfig: &SimpleTaxConfig{
 			Enabled:          true,
 			EffectiveRate:    0.22,
@@ -93,6 +96,7 @@ func TestGrossUp_OnlyTaxDeferredAvailable(t *testing.T) {
 func TestGrossUp_OnlyTaxableAvailable(t *testing.T) {
 	engine := NewSimulationEngine(StochasticModelConfig{})
 	engine.simulationInput = &SimulationInput{
+		InitialAge: 65,
 		TaxConfig: &SimpleTaxConfig{
 			Enabled:          true,
 			EffectiveRate:    0.22,
@@ -124,6 +128,7 @@ func TestGrossUp_OnlyTaxableAvailable(t *testing.T) {
 func TestGrossUp_OnlyRothAvailable(t *testing.T) {
 	engine := NewSimulationEngine(StochasticModelConfig{})
 	engine.simulationInput = &SimulationInput{
+		InitialAge: 65,
 		TaxConfig: &SimpleTaxConfig{
 			Enabled:          true,
 			EffectiveRate:    0.22,
@@ -150,6 +155,7 @@ func TestGrossUp_OnlyRothAvailable(t *testing.T) {
 func TestGrossUp_MixedAccounts_TaxDeferredFirst(t *testing.T) {
 	engine := NewSimulationEngine(StochasticModelConfig{})
 	engine.simulationInput = &SimulationInput{
+		InitialAge: 65,
 		TaxConfig: &SimpleTaxConfig{
 			Enabled:          true,
 			EffectiveRate:    0.22,
@@ -177,6 +183,7 @@ func TestGrossUp_MixedAccounts_TaxDeferredFirst(t *testing.T) {
 func TestGrossUp_MixedAccounts_FullSequence(t *testing.T) {
 	engine := NewSimulationEngine(StochasticModelConfig{})
 	engine.simulationInput = &SimulationInput{
+		InitialAge: 65,
 		TaxConfig: &SimpleTaxConfig{
 			Enabled:          true,
 			EffectiveRate:    0.22,
@@ -220,6 +227,7 @@ func TestGrossUp_MixedAccounts_FullSequence(t *testing.T) {
 func TestGrossUp_InsufficientAccounts(t *testing.T) {
 	engine := NewSimulationEngine(StochasticModelConfig{})
 	engine.simulationInput = &SimulationInput{
+		InitialAge: 65,
 		TaxConfig: &SimpleTaxConfig{
 			Enabled:          true,
 			EffectiveRate:    0.22,
@@ -256,6 +264,7 @@ func TestGrossUp_InsufficientAccounts(t *testing.T) {
 func TestGrossUp_NegativeCash(t *testing.T) {
 	engine := NewSimulationEngine(StochasticModelConfig{})
 	engine.simulationInput = &SimulationInput{
+		InitialAge: 65,
 		TaxConfig: &SimpleTaxConfig{
 			Enabled:          true,
 			EffectiveRate:    0.22,
@@ -283,6 +292,7 @@ func TestGrossUp_NegativeCash(t *testing.T) {
 func TestGrossUp_HighTaxRate(t *testing.T) {
 	engine := NewSimulationEngine(StochasticModelConfig{})
 	engine.simulationInput = &SimulationInput{
+		InitialAge: 65,
 		TaxConfig: &SimpleTaxConfig{
 			Enabled:          true,
 			EffectiveRate:    0.37, // Top federal bracket
@@ -309,6 +319,7 @@ func TestGrossUp_HighTaxRate(t *testing.T) {
 func TestGrossUp_ZeroAmountNeeded(t *testing.T) {
 	engine := NewSimulationEngine(StochasticModelConfig{})
 	engine.simulationInput = &SimulationInput{
+		InitialAge: 65,
 		TaxConfig: &SimpleTaxConfig{
 			Enabled:          true,
 			EffectiveRate:    0.22,
@@ -331,6 +342,7 @@ func TestGrossUp_ZeroAmountNeeded(t *testing.T) {
 func TestGrossUp_DefaultRates(t *testing.T) {
 	engine := NewSimulationEngine(StochasticModelConfig{})
 	engine.simulationInput = &SimulationInput{
+		InitialAge: 65,
 		TaxConfig: &SimpleTaxConfig{
 			Enabled:          true,
 			EffectiveRate:    0, // Should default to 22%
@@ -619,6 +631,7 @@ func TestSellFromInvestmentsOnly_Direct(t *testing.T) {
 // TestGrossUp_DetailedEventTrace provides detailed event-by-event analysis
 func TestGrossUp_DetailedEventTrace(t *testing.T) {
 	input := createBasicInput()
+	input.InitialAge = 65 // Above 59.5 to avoid early withdrawal penalty
 	// Start with $2000 cash and $50k in tax-deferred
 	input.InitialAccounts = AccountHoldingsMonthEnd{
 		Cash: 2000,
@@ -812,6 +825,7 @@ func TestGrossUp_MultipleAccountTypes(t *testing.T) {
 // TestGrossUp_RecurringExpensesManyMonths tests gross-up over extended period
 func TestGrossUp_RecurringExpensesManyMonths(t *testing.T) {
 	input := createBasicInput()
+	input.InitialAge = 65 // Avoid early withdrawal penalty
 	input.InitialAccounts = AccountHoldingsMonthEnd{
 		Cash: 0, // Start with zero cash
 		TaxDeferred: &Account{
@@ -896,6 +910,7 @@ func TestGrossUp_RecurringExpensesManyMonths(t *testing.T) {
 // TestGrossUp_ExactMathVerification verifies the exact math of gross-up
 func TestGrossUp_ExactMathVerification(t *testing.T) {
 	input := createBasicInput()
+	input.InitialAge = 65 // Avoid early withdrawal penalty
 	// Start with exactly $0 cash to force full withdrawal
 	input.InitialAccounts = AccountHoldingsMonthEnd{
 		Cash: 0,
@@ -1069,6 +1084,7 @@ func TestGrossUp_TaxableAccountWithGains(t *testing.T) {
 func TestGrossUp_CompareWithAndWithoutTaxes(t *testing.T) {
 	createInput := func(taxEnabled bool, taxRate float64) SimulationInput {
 		input := createBasicInput()
+		input.InitialAge = 65 // Avoid early withdrawal penalty
 		input.InitialAccounts = AccountHoldingsMonthEnd{
 			Cash: 0,
 			TaxDeferred: &Account{

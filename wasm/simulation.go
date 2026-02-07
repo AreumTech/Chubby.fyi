@@ -33,6 +33,7 @@ type SimulationEngine struct {
 	config              StochasticModelConfig
 	stochasticState     StochasticState
 	currentYear         int
+	currentMonthOffset  int                    // Current month being processed (for age calculations)
 	currentMonthReturns *StochasticReturns
 	marketPrices        MarketPrices                // Current market prices per share for share-based calculations
 	backtestReturns     map[int]StochasticReturns   // Historical returns for true backtesting (month offset -> returns)
@@ -67,7 +68,7 @@ type SimulationEngine struct {
 	taxWithholdingYTD                   float64
 	estimatedPaymentsYTD                float64
 	ordinaryIncomeYTD                   float64
-	// employmentIncomeYTD removed - unified with ordinaryIncomeYTD to prevent sync issues
+	employmentIncomeYTD                 float64 // W-2 wages only (for FICA calculation)
 	capitalGainsYTD                     float64
 	capitalLossesYTD                    float64
 	qualifiedDividendsYTD               float64
@@ -91,6 +92,13 @@ type SimulationEngine struct {
 	// Annual tax calculation results (populated in December)
 	lastTaxCalculationResults *TaxCalculationResult
 	lastRMDAmount             float64
+
+	// RMD: Prior year-end tax-deferred balance (IRS uses Dec 31 of prior year)
+	priorYearEndTaxDeferredBalance float64
+
+	// Stochastic inflation tracking for event amount adjustment
+	cumulativeInflationFactor      float64 // Compound factor updated AFTER market update
+	eventInflationFactor           float64 // Factor available to events (lags by 1 month)
 
 	// MAGI history for IRMAA two-year look-back
 	magiHistory map[int]float64 // Year -> MAGI
@@ -354,6 +362,9 @@ func (se *SimulationEngine) ResetSimulationState() {
 	se.liabilities = make([]*LiabilityInfo, 0)
 	se.isBankrupt = false
 	se.bankruptcyMonth = -1
+	se.priorYearEndTaxDeferredBalance = 0
+	se.cumulativeInflationFactor = 1.0
+	se.eventInflationFactor = 1.0
 
 	// Initialize expense history tracking for cash reserve calculations
 	se.expenseHistorySize = 6 // Track 6 months of expenses
@@ -469,10 +480,10 @@ func (se *SimulationEngine) UpdateMarketPrices(monthlyReturns StochasticReturns)
 	se.marketPrices.BND *= (1 + monthlyReturns.BND)
 	se.marketPrices.INTL *= (1 + monthlyReturns.Intl)          // Use Intl field
 	se.marketPrices.RealEstate *= (1 + monthlyReturns.Home)    // Use Home field for real estate
-	se.marketPrices.Individual *= (1 + monthlyReturns.SPY)     // Use SPY return for individual stocks
+	se.marketPrices.Individual *= (1 + monthlyReturns.IndividualStock) // Use individual stock's own GARCH return
 	// Cash always remains at 1.0
 	se.marketPrices.Cash = 1.0
-	se.marketPrices.Other *= (1 + monthlyReturns.SPY)          // Use SPY return for other assets
+	se.marketPrices.Other *= (1 + monthlyReturns.Other)              // Use other asset's own GARCH return
 }
 
 // ResetMarketPrices resets market prices to their initial values for a new simulation path
@@ -704,8 +715,6 @@ func (se *SimulationEngine) ApplyMarketGrowth(accounts *AccountHoldingsMonthEnd,
 		investedBefore += accounts.FiveTwoNine.TotalValue
 	}
 
-	simulationYear := currentMonthOffset / 12
-
 	// CRITICAL FIX: Use historical returns for backtesting instead of stochastic generation
 	var monthlyReturns StochasticReturns
 
@@ -719,24 +728,15 @@ func (se *SimulationEngine) ApplyMarketGrowth(accounts *AccountHoldingsMonthEnd,
 		}
 	} else {
 		// Standard stochastic simulation (not backtesting)
-		// Generate new annual returns if we've moved to a new year
-		if se.currentYear != simulationYear || se.currentMonthReturns == nil {
-			// Use seeded RNG if available for deterministic simulation
-			returns, newState, err := GenerateAdvancedStochasticReturnsSeeded(se.stochasticState, &se.config, se.seededRng)
-			if err != nil {
-				return fmt.Errorf("failed to generate stochastic returns: %v", err)
-			}
-
-			se.currentMonthReturns = &returns
-			se.stochasticState = newState
-			se.currentYear = simulationYear
+		// Generate fresh returns every month — GARCH state evolves monthly
+		returns, newState, err := GenerateAdvancedStochasticReturnsSeeded(se.stochasticState, &se.config, se.seededRng)
+		if err != nil {
+			return fmt.Errorf("failed to generate stochastic returns: %v", err)
 		}
 
-		if se.currentMonthReturns == nil {
-			return fmt.Errorf("annual returns not initialized")
-		}
-
-		monthlyReturns = *se.currentMonthReturns
+		se.currentMonthReturns = &returns
+		se.stochasticState = newState
+		monthlyReturns = returns
 	}
 
 	// Update market prices based on current month's returns
@@ -839,8 +839,8 @@ func (se *SimulationEngine) ApplyMarketGrowth(accounts *AccountHoldingsMonthEnd,
 		}
 	}
 
-	// Apply growth to cash holdings based on inflation
-	monthlyCashGrowthRate := monthlyReturns.Inflation * 0.3 // Cash tracks 30% of inflation
+	// Apply growth to cash holdings using configured cash return model
+	monthlyCashGrowthRate := GetCashReturn(monthlyReturns.Inflation)
 	accounts.Cash *= (1 + monthlyCashGrowthRate)
 
 	// Generate dividend income from holdings
@@ -1385,6 +1385,11 @@ func (se *SimulationEngine) RunSingleSimulation(input SimulationInput) Simulatio
 	// DEBUG: Log MonthsToRun value received
 	simLogVerbose("🔍 [MONTHS-TO-RUN-DEBUG] Go received MonthsToRun: %d", input.MonthsToRun)
 
+	// Initialize prior year-end tax-deferred balance for RMD calculation (IRS uses Dec 31 of prior year)
+	if accounts.TaxDeferred != nil {
+		se.priorYearEndTaxDeferredBalance = accounts.TaxDeferred.TotalValue
+	}
+
 	// Run the priority queue-based simulation engine
 	simLogVerbose("🚀 [ENGINE] Running Priority Queue-based Discrete Event Simulation...")
 	var result SimulationResult
@@ -1769,6 +1774,11 @@ func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accoun
 	simLogVerbose("✅ [PROGRESS-COMPLETE] Simulation finished: %d months (%.1f years) - Final Net Worth: $%.0f",
 		len(monthlyDataList), actualYears, finalNetWorth)
 
+	// TODO: Integrate estate tax into terminal wealth calculation
+	// EstateTaxCalculator exists (estate_tax_calculator.go) with federal + 12 state taxes.
+	// Would subtract estate tax from FinalNetWorth for after-tax bequest analysis.
+	// Relevant for high-net-worth scenarios (federal exemption ~$13.6M in 2024).
+
 	// Build and return result
 	result := SimulationResult{
 		Success:           bankruptcyMonth == 0,
@@ -1832,11 +1842,35 @@ func (se *SimulationEngine) processQueuedEvent(
 
 		simLogVerbose("[WASM-QUEUE-DEBUG] User event detected: type='%s', processing through event registry", event.Type)
 
+	// Apply stochastic inflation to event amount if applyInflation is set
+	if applyInflation, ok := event.Metadata["applyInflation"].(bool); ok && applyInflation {
+		inflationBase := "simulation_start"
+		if base, ok := event.Metadata["inflationBase"].(string); ok {
+			inflationBase = base
+		}
+
+		if inflationBase == "event_start" {
+			// Inflation from event start date: approximate using average monthly stochastic inflation
+			monthsFromStart := queuedEvent.MonthOffset - event.MonthOffset
+			if monthsFromStart > 0 && queuedEvent.MonthOffset > 0 {
+				// Use geometric mean of monthly inflation rates observed so far
+				avgMonthlyInflation := math.Pow(se.eventInflationFactor, 1.0/float64(queuedEvent.MonthOffset)) - 1.0
+				inflationMultiplier := math.Pow(1+avgMonthlyInflation, float64(monthsFromStart))
+				event.Amount *= inflationMultiplier
+			}
+		} else {
+			// Inflation from simulation start (default): use lagged cumulative factor
+			// eventInflationFactor = cumulative inflation through end of prior month
+			event.Amount *= se.eventInflationFactor
+		}
+	}
+
 	// Process user event through the event registry
 	cashFlow := 0.0 // Legacy compatibility
 	// PERF: Reuse engine-level context to avoid per-event heap allocation
 	se.eventContext.CurrentMonth = queuedEvent.MonthOffset
 	se.eventContext.SimulationEngine = se
+	se.currentMonthOffset = queuedEvent.MonthOffset
 	err := se.eventRegistry.ProcessEvent(event, accounts, &cashFlow, &se.eventContext)
 
 	if err != nil {
@@ -2289,6 +2323,7 @@ func (se *SimulationEngine) processEventWithFIFO(event FinancialEvent, accounts 
 	// PERF: Reuse engine-level context to avoid per-event heap allocation
 	se.eventContext.SimulationEngine = se
 	se.eventContext.CurrentMonth = currentMonth
+	se.currentMonthOffset = currentMonth
 
 	// Process event using the appropriate handler
 	if currentMonth == 0 {
@@ -3015,20 +3050,27 @@ func (se *SimulationEngine) ProcessAnnualTaxes(accounts *AccountHoldingsMonthEnd
 		return nil
 	}
 
-	// Process Required Minimum Distributions first
-	if err := se.processRMDs(accounts, age); err != nil {
-		return fmt.Errorf("failed to process RMDs: %v", err)
-	}
+	// Note: RMDs are processed by the system event handler (processRMDCheck)
+	// which fires before TAX_CHECK in December. Do NOT process RMDs here
+	// to avoid double-processing.
 
 	// Calculate taxable portion of Social Security benefits
-	provisionalIncome := se.ordinaryIncomeYTD + se.qualifiedDividendsYTD + se.capitalGainsYTD
+	// IRS provisional income = AGI (excl SS) + tax-exempt interest
+	provisionalIncome := se.ordinaryIncomeYTD + se.qualifiedDividendsYTD + se.capitalGainsYTD + se.taxExemptIncomeYTD
 	taxableSocialSecurity := se.taxCalculator.CalculateTaxableSocialSecurity(provisionalIncome, se.socialSecurityBenefitsYTD)
 
-	// Add taxable Social Security to ordinary income
-	adjustedOrdinaryIncome := se.ordinaryIncomeYTD + taxableSocialSecurity
+	// Add taxable Social Security to ordinary income, subtract pre-tax contributions (401k, trad IRA)
+	adjustedOrdinaryIncome := se.ordinaryIncomeYTD + taxableSocialSecurity - se.preTaxContributionsYTD
 
 	// Calculate current year for Medicare processing
-	currentYear := se.currentYear + monthOffset/12  // ✅ FIX: Use simulation's start year instead of hard-coded 2024
+	currentYear := se.simulationInput.StartYear + monthOffset/12
+
+	// Set simulation year on tax calculator for threshold inflation indexing
+	thresholdRate := se.config.TaxThresholdInflationRate
+	if thresholdRate == 0 {
+		thresholdRate = 0.025 // Default 2.5% annual indexing
+	}
+	se.taxCalculator.SetSimulationYear(currentYear, thresholdRate)
 
 	// Calculate MAGI for current year (AGI + tax-exempt interest + foreign income exclusions)
 	// For simplified calculation, we'll use AGI as MAGI approximation
@@ -3059,17 +3101,22 @@ func (se *SimulationEngine) ProcessAnnualTaxes(accounts *AccountHoldingsMonthEnd
 	// Previously: employmentIncomeYTD and ordinaryIncomeYTD could get out of sync
 	taxResult := se.taxCalculator.CalculateComprehensiveTaxWithFICA(
 		adjustedOrdinaryIncome,
-		se.capitalGainsYTD,
-		0, // STCG (treated as ordinary income)
+		se.longTermCapitalGainsYTD,
+		se.shortTermCapitalGainsYTD,
 		se.qualifiedDividendsYTD,
 		se.taxWithholdingYTD,
 		se.estimatedPaymentsYTD,
-		adjustedOrdinaryIncome,  // Use same income for FICA calculation (unified tracker)
-		0,                       // Self-employment income (not implemented yet)
+		se.employmentIncomeYTD,
+		se.selfEmploymentIncomeYTD,
 	)
 
 	simLogVerbose("🎯 [TAX-RESULT] Tax calculation completed: TotalTax=$%.2f, FederalTax=$%.2f, StateTax=$%.2f",
 		taxResult.TotalTax, taxResult.FederalIncomeTax, taxResult.StateIncomeTax)
+
+	// TODO: Integrate ACA Premium Tax Credit for early retirees (age < 65)
+	// CalculateACASubsidy() exists in tax.go but is not called here.
+	// For ages 50-65, ACA subsidies can reduce healthcare costs by $500-1500/month.
+	// Would need: healthcare expense events, MAGI-based subsidy calculation, FPL lookups.
 
 	// Add Medicare premiums to tax liability (annual cost)
 	annualMedicareCost := totalMedicarePremium * 12
@@ -3454,6 +3501,7 @@ func (se *SimulationEngine) resetTaxYTD(taxYear int) {
 	se.taxWithholdingYTD = 0
 	se.estimatedPaymentsYTD = 0
 	se.ordinaryIncomeYTD = 0
+	se.employmentIncomeYTD = 0
 	se.capitalGainsYTD = 0
 	se.capitalLossesYTD = 0
 	se.qualifiedDividendsYTD = 0
@@ -3472,16 +3520,15 @@ func (se *SimulationEngine) resetTaxYTD(taxYear int) {
 
 // CalculateTaxOwed calculates current tax liability
 func (se *SimulationEngine) CalculateTaxOwed() TaxCalculationResult {
-	// UNIFIED INCOME FIX: Use ordinaryIncomeYTD for BOTH income tax AND FICA calculation
 	return se.taxCalculator.CalculateComprehensiveTaxWithFICA(
 		se.ordinaryIncomeYTD,
-		se.capitalGainsYTD,
-		0, // STCG
+		se.longTermCapitalGainsYTD,
+		se.shortTermCapitalGainsYTD,
 		se.qualifiedDividendsYTD,
 		se.taxWithholdingYTD,
 		se.estimatedPaymentsYTD,
-		se.ordinaryIncomeYTD,    // Use unified income tracker for FICA calculation
-		0,                       // Self-employment income (not implemented yet)
+		se.employmentIncomeYTD,
+		se.selfEmploymentIncomeYTD,
 	)
 }
 
@@ -4547,6 +4594,18 @@ func (se *SimulationEngine) ApplyImmediateWithdrawalTax(saleResult LotSaleResult
 			saleResult.ShortTermGains, effectiveRate*100, capitalGainsTax)
 	}
 
+	// Early withdrawal penalty (10% on tax-deferred before age 59.5)
+	if se.simulationInput != nil && saleResult.TaxDeferredProceeds > 0 {
+		currentAge := se.simulationInput.InitialAge + se.currentMonthOffset/12
+		if currentAge < 60 { // Integer approximation of 59.5
+			penalty := saleResult.TaxDeferredProceeds * 0.10
+			totalTaxWithheld += penalty
+			se.taxWithholdingYTD += penalty
+			simLogVerbose("TAX-WITHHOLDING: Early withdrawal penalty $%.0f (10%% on $%.0f, age %d)",
+				penalty, saleResult.TaxDeferredProceeds, currentAge)
+		}
+	}
+
 	// Roth withdrawals: Tax-free, no withholding
 	if saleResult.RothProceeds > 0 {
 		simLogVerbose("TAX-WITHHOLDING: Roth withdrawal $%.0f, no tax withheld (tax-free)", saleResult.RothProceeds)
@@ -4626,10 +4685,16 @@ func (se *SimulationEngine) grossUpForTaxes(netAmountNeeded float64, accounts *A
 		taxDeferredAvailable = taxDeferredAccount.TotalValue
 	}
 	if taxDeferredAvailable > 0 && remainingNeeded > 0 {
-		// Net = Gross * (1 - effectiveRate)
-		// Gross = Net / (1 - effectiveRate)
-		fromTaxDeferredNet := math.Min(remainingNeeded, taxDeferredAvailable*(1-effectiveRate))
-		fromTaxDeferredGross := fromTaxDeferredNet / (1 - effectiveRate)
+		// Net = Gross * (1 - totalRate) where totalRate includes early withdrawal penalty
+		totalTaxDeferredRate := effectiveRate
+		if se.simulationInput != nil {
+			currentAge := se.simulationInput.InitialAge + se.currentMonthOffset/12
+			if currentAge < 60 { // 10% early withdrawal penalty before 59.5
+				totalTaxDeferredRate += 0.10
+			}
+		}
+		fromTaxDeferredNet := math.Min(remainingNeeded, taxDeferredAvailable*(1-totalTaxDeferredRate))
+		fromTaxDeferredGross := fromTaxDeferredNet / (1 - totalTaxDeferredRate)
 		totalGrossNeeded += fromTaxDeferredGross
 		remainingNeeded -= fromTaxDeferredNet
 	}

@@ -195,14 +195,19 @@ func (calc *SocialSecurityCalculator) CalculateSpousalBenefit(
 		)
 	}
 
-	// Apply early claiming reduction to spousal benefit
+	// Apply early claiming reduction to spousal benefit using SSA two-tier formula:
+	// First 36 months early: 25/36 of 1% per month (6.94% per year)
+	// Additional months beyond 36: 5/12 of 1% per month (5% per year)
 	if spouseClaimingAge < spouseFRA {
-		// Spousal benefits reduce by 25/36% per month early (different from own benefit!)
 		monthsEarly := (spouseFRA - spouseClaimingAge) * 12
-		reductionPerMonth := 25.0 / 36.0 / 100.0 // 0.6944%
-		reduction := float64(monthsEarly) * reductionPerMonth
-		if reduction > 0.30 { // Max 30% reduction
-			reduction = 0.30
+		var reduction float64
+		if monthsEarly <= 36 {
+			reduction = float64(monthsEarly) * (25.0 / 36.0 / 100.0)
+		} else {
+			// First 36 months at 25/36% per month
+			reduction = 36.0 * (25.0 / 36.0 / 100.0)
+			// Remaining months at 5/12% per month
+			reduction += float64(monthsEarly-36) * (5.0 / 12.0 / 100.0)
 		}
 		return spousalBenefitAtFRA * (1.0 - reduction)
 	}

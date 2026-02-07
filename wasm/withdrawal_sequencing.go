@@ -36,14 +36,15 @@ type WithdrawalRequest struct {
 
 // WithdrawalResult contains the outcome of a withdrawal operation
 type WithdrawalResult struct {
-	TotalWithdrawn      float64
-	CashWithdrawn       float64
-	TaxableWithdrawn    float64
+	TotalWithdrawn       float64
+	CashWithdrawn        float64
+	TaxableWithdrawn     float64
 	TaxDeferredWithdrawn float64
-	RothWithdrawn       float64
-	RMDAmount           float64
-	EstimatedTaxOwed    float64
-	WithdrawalSequence  []string
+	RothWithdrawn        float64
+	RMDAmount            float64
+	EstimatedTaxOwed     float64
+	EarlyWithdrawalPenalty float64 // 10% penalty on pre-59.5 tax-deferred/Roth withdrawals
+	WithdrawalSequence   []string
 }
 
 // ExecuteWithdrawal performs intelligent withdrawal with the specified strategy
@@ -137,6 +138,18 @@ func (ws *WithdrawalSequencer) ExecuteWithdrawal(
 
 		result.TotalWithdrawn += withdrawn
 		remaining -= withdrawn
+	}
+
+	// Apply 10% early withdrawal penalty for pre-59.5 tax-deferred withdrawals
+	// (excluding RMDs, which are by definition for age 73+)
+	if request.CurrentAge < 60 { // Using 60 as integer approximation of 59.5
+		penaltyBase := result.TaxDeferredWithdrawn - result.RMDAmount
+		if penaltyBase > 0 {
+			result.EarlyWithdrawalPenalty = penaltyBase * 0.10
+		}
+		// Roth earnings withdrawals also penalized, but we don't track
+		// contributions vs earnings separately, so we skip Roth penalty
+		// as a conservative simplification (under-penalizes rather than over)
 	}
 
 	// Check if we met the withdrawal need

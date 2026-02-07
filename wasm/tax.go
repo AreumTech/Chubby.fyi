@@ -224,6 +224,7 @@ type TaxCalculationResult struct {
 	AdditionalMedicareTax float64 `json:"additionalMedicareTax"`
 	TotalFICATax          float64 `json:"totalFicaTax"`
 
+	NIITTax             float64 `json:"niitTax"`             // Net Investment Income Tax (3.8%)
 	IRMAAPremium        float64 `json:"irmaaPremium"`
 	TotalTax            float64 `json:"totalTax"`            // Total tax liability (before withholding/payments)
 	NetTaxDueOrRefund   float64 `json:"netTaxDueOrRefund"`   // Net amount due after withholding/estimated payments
@@ -237,6 +238,11 @@ type TaxCalculationResult struct {
 type TaxCalculator struct {
 	config             TaxConfigDetailed
 	stateTaxCalculator *StateTaxCalculator
+
+	// Inflation-adjusted threshold support
+	baseYear                  int     // Year the hardcoded thresholds represent (2024)
+	simulationYear            int     // Current simulation year
+	thresholdInflationRate    float64 // Annual rate for indexing thresholds
 }
 
 // Create new tax calculator
@@ -244,7 +250,23 @@ func NewTaxCalculator(config TaxConfigDetailed, stateTaxCalc *StateTaxCalculator
 	return &TaxCalculator{
 		config:             config,
 		stateTaxCalculator: stateTaxCalc,
+		baseYear:           2024,
 	}
+}
+
+// SetSimulationYear updates the current year and threshold inflation rate for indexing
+func (tc *TaxCalculator) SetSimulationYear(year int, thresholdInflationRate float64) {
+	tc.simulationYear = year
+	tc.thresholdInflationRate = thresholdInflationRate
+}
+
+// inflationAdjust adjusts a base-year threshold to the current simulation year
+func (tc *TaxCalculator) inflationAdjust(baseValue float64) float64 {
+	yearsElapsed := tc.simulationYear - tc.baseYear
+	if yearsElapsed <= 0 || tc.thresholdInflationRate <= 0 {
+		return baseValue
+	}
+	return baseValue * math.Pow(1+tc.thresholdInflationRate, float64(yearsElapsed))
 }
 
 
@@ -484,20 +506,20 @@ func (tc *TaxCalculator) CalculateCapitalGainsTax(ordinaryIncome, ltcgIncome, st
 
 // Calculate Alternative Minimum Tax (AMT)
 func (tc *TaxCalculator) CalculateAlternativeMinimumTax(income, preferences float64) float64 {
-	// AMT exemption amounts for 2024
+	// AMT exemption amounts (2024 base, inflation-adjusted)
 	var exemption float64
 	var phaseoutThreshold float64
 
 	switch tc.config.FilingStatus {
 	case FilingStatusMarriedJointly, FilingStatusQualifyingWidow:
-		exemption = 133300
-		phaseoutThreshold = 1218700
+		exemption = tc.inflationAdjust(133300)
+		phaseoutThreshold = tc.inflationAdjust(1218700)
 	case FilingStatusMarriedSeparately:
-		exemption = 66650
-		phaseoutThreshold = 609350
+		exemption = tc.inflationAdjust(66650)
+		phaseoutThreshold = tc.inflationAdjust(609350)
 	default: // Single, Head of Household
-		exemption = 85700
-		phaseoutThreshold = 609350
+		exemption = tc.inflationAdjust(85700)
+		phaseoutThreshold = tc.inflationAdjust(609350)
 	}
 
 	// Calculate AMT income
@@ -511,12 +533,13 @@ func (tc *TaxCalculator) CalculateAlternativeMinimumTax(income, preferences floa
 
 	amtTaxableIncome := math.Max(0, amtIncome-exemption)
 
-	// AMT tax calculation (26% and 28% rates)
+	// AMT tax calculation (26% and 28% rates, threshold inflation-adjusted)
+	amtRateThreshold := tc.inflationAdjust(220700)
 	amtTax := 0.0
-	if amtTaxableIncome <= 220700 { // 2024 threshold
+	if amtTaxableIncome <= amtRateThreshold {
 		amtTax = amtTaxableIncome * 0.26
 	} else {
-		amtTax = 220700*0.26 + (amtTaxableIncome-220700)*0.28
+		amtTax = amtRateThreshold*0.26 + (amtTaxableIncome-amtRateThreshold)*0.28
 	}
 
 	return math.Max(0, amtTax)
@@ -774,13 +797,10 @@ func (tc *TaxCalculator) CalculateComprehensiveTaxWithFICA(
 	// Calculate adjusted gross income
 	adjustedGrossIncome := ordinaryIncome + ltcgIncome + stcgIncome + qualifiedDividends
 
-	// Calculate deductions
+	// Calculate deductions — take the higher of standard or itemized
+	// Note: SALT cap ($10k) should be applied when computing ItemizedDeduction.
+	// The user-provided ItemizedDeduction value should already reflect the SALT cap.
 	deduction := math.Max(tc.config.StandardDeduction, tc.config.ItemizedDeduction)
-
-	// Apply SALT cap to itemized deductions
-	if tc.config.ItemizedDeduction > tc.config.StandardDeduction && tc.config.SaltCap > 0 {
-		deduction = math.Min(deduction, tc.config.StandardDeduction+tc.config.SaltCap)
-	}
 
 	// Calculate taxable income
 	taxableIncome := math.Max(0, adjustedGrossIncome-deduction)
@@ -795,8 +815,13 @@ func (tc *TaxCalculator) CalculateComprehensiveTaxWithFICA(
 	// Calculate capital gains tax (this function already calculates incremental tax correctly)
 	capitalGainsTax := tc.CalculateCapitalGainsTax(ordinaryIncome, ltcgIncome+qualifiedDividends, stcgIncome)
 
-	// AMT calculation (simplified - would need more detailed preferences in real implementation)
-	amtTax := tc.CalculateAlternativeMinimumTax(adjustedGrossIncome, 0)
+	// AMT calculation — pass SALT deduction as primary AMT preference
+	// State/local tax deduction (capped at $10K under TCJA) is an AMT add-back
+	saltPreference := 0.0
+	if tc.config.ItemizedDeduction > tc.config.StandardDeduction {
+		saltPreference = math.Min(stateIncomeTax, tc.config.SaltCap)
+	}
+	amtTax := tc.CalculateAlternativeMinimumTax(adjustedGrossIncome, saltPreference)
 
 	// IRMAA calculation
 	irmaa := tc.CalculateIRMAAPremium(adjustedGrossIncome)
@@ -822,10 +847,14 @@ func (tc *TaxCalculator) CalculateComprehensiveTaxWithFICA(
 
 	totalFICATax := socialSecurityTax + medicareTax + additionalMedicareTax
 
+	// Calculate NIIT (3.8% on net investment income above MAGI threshold)
+	netInvestmentIncome := ltcgIncome + stcgIncome + qualifiedDividends
+	niitTax := tc.CalculateNIIT(adjustedGrossIncome, netInvestmentIncome)
+
 	// Total federal tax: ordinary income tax + capital gains tax (not double-counted)
 	regularFederalTax := federalIncomeTax + capitalGainsTax
 	totalFederalTax := math.Max(regularFederalTax, amtTax)
-	totalTax := totalFederalTax + stateIncomeTax + totalFICATax + irmaa*12 // IRMAA is monthly
+	totalTax := totalFederalTax + stateIncomeTax + totalFICATax + niitTax + irmaa*12 // IRMAA is monthly
 
 	// Net tax after withholding and estimated payments
 	netTaxDue := math.Max(0, totalTax-taxWithholding-estimatedPayments)
@@ -854,14 +883,44 @@ func (tc *TaxCalculator) CalculateComprehensiveTaxWithFICA(
 		AdditionalMedicareTax: additionalMedicareTax,
 		TotalFICATax:          totalFICATax,
 
+		NIITTax:             niitTax,
 		IRMAAPremium:        irmaa * 12,
-		TotalTax:            totalTax,    // FIXED: Total liability (not net due)
+		TotalTax:            totalTax,
 		NetTaxDueOrRefund:   netTaxDue,   // Net amount after withholding/payments
 		EffectiveRate:       effectiveRate,
 		MarginalRate:        marginalRate,
 		AdjustedGrossIncome: adjustedGrossIncome,
 		TaxableIncome:       taxableIncome,
 	}
+}
+
+// CalculateNIIT calculates the Net Investment Income Tax (3.8%)
+// NIIT applies to the lesser of: net investment income, or MAGI exceeding threshold
+func (tc *TaxCalculator) CalculateNIIT(magi float64, netInvestmentIncome float64) float64 {
+	if netInvestmentIncome <= 0 {
+		return 0
+	}
+
+	// NIIT thresholds (2024 base, inflation-adjusted forward)
+	var threshold float64
+	switch tc.config.FilingStatus {
+	case FilingStatusMarriedFilingJointly:
+		threshold = tc.inflationAdjust(250000)
+	case FilingStatusSingle, FilingStatusHeadOfHousehold:
+		threshold = tc.inflationAdjust(200000)
+	case FilingStatusMarriedFilingSeparately:
+		threshold = tc.inflationAdjust(125000)
+	default:
+		threshold = tc.inflationAdjust(200000)
+	}
+
+	if magi <= threshold {
+		return 0
+	}
+
+	excess := magi - threshold
+	taxableAmount := math.Min(netInvestmentIncome, excess)
+	return taxableAmount * 0.038
 }
 
 // Get standard deduction for filing status (2024 amounts)

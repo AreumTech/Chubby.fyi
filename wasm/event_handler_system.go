@@ -123,6 +123,13 @@ func (h *SystemEventHandlerSimple) processMarketUpdate(accounts *AccountHoldings
 			holding.Quantity, holding.CurrentMarketPricePerUnit, holding.CurrentMarketValueTotal)
 	}
 
+	// Update cumulative inflation factor for stochastic event inflation
+	// eventInflationFactor lags by 1 month so month-N events use inflation through end of month N-1
+	if h.engine.currentMonthReturns != nil {
+		h.engine.eventInflationFactor = h.engine.cumulativeInflationFactor
+		h.engine.cumulativeInflationFactor *= (1 + h.engine.currentMonthReturns.Inflation)
+	}
+
 	// Apply market growth using the existing ApplyMarketGrowth method
 	err := h.engine.ApplyMarketGrowth(accounts, monthOffset)
 	if err != nil {
@@ -297,43 +304,51 @@ func (h *SystemEventHandlerSimple) processRMDCheck(accounts *AccountHoldingsMont
 	age := h.engine.simulationInput.InitialAge + (monthOffset / 12)
 
 	// Only process RMDs if age 73 or older
-	if age >= 73 {
-		// Process RMDs for tax-deferred accounts
-		processRMDForAccount := func(account *Account, accountName string) error {
-			if account != nil && account.TotalValue > 0 {
-				rmdAmount := CalculateRMD(age, account.TotalValue)
-				if rmdAmount > 0 {
-					simLogVerbose("📊 [RMD] %s RMD: $%.2f (age %d, balance $%.2f)",
-						accountName, rmdAmount, age, account.TotalValue)
+	if age < 73 {
+		return nil
+	}
 
-					// Force withdrawal for RMD
-					// Pass default values for tax parameters since this is an RMD withdrawal
-					saleResult, remainingCash := h.engine.cashManager.ExecuteWithdrawalWithStrategy(
-						accounts, rmdAmount, WithdrawalSequenceTaxEfficient, monthOffset, 0, FilingStatusSingle)
+	taxDeferredAccount := GetTaxDeferredAccount(accounts)
+	if taxDeferredAccount == nil || taxDeferredAccount.TotalValue <= 0 {
+		return nil
+	}
 
-					// Apply immediate tax withholding on RMD withdrawals
-					taxWithheld := h.engine.ApplyImmediateWithdrawalTax(saleResult, accounts)
-					if taxWithheld > 0 {
-						simLogVerbose("💸 [RMD] Tax withheld on RMD: $%.2f", taxWithheld)
-					}
+	// IRS requires RMD based on prior year-end balance (Dec 31 of previous year)
+	rmdBasis := h.engine.priorYearEndTaxDeferredBalance
 
-					// Track capital gains from any taxable account sales
-					h.engine.ProcessCapitalGainsWithTermDifferentiation(saleResult.ShortTermGains, saleResult.LongTermGains)
+	// Calculate total RMD requirement for the year
+	totalRmdRequired := CalculateRMD(age, rmdBasis)
+	if totalRmdRequired <= 0 {
+		h.engine.lastRMDAmount = 0
+		return nil
+	}
 
-					// Track RMD for tax purposes (RMDs from tax-deferred are ordinary income)
-					// Note: ordinaryIncomeYTD is already updated by ApplyImmediateWithdrawalTax
-					h.engine.lastRMDAmount += saleResult.TotalProceeds
+	// Subtract QCDs taken during the year from the RMD requirement
+	remainingRmdRequired := math.Max(0, totalRmdRequired-h.engine.qualifiedCharitableDistributionsYTD)
 
-					_ = remainingCash // May be used for tracking
-				}
+	// Store total RMD amount for MonthlyData (including QCD portion)
+	h.engine.lastRMDAmount = totalRmdRequired
+
+	simLogVerbose("📊 [RMD] Tax-Deferred RMD: $%.2f (age %d, prior year-end balance $%.2f, current $%.2f, QCDs $%.2f)",
+		totalRmdRequired, age, rmdBasis, taxDeferredAccount.TotalValue, h.engine.qualifiedCharitableDistributionsYTD)
+
+	// Only process additional withdrawal if QCDs haven't satisfied the full RMD
+	if remainingRmdRequired > 0 {
+		withdrawalAmount := math.Min(remainingRmdRequired, taxDeferredAccount.TotalValue)
+
+		// RMDs must come directly from tax-deferred accounts
+		if taxDeferredAccount.TotalValue > 0 {
+			reductionFactor := 1.0 - (withdrawalAmount / taxDeferredAccount.TotalValue)
+			for i := range taxDeferredAccount.Holdings {
+				taxDeferredAccount.Holdings[i].CurrentMarketValueTotal *= reductionFactor
+				taxDeferredAccount.Holdings[i].Quantity *= reductionFactor
 			}
-			return nil
+			taxDeferredAccount.TotalValue -= withdrawalAmount
 		}
 
-		// Process RMDs for traditional IRA/401k accounts
-		if err := processRMDForAccount(GetTaxDeferredAccount(accounts), "Tax-Deferred"); err != nil {
-			return err
-		}
+		// Add RMD to cash and ordinary income
+		accounts.Cash += withdrawalAmount
+		h.engine.ordinaryIncomeYTD += withdrawalAmount
 	}
 
 	return nil
@@ -391,6 +406,12 @@ func (h *SystemEventHandlerSimple) processYearEnd(accounts *AccountHoldingsMonth
 	h.engine.preTaxContributionsYTD = 0
 	h.engine.taxWithholdingYTD = 0
 	h.engine.estimatedPaymentsYTD = 0
+
+	// Store year-end tax-deferred balance for next year's RMD calculation (IRS uses Dec 31 of prior year)
+	taxDeferredAccount := GetTaxDeferredAccount(accounts)
+	if taxDeferredAccount != nil {
+		h.engine.priorYearEndTaxDeferredBalance = taxDeferredAccount.TotalValue
+	}
 
 	simLogVerbose("✨ [YEAR_END] YTD trackers reset for year %d", year+1)
 

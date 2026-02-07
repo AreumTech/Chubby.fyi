@@ -74,11 +74,8 @@ func (ep *EventPreprocessor) addSystemEvents(monthsToRun int, config StochasticM
 
 		// December-only events (year-end processing)
 		if month%12 == 11 {
-			// PERF: Skip RMD check in LiteMode for Bronze tier (no retirement account management)
-			if !config.LiteMode {
-				// RMD check for retirement accounts
-				ep.queue.AddSystemEvent(SystemEventRMDCheck, month, PriorityRMD)
-			}
+			// RMD check for retirement accounts (required in all modes for accuracy)
+			ep.queue.AddSystemEvent(SystemEventRMDCheck, month, PriorityRMD)
 
 			// Annual tax calculation and filing
 			ep.queue.AddSystemEvent(SystemEventTaxCheck, month, PriorityTaxCalculation)
@@ -260,37 +257,10 @@ func (ep *EventPreprocessor) cloneEventForMonth(event FinancialEvent, month int)
 		}
 	}
 
-	// Apply inflation if specified
-	// By default, inflation is applied from simulation start (month 0), meaning the event
-	// amount is in "today's dollars" and will be inflated to the event's actual date.
-	// Set inflationBase: "event_start" to apply inflation only from the event's start date,
-	// meaning the amount is already in "event date dollars".
-	if applyInflation, ok := event.Metadata["applyInflation"].(bool); ok && applyInflation {
-		inflationRate := 0.025 // Default 2.5% inflation
-		if rate, ok := event.Metadata["inflationRate"].(float64); ok {
-			inflationRate = rate
-		}
-
-		// Determine inflation base: "simulation_start" (default) or "event_start"
-		inflationBase := "simulation_start"
-		if base, ok := event.Metadata["inflationBase"].(string); ok {
-			inflationBase = base
-		}
-
-		var yearsElapsed float64
-		if inflationBase == "event_start" {
-			// Inflation from event start date - amount is in "event date dollars"
-			yearsElapsed = float64(month-event.MonthOffset) / 12.0
-		} else {
-			// Inflation from simulation start (default) - amount is in "today's dollars"
-			yearsElapsed = float64(month) / 12.0
-		}
-
-		if yearsElapsed > 0 {
-			inflationMultiplier := math.Pow(1+inflationRate, yearsElapsed)
-			clone.Amount = clone.Amount * inflationMultiplier
-		}
-	}
+	// Inflation adjustment is deferred to runtime using stochastic inflation
+	// The engine tracks cumulativeInflationFactor and applies it in processQueuedEvent
+	// Events with applyInflation: true in metadata will be adjusted at processing time
+	// This replaces the old static 2.5% approach with actual stochastic inflation
 
 	return clone
 }

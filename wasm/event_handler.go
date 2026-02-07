@@ -69,7 +69,8 @@ func (h *IncomeEventHandler) Process(event FinancialEvent, accounts *AccountHold
 	se.currentMonthFlows.IncomeThisMonth += event.Amount
 	// fmt.Printf("🔴 [INCOME-HANDLER] Updated IncomeThisMonth\n")
 
-	se.currentMonthFlows.EmploymentIncomeThisMonth += event.Amount // NEW: Track employment income separately
+	se.currentMonthFlows.EmploymentIncomeThisMonth += event.Amount
+	se.employmentIncomeYTD += event.Amount
 	// fmt.Printf("🔴 [INCOME-HANDLER] Updated EmploymentIncomeThisMonth\n")
 
 	se.currentMonthFlows.TaxWithheldThisMonth += salaryWithholding
