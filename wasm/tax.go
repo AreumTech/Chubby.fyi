@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
+	"strconv"
 )
 
 // RMD calculation and processing functions for WASM engine
@@ -542,7 +543,7 @@ func (tc *TaxCalculator) CalculateIRMAAEnhanced(currentYearMAGI float64, lookbac
 	magiForIRMAA := lookbackMAGI
 
 	// Determine the year for Medicare data (use current year)
-	yearStr := fmt.Sprintf("%d", currentYear)
+	yearStr := strconv.Itoa(currentYear)
 
 	// Get base Medicare premiums and IRMAA brackets from configuration
 	var basePartBPremium, basePartDPremium, irmaaPartBSurcharge, irmaaPartDSurcharge float64 = 0, 0, 0, 0

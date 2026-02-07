@@ -5,7 +5,7 @@ package main
 
 import (
 	"container/heap"
-	"fmt"
+	"strconv"
 )
 
 // This file contains the core event queue implementation that doesn't depend on WASM
@@ -87,8 +87,8 @@ func (pq *EventQueueCore) AddEvent(id, eventType, description string, amount flo
 
 // AddSystemEvent adds a system-generated event
 func (pq *EventQueueCore) AddSystemEvent(eventType string, monthOffset, priority int) {
-	id := fmt.Sprintf("SYSTEM_%s_%d", eventType, monthOffset)
-	description := fmt.Sprintf("System event: %s for month %d", eventType, monthOffset)
+	id := "SYSTEM_" + eventType + "_" + strconv.Itoa(monthOffset)
+	description := "System event: " + eventType + " for month " + strconv.Itoa(monthOffset)
 	pq.AddEvent(id, eventType, description, 0, monthOffset, priority)
 }
 

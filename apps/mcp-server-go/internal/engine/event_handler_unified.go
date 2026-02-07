@@ -325,7 +325,7 @@ func (h *UnifiedInsurancePremiumEventHandler) Process(event FinancialEvent, acco
 	}
 
 	// Record in ledger
-	ledgerType := fmt.Sprintf("%s_premium", insuranceType)
+	ledgerType := insuranceType + "_premium"
 	if err := se.ledger.RecordExpense(event.Amount, ledgerType); err != nil {
 		simLogVerbose("⚠️ [LEDGER-WARNING] Failed to record insurance premium in ledger: %v", err)
 	}
@@ -379,7 +379,7 @@ func (h *UnifiedInsurancePayoutEventHandler) Process(event FinancialEvent, accou
 	}
 
 	// Record in ledger
-	ledgerType := fmt.Sprintf("%s_payout", insuranceType)
+	ledgerType := insuranceType + "_payout"
 	if err := se.ledger.RecordIncome(event.Amount, ledgerType); err != nil {
 		simLogVerbose("⚠️ [LEDGER-WARNING] Failed to record insurance payout in ledger: %v", err)
 	}

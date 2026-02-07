@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"math"
+	"strconv"
 )
 
 // CircuitBreakerValidator provides runtime validation to catch data integrity issues
@@ -76,7 +77,7 @@ func (cbv *CircuitBreakerValidator) validateTaxableAccountIntegrity(account *Acc
 	// Validate individual holdings
 	calculatedTotal := 0.0
 	for i, holding := range account.Holdings {
-		if err := cbv.validateHoldingIntegrity(&holding, fmt.Sprintf("Taxable[%d]", i), month, year); err != nil {
+		if err := cbv.validateHoldingIntegrity(&holding, "Taxable["+strconv.Itoa(i)+"]", month, year); err != nil {
 			return fmt.Errorf("holding %d integrity failure: %w", i, err)
 		}
 		calculatedTotal += holding.Quantity * holding.CostBasisPerUnit
@@ -198,7 +199,7 @@ func (cbv *CircuitBreakerValidator) validateTaxDeferredAccountIntegrity(account 
 
 	// Validate individual holdings (same rules as taxable)
 	for i, holding := range account.Holdings {
-		if err := cbv.validateHoldingIntegrity(&holding, fmt.Sprintf("TaxDeferred[%d]", i), month, year); err != nil {
+		if err := cbv.validateHoldingIntegrity(&holding, "TaxDeferred["+strconv.Itoa(i)+"]", month, year); err != nil {
 			return fmt.Errorf("holding %d integrity failure: %w", i, err)
 		}
 	}
@@ -219,7 +220,7 @@ func (cbv *CircuitBreakerValidator) validateRothAccountIntegrity(account *Accoun
 
 	// Validate individual holdings
 	for i, holding := range account.Holdings {
-		if err := cbv.validateHoldingIntegrity(&holding, fmt.Sprintf("Roth[%d]", i), month, year); err != nil {
+		if err := cbv.validateHoldingIntegrity(&holding, "Roth["+strconv.Itoa(i)+"]", month, year); err != nil {
 			return fmt.Errorf("holding %d integrity failure: %w", i, err)
 		}
 	}

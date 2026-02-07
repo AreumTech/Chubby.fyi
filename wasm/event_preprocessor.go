@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"strconv"
 )
 
 // EventPreprocessor is responsible for expanding and scheduling all events for a simulation
@@ -86,7 +87,7 @@ func (ep *EventPreprocessor) addSystemEvents(monthsToRun int, config StochasticM
 			if config.PayTaxesEndOfYear {
 				// Pay taxes immediately at end of year (December)
 				ep.queue.Add(FinancialEvent{
-					ID:          fmt.Sprintf("TAX_PAYMENT_%d", month/12),
+					ID:          "TAX_PAYMENT_" + strconv.Itoa(month/12),
 					Type:        "TAX_PAYMENT",
 					Description: "Annual tax payment/refund settlement (end of year)",
 					MonthOffset: month,
@@ -100,7 +101,7 @@ func (ep *EventPreprocessor) addSystemEvents(monthsToRun int, config StochasticM
 		// April tax payment (for previous year's taxes) - only if NOT paying at end of year
 		if !config.PayTaxesEndOfYear && month%12 == 3 && month > 0 {
 			ep.queue.Add(FinancialEvent{
-				ID:          fmt.Sprintf("TAX_PAYMENT_%d", month/12),
+				ID:          "TAX_PAYMENT_" + strconv.Itoa(month/12),
 				Type:        "TAX_PAYMENT",
 				Description: "Annual tax payment/refund settlement (April)",
 				MonthOffset: month,
@@ -382,9 +383,9 @@ func (ep *EventPreprocessor) addStrategyEvents(monthsToRun int, settings *Strate
 		eventMetadata["assetAllocation"] = strategyConfig.AssetAllocation.Allocations
 
 		ep.queue.Add(FinancialEvent{
-			ID:          fmt.Sprintf("STRATEGY_REBALANCE_CHECK_%d", month),
+			ID:          "STRATEGY_REBALANCE_CHECK_" + strconv.Itoa(month),
 			Type:        "STRATEGY_REBALANCING_RULE_SET",
-			Description: fmt.Sprintf("Rebalancing check for month %d", month),
+			Description: "Rebalancing check for month " + strconv.Itoa(month),
 			Amount:      0, // No specific amount - generates sub-events as needed
 			MonthOffset: month,
 			Metadata:    eventMetadata,
@@ -394,18 +395,18 @@ func (ep *EventPreprocessor) addStrategyEvents(monthsToRun int, settings *Strate
 	// Add cash management check events monthly (after expenses)
 	for month := 0; month < monthsToRun; month++ {
 		ep.queue.Add(FinancialEvent{
-			ID:          fmt.Sprintf("STRATEGY_CASH_MANAGEMENT_%d", month),
+			ID:          "STRATEGY_CASH_MANAGEMENT_" + strconv.Itoa(month),
 			Type:        "ADJUST_CASH_RESERVE_SELL_ASSETS", // Use existing handler
-			Description: fmt.Sprintf("Monthly cash management check for month %d", month),
+			Description: "Monthly cash management check for month " + strconv.Itoa(month),
 			Amount:      0, // Amount determined dynamically by handler
 			MonthOffset: month,
 		}, month, PriorityAssetSales-10) // Just before other asset sales
 
 		// Also add investment check for excess cash
 		ep.queue.Add(FinancialEvent{
-			ID:          fmt.Sprintf("STRATEGY_CASH_INVEST_%d", month),
+			ID:          "STRATEGY_CASH_INVEST_" + strconv.Itoa(month),
 			Type:        "ADJUST_CASH_RESERVE_BUY_ASSETS", // Use existing handler
-			Description: fmt.Sprintf("Monthly excess cash investment for month %d", month),
+			Description: "Monthly excess cash investment for month " + strconv.Itoa(month),
 			Amount:      0, // Amount determined dynamically by handler
 			MonthOffset: month,
 		}, month, PriorityAssetPurchases) // With other asset purchases
@@ -414,9 +415,9 @@ func (ep *EventPreprocessor) addStrategyEvents(monthsToRun int, settings *Strate
 	// Add annual tax loss harvesting check (December)
 	for month := 11; month < monthsToRun; month += 12 { // December of each year
 		ep.queue.Add(FinancialEvent{
-			ID:          fmt.Sprintf("STRATEGY_TAX_LOSS_HARVEST_%d", month),
+			ID:          "STRATEGY_TAX_LOSS_HARVEST_" + strconv.Itoa(month),
 			Type:        "TAX_LOSS_HARVESTING_CHECK_AND_EXECUTE",
-			Description: fmt.Sprintf("Annual tax loss harvesting check for month %d", month),
+			Description: "Annual tax loss harvesting check for month " + strconv.Itoa(month),
 			Amount:      0, // Amount determined by available losses
 			MonthOffset: month,
 		}, month, PriorityTaxCalculation-10) // Before tax calculation

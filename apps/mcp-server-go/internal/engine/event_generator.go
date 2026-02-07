@@ -1,6 +1,9 @@
 package engine
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 // EventGenerator interface for strategy events that generate atomic events
 type EventGenerator interface {
@@ -71,10 +74,10 @@ func (reg *RebalancingEventGenerator) GenerateEvents(
 			// Generate ASSET_SALE event
 			saleEvent := QueuedEvent{
 				Event: FinancialEvent{
-					ID:          fmt.Sprintf("rebalance_sale_%s_%d", trade.AssetClass, currentMonth),
+					ID:          "rebalance_sale_" + string(trade.AssetClass) + "_" + strconv.Itoa(currentMonth),
 					Type:        "ASSET_SALE",
 					Amount:      trade.Amount,
-					Description: fmt.Sprintf("Rebalancing sale of %s", trade.AssetClass),
+					Description: "Rebalancing sale of " + string(trade.AssetClass),
 					Metadata: map[string]interface{}{
 						"assetClass":   string(trade.AssetClass),
 						"reason":       "rebalancing",
@@ -90,10 +93,10 @@ func (reg *RebalancingEventGenerator) GenerateEvents(
 			// Generate ASSET_PURCHASE event
 			purchaseEvent := QueuedEvent{
 				Event: FinancialEvent{
-					ID:          fmt.Sprintf("rebalance_buy_%s_%d", trade.AssetClass, currentMonth),
+					ID:          "rebalance_buy_" + string(trade.AssetClass) + "_" + strconv.Itoa(currentMonth),
 					Type:        "ASSET_PURCHASE",
 					Amount:      -trade.Amount, // Convert to positive
-					Description: fmt.Sprintf("Rebalancing purchase of %s", trade.AssetClass),
+					Description: "Rebalancing purchase of " + string(trade.AssetClass),
 					Metadata: map[string]interface{}{
 						"assetClass":   string(trade.AssetClass),
 						"reason":       "rebalancing",
@@ -133,7 +136,7 @@ func (cmeg *CashManagementEventGenerator) GenerateEvents(
 
 		saleEvent := QueuedEvent{
 			Event: FinancialEvent{
-				ID:          fmt.Sprintf("cash_mgmt_sale_%d", currentMonth),
+				ID:          "cash_mgmt_sale_" + strconv.Itoa(currentMonth),
 				Type:        "ASSET_SALE",
 				Amount:      shortfall,
 				Description: fmt.Sprintf("Asset sale for cash shortfall: $%.0f", shortfall),
@@ -153,7 +156,7 @@ func (cmeg *CashManagementEventGenerator) GenerateEvents(
 
 		purchaseEvent := QueuedEvent{
 			Event: FinancialEvent{
-				ID:          fmt.Sprintf("cash_mgmt_buy_%d", currentMonth),
+				ID:          "cash_mgmt_buy_" + strconv.Itoa(currentMonth),
 				Type:        "ASSET_PURCHASE",
 				Amount:      excess,
 				Description: fmt.Sprintf("Asset purchase with excess cash: $%.0f", excess),

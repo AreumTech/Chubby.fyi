@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"time"
 )
 
@@ -128,12 +129,12 @@ func (sl *SimpleLedger) RecordTransaction(description string, entries []LedgerEn
 	}
 
 	// Create transaction
-	txnID := fmt.Sprintf("txn_%d", sl.nextTxnID)
+	txnID := "txn_" + strconv.Itoa(sl.nextTxnID)
 	sl.nextTxnID++
 
 	// Assign IDs to entries
 	for i := range entries {
-		entries[i].ID = fmt.Sprintf("entry_%d", sl.nextEntryID)
+		entries[i].ID = "entry_" + strconv.Itoa(sl.nextEntryID)
 		sl.nextEntryID++
 	}
 
@@ -198,7 +199,7 @@ func (sl *SimpleLedger) RecordIncome(amount float64, incomeType string) error {
 		{AccountID: "salary_income", Amount: amountCents, Direction: CreditBalance},
 	}
 
-	return sl.RecordTransaction(fmt.Sprintf("Income: %s", incomeType), entries)
+	return sl.RecordTransaction("Income: "+incomeType, entries)
 }
 
 // RecordExpense records an expense using double-entry accounting
@@ -213,7 +214,7 @@ func (sl *SimpleLedger) RecordExpense(amount float64, expenseType string) error 
 		{AccountID: "cash", Amount: amountCents, Direction: CreditBalance},
 	}
 
-	return sl.RecordTransaction(fmt.Sprintf("Expense: %s", expenseType), entries)
+	return sl.RecordTransaction("Expense: "+expenseType, entries)
 }
 
 // RecordInvestment records an investment purchase using double-entry accounting
@@ -240,7 +241,7 @@ func (sl *SimpleLedger) RecordInvestment(amount float64, accountType string) err
 		{AccountID: "cash", Amount: amountCents, Direction: CreditBalance},
 	}
 
-	return sl.RecordTransaction(fmt.Sprintf("Investment: %s", accountType), entries)
+	return sl.RecordTransaction("Investment: "+accountType, entries)
 }
 
 // GetAccountBalance calculates the current balance of an account

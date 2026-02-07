@@ -116,7 +116,7 @@ func (se *SimulationEngine) runDeterministicSimulationWithTrace(input Simulation
 			holding := &account.Holdings[i]
 			if len(holding.Lots) == 0 && holding.Quantity > 0 {
 				initialLot := TaxLot{
-					ID:               fmt.Sprintf("%s-initial", holding.ID),
+					ID:               holding.ID + "-initial",
 					AssetClass:       holding.AssetClass,
 					Quantity:         holding.Quantity,
 					CostBasisPerUnit: holding.CostBasisPerUnit,

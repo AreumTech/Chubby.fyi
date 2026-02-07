@@ -5,6 +5,7 @@ import (
 	"math"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -1276,7 +1277,7 @@ func (se *SimulationEngine) RunSingleSimulation(input SimulationInput) Simulatio
 			// If lots are missing/empty but holding has quantity, create initial lot
 			if len(holding.Lots) == 0 && holding.Quantity > 0 {
 				initialLot := TaxLot{
-					ID:                fmt.Sprintf("%s-initial", holding.ID),
+					ID:                holding.ID + "-initial",
 					AssetClass:        holding.AssetClass,
 					Quantity:          holding.Quantity,
 					CostBasisPerUnit:  holding.CostBasisPerUnit,
@@ -1954,7 +1955,7 @@ func (se *SimulationEngine) initializeAccountsForQueue(initial AccountHoldingsMo
 			// Now create tax lot if missing
 			if len(holding.Lots) == 0 && holding.Quantity > 0 {
 				initialLot := TaxLot{
-					ID:                fmt.Sprintf("%s-initial", holding.ID),
+					ID:                holding.ID + "-initial",
 					AssetClass:        holding.AssetClass,
 					Quantity:          holding.Quantity,
 					CostBasisPerUnit:  holding.CostBasisPerUnit,
@@ -1987,7 +1988,7 @@ func (se *SimulationEngine) initializeAccountsForQueue(initial AccountHoldingsMo
 		quantity := account.TotalValue / currentPrice
 
 		holding := Holding{
-			ID:                        fmt.Sprintf("%s-default-holding", accountName),
+			ID:                        accountName + "-default-holding",
 			AssetClass:                assetClass,
 			Quantity:                  quantity,
 			CostBasisPerUnit:          currentPrice,
@@ -1998,7 +1999,7 @@ func (se *SimulationEngine) initializeAccountsForQueue(initial AccountHoldingsMo
 			LiquidityTier:             LiquidityTierLiquid,
 			Lots: []TaxLot{
 				{
-					ID:                fmt.Sprintf("%s-default-lot", accountName),
+					ID:                accountName + "-default-lot",
 					AssetClass:        assetClass,
 					Quantity:          quantity,
 					CostBasisPerUnit:  currentPrice,
@@ -2205,7 +2206,7 @@ func (se *SimulationEngine) shouldEventFireThisMonth(event FinancialEvent, month
 	switch frequency {
 	case "one-time":
 		result := monthsSinceStart == 0 // Only fire on the exact start month
-		if event.Type == "REAL_ESTATE_SALE" {
+		if VERBOSE_DEBUG && event.Type == "REAL_ESTATE_SALE" {
 			_ = fmt.Sprintf("SHOULD_FIRE_DEBUG: REAL_ESTATE_SALE - one-time frequency, monthsSinceStart=%d, result=%v\n", monthsSinceStart, result)
 		}
 		return result
@@ -3236,7 +3237,11 @@ func (se *SimulationEngine) captureRealizedVariables(monthOffset int, startYear 
 	// Calculate the month string (YYYY-MM format)
 	simulationYear := startYear + (monthOffset / 12)
 	simulationMonth := (monthOffset % 12) + 1
-	monthStr := fmt.Sprintf("%d-%02d", simulationYear, simulationMonth)
+	monthPad := strconv.Itoa(simulationMonth)
+	if simulationMonth < 10 {
+		monthPad = "0" + monthPad
+	}
+	monthStr := strconv.Itoa(simulationYear) + "-" + monthPad
 
 	// Calculate asset weights from current accounts
 	assetWeights := make(map[string]float64)

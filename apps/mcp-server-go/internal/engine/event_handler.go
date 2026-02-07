@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 )
 
@@ -314,7 +315,7 @@ func (h *ScheduledContributionEventHandler) Process(event FinancialEvent, accoun
 	var safeEventID string
 	if currentMonth >= 11 {
 		// Use index-based ID for Month 11+ to avoid ValueOf issues
-		safeEventID = fmt.Sprintf("event_%d", len(h.contributionCount))
+		safeEventID = "event_" + strconv.Itoa(len(h.contributionCount))
 	} else {
 		safeEventID = event.ID
 	}
