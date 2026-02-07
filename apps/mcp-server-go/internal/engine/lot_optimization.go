@@ -116,15 +116,18 @@ func (cm *CashManager) OptimizeLotStructureMinimal(account *Account) {
 	for i := range account.Holdings {
 		holding := &account.Holdings[i]
 
-		// PERFORMANCE: Only remove zero-quantity lots, skip expensive consolidation
+		// PERF: In-place filter to avoid allocating a new slice
 		if len(holding.Lots) > 0 {
-			nonZeroLots := make([]TaxLot, 0, len(holding.Lots))
-			for _, lot := range holding.Lots {
-				if lot.Quantity > 0.001 { // Keep lots with meaningful quantity
-					nonZeroLots = append(nonZeroLots, lot)
+			n := 0
+			for j := range holding.Lots {
+				if holding.Lots[j].Quantity > 0.001 { // Keep lots with meaningful quantity
+					if n != j {
+						holding.Lots[n] = holding.Lots[j]
+					}
+					n++
 				}
 			}
-			holding.Lots = nonZeroLots
+			holding.Lots = holding.Lots[:n]
 		}
 	}
 }

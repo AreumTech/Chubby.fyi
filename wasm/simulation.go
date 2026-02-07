@@ -140,6 +140,9 @@ type SimulationEngine struct {
 
 	// PFOS-E: Track realized stochastic variables for "show the math" transparency
 	realizedPathVariables []RealizedMonthVariables
+
+	// PERF: Reusable event processing context (avoids per-event heap allocation)
+	eventContext EventProcessingContext
 }
 
 // MonthlyFlows tracks financial flows for the current month
@@ -718,7 +721,7 @@ func (se *SimulationEngine) ApplyMarketGrowth(accounts *AccountHoldingsMonthEnd,
 		// Generate new annual returns if we've moved to a new year
 		if se.currentYear != simulationYear || se.currentMonthReturns == nil {
 			// Use seeded RNG if available for deterministic simulation
-			returns, newState, err := GenerateAdvancedStochasticReturnsSeeded(se.stochasticState, se.config, se.seededRng)
+			returns, newState, err := GenerateAdvancedStochasticReturnsSeeded(se.stochasticState, &se.config, se.seededRng)
 			if err != nil {
 				return fmt.Errorf("failed to generate stochastic returns: %v", err)
 			}
@@ -1830,11 +1833,10 @@ func (se *SimulationEngine) processQueuedEvent(
 
 	// Process user event through the event registry
 	cashFlow := 0.0 // Legacy compatibility
-	context := &EventProcessingContext{
-		CurrentMonth:     queuedEvent.MonthOffset,
-		SimulationEngine: se,
-	}
-	err := se.eventRegistry.ProcessEvent(event, accounts, &cashFlow, context)
+	// PERF: Reuse engine-level context to avoid per-event heap allocation
+	se.eventContext.CurrentMonth = queuedEvent.MonthOffset
+	se.eventContext.SimulationEngine = se
+	err := se.eventRegistry.ProcessEvent(event, accounts, &cashFlow, &se.eventContext)
 
 	if err != nil {
 		return fmt.Errorf("processing event %s: %w", event.ID, err)
@@ -2283,17 +2285,15 @@ func (se *SimulationEngine) processEventWithFIFO(event FinancialEvent, accounts 
 		_ = fmt.Sprintf("DEBUG WASM processEventWithFIFO: current cashFlow=%.2f, event.Amount=%.2f\n", *cashFlow, event.Amount)
 	}
 
-	// Create processing context
-	context := &EventProcessingContext{
-		SimulationEngine: se,
-		CurrentMonth:     currentMonth,
-	}
+	// PERF: Reuse engine-level context to avoid per-event heap allocation
+	se.eventContext.SimulationEngine = se
+	se.eventContext.CurrentMonth = currentMonth
 
 	// Process event using the appropriate handler
 	if currentMonth == 0 {
 		simLogVerbose("🎯 [EVENT-DEBUG] About to call ProcessEvent for type=%s", event.Type)
 	}
-	if err := se.eventRegistry.ProcessEvent(event, accounts, cashFlow, context); err != nil {
+	if err := se.eventRegistry.ProcessEvent(event, accounts, cashFlow, &se.eventContext); err != nil {
 		simLogVerbose("🚨 [EVENT-ERROR] ERROR processing event %s: %v", event.Type, err)
 	} else if currentMonth == 0 {
 		simLogVerbose("✅ [EVENT-DEBUG] ProcessEvent SUCCESS for type=%s, new cashFlow=%.2f", event.Type, *cashFlow)

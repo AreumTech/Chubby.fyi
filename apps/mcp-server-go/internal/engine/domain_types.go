@@ -231,6 +231,9 @@ type StochasticModelConfig struct {
 	// - Uses simplified withdrawal sequencing
 	LiteMode bool `json:"liteMode,omitempty"`
 
+	// PERF: Set after first successful validateStochasticConfig call to skip redundant validation
+	ConfigValidated bool `json:"-"`
+
 	// PERF: Cached Cholesky decomposition (computed once per simulation, not per month)
 	// This avoids recomputing O(n^3) decomposition every month
 	CachedCholeskyMatrix [][]float64 `json:"-"` // Not serialized - computed at runtime

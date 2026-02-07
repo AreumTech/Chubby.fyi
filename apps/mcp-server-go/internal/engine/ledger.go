@@ -188,6 +188,9 @@ func (sl *SimpleLedger) validateTransaction(entries []LedgerEntry) error {
 
 // RecordIncome records income using double-entry accounting
 func (sl *SimpleLedger) RecordIncome(amount float64, incomeType string) error {
+	if sl.disabled {
+		return nil
+	}
 	amountCents := int64(amount * 100)
 
 	entries := []LedgerEntry{
@@ -200,6 +203,9 @@ func (sl *SimpleLedger) RecordIncome(amount float64, incomeType string) error {
 
 // RecordExpense records an expense using double-entry accounting
 func (sl *SimpleLedger) RecordExpense(amount float64, expenseType string) error {
+	if sl.disabled {
+		return nil
+	}
 	amountCents := int64(amount * 100)
 
 	entries := []LedgerEntry{
@@ -212,6 +218,9 @@ func (sl *SimpleLedger) RecordExpense(amount float64, expenseType string) error 
 
 // RecordInvestment records an investment purchase using double-entry accounting
 func (sl *SimpleLedger) RecordInvestment(amount float64, accountType string) error {
+	if sl.disabled {
+		return nil
+	}
 	amountCents := int64(amount * 100)
 
 	var investmentAccount string

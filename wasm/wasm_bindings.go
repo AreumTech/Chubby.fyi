@@ -315,7 +315,7 @@ func generateStochasticReturns(this js.Value, inputs []js.Value) interface{} {
 		}
 	}
 
-	returns, newState, err := GenerateAdvancedStochasticReturns(state, config)
+	returns, newState, err := GenerateAdvancedStochasticReturns(state, &config)
 	if err != nil {
 		return map[string]interface{}{
 			"success": false,

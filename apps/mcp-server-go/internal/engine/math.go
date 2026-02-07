@@ -457,6 +457,11 @@ func PrecomputeConfigParameters(config *StochasticModelConfig) error {
 
 // validateStochasticConfig validates the stochastic model configuration
 func validateStochasticConfig(config *StochasticModelConfig) error {
+	// PERF: Skip validation after first successful call (config doesn't change between months)
+	if config.ConfigValidated {
+		return nil
+	}
+
 	// SAFETY NET: Apply Go-side defaults for any zero GARCH parameters
 	// This prevents JavaScript config errors from breaking simulation
 	if config.GarchSPYOmega <= 0 {
@@ -585,13 +590,14 @@ func validateStochasticConfig(config *StochasticModelConfig) error {
 		}
 	}
 
+	config.ConfigValidated = true
 	return nil
 }
 
 // GenerateAdvancedStochasticReturns generates one month of stochastic returns using GARCH and AR(1) models
-func GenerateAdvancedStochasticReturns(state StochasticState, config StochasticModelConfig) (StochasticReturns, StochasticState, error) {
+func GenerateAdvancedStochasticReturns(state StochasticState, config *StochasticModelConfig) (StochasticReturns, StochasticState, error) {
 	// Validate inputs (and apply Go-side defaults if needed)
-	if err := validateStochasticConfig(&config); err != nil {
+	if err := validateStochasticConfig(config); err != nil {
 		return StochasticReturns{}, state, fmt.Errorf("invalid config: %v", err)
 	}
 
@@ -932,14 +938,14 @@ func CalculateDynamicWithdrawal(portfolioValue, baseWithdrawalAmount float64, co
 
 // GenerateAdvancedStochasticReturnsSeeded generates one month of stochastic returns using seeded RNG
 // When rng is nil, falls back to the original GenerateAdvancedStochasticReturns behavior
-func GenerateAdvancedStochasticReturnsSeeded(state StochasticState, config StochasticModelConfig, rng *SeededRNG) (StochasticReturns, StochasticState, error) {
+func GenerateAdvancedStochasticReturnsSeeded(state StochasticState, config *StochasticModelConfig, rng *SeededRNG) (StochasticReturns, StochasticState, error) {
 	// If no seeded RNG provided, fall back to original behavior
 	if rng == nil {
 		return GenerateAdvancedStochasticReturns(state, config)
 	}
 
 	// Validate inputs (and apply Go-side defaults if needed)
-	if err := validateStochasticConfig(&config); err != nil {
+	if err := validateStochasticConfig(config); err != nil {
 		return StochasticReturns{}, state, err
 	}
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"sort"
+	"strconv"
 )
 
 // CashManager handles FIFO lot management and tax-efficient withdrawals
@@ -121,7 +122,7 @@ func (cm *CashManager) AddHoldingWithLotTracking(account *Account, assetClass As
 		CurrentMarketPricePerUnit: pricePerShare,
 		CurrentMarketValueTotal:   0,  // Will be calculated from quantity * current price
 		UnrealizedGainLossTotal:   0,  // Will be calculated from market value - cost basis
-		Lots:                      []TaxLot{}, // Start empty, add the initial lot
+		Lots:                      make([]TaxLot, 0, 16), // PERF: Pre-allocate for typical lot growth
 	}
 
 	// Add the initial lot with exact share tracking
@@ -165,7 +166,8 @@ func (cm *CashManager) addShareLotToHolding(holding *Holding, shareQuantity floa
 	}
 
 	// Generate unique lot ID for tax tracking
-	lotID := fmt.Sprintf("lot_%d_%s_%d", cm.nextLotID, holding.AssetClass, acquisitionDate)
+	// PERF: Generate lot ID with strconv instead of fmt.Sprintf (avoids format parsing overhead)
+	lotID := "lot_" + strconv.Itoa(cm.nextLotID) + "_" + string(holding.AssetClass) + "_" + strconv.Itoa(acquisitionDate)
 	cm.nextLotID++
 
 	// Calculate EXACT total cost basis for this specific lot
@@ -374,7 +376,7 @@ func (cm *CashManager) SellAssetsFromAccountFIFO(account *Account, targetAmount 
 				} else {
 					// Partially sold this lot - create a new lot representing the sold portion
 					partialLot := TaxLot{
-						ID:                fmt.Sprintf("%s_partial_%d", lot.ID, cm.nextLotID),
+						ID:                lot.ID + "_partial_" + strconv.Itoa(cm.nextLotID),
 						AssetClass:        lot.AssetClass,
 						Quantity:          sellQuantity,
 						CostBasisPerUnit:  lot.CostBasisPerUnit,
@@ -445,7 +447,7 @@ func (cm *CashManager) createSaleTransaction(lot TaxLot, sellQuantity float64, s
 	gainLoss := netProceeds - costBasis
 
 	return SaleTransaction{
-		ID:               fmt.Sprintf("sale_%d_%s_%d", cm.nextLotID, lot.AssetClass, saleDate),
+		ID:               "sale_" + strconv.Itoa(cm.nextLotID) + "_" + string(lot.AssetClass) + "_" + strconv.Itoa(saleDate),
 		AssetClass:       lot.AssetClass,
 		Quantity:         sellQuantity,
 		SalePrice:        salePrice,
@@ -1107,14 +1109,17 @@ func (cm *CashManager) OptimizeLotStructure(account *Account) {
 	for i := range account.Holdings {
 		holding := &account.Holdings[i]
 
-		// Remove zero-quantity lots
-		newLots := make([]TaxLot, 0, len(holding.Lots))
-		for _, lot := range holding.Lots {
-			if lot.Quantity > 1e-10 { // Small tolerance for floating point precision
-				newLots = append(newLots, lot)
+		// PERF: In-place filter to avoid allocating a new slice
+		n := 0
+		for j := range holding.Lots {
+			if holding.Lots[j].Quantity > 1e-10 { // Small tolerance for floating point precision
+				if n != j {
+					holding.Lots[n] = holding.Lots[j]
+				}
+				n++
 			}
 		}
-		holding.Lots = newLots
+		holding.Lots = holding.Lots[:n]
 
 		// NOTE: Do NOT call updateHoldingTotals here!
 		// It would recalculate CurrentMarketValueTotal using CashManager's market prices,
@@ -1291,7 +1296,7 @@ func (cm *CashManager) SellSpecificAssetClassFromAccount(account *Account, targe
 				} else {
 					// Partially sold this lot - create a new lot representing the sold portion
 					partialLot := TaxLot{
-						ID:                fmt.Sprintf("%s_partial_%d", lot.ID, cm.nextLotID),
+						ID:                lot.ID + "_partial_" + strconv.Itoa(cm.nextLotID),
 						AssetClass:        lot.AssetClass,
 						Quantity:          sellQuantity,
 						CostBasisPerUnit:  lot.CostBasisPerUnit,

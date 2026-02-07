@@ -149,7 +149,7 @@ func TestStochasticReturns(t *testing.T) { // Modified signature
 
 	// Generate returns for several months
 	for month := 0; month < 3; month++ {
-		returns, newState, err := GenerateAdvancedStochasticReturns(state, config)
+		returns, newState, err := GenerateAdvancedStochasticReturns(state, &config)
 		if err != nil {
 			t.Fatalf("❌ Error generating returns for month %d: %v\n", month, err) // Changed from fmt.Printf + return to t.Fatalf
 		}

@@ -1,6 +1,12 @@
 package engine
 
-import "fmt"
+import "errors"
+
+// PERF: Package-level singleton to avoid per-miss allocation in GetHandler
+var defaultHandler EventHandler = &DefaultEventHandler{}
+
+// PERF: Sentinel error avoids fmt.Errorf allocation per GetHandler miss
+var errNoHandler = errors.New("no handler found for event type")
 
 // EventHandlerRegistry manages the mapping of event types to their handlers
 type EventHandlerRegistry struct {
@@ -147,29 +153,23 @@ func (r *EventHandlerRegistry) registerHandlers() {
 
 // GetHandler returns the handler for a given event type
 func (r *EventHandlerRegistry) GetHandler(eventType EventType) (EventHandler, error) {
-	// Only log on first lookup to prevent spam
-	if r.debugLogged == nil {
-		r.debugLogged = make(map[EventType]bool)
-	}
-	if !r.debugLogged[eventType] {
-		r.debugLogged[eventType] = true
-	}
-
 	if handler, exists := r.handlers[eventType]; exists {
-		if !r.debugLogged[eventType+"_found"] {
-			r.debugLogged[eventType+"_found"] = true
-		}
 		return handler, nil
 	}
 
-	// Log error only once per type when at highest verbosity
-	if !r.debugLogged[eventType+"_error"] {
-		simLogVerbose("DEBUG No handler found for event type: %s", eventType)
-		r.debugLogged[eventType+"_error"] = true
+	// PERF: Only do debug tracking when VERBOSE_DEBUG is enabled (const-eliminated otherwise)
+	if VERBOSE_DEBUG {
+		if r.debugLogged == nil {
+			r.debugLogged = make(map[EventType]bool)
+		}
+		if !r.debugLogged[eventType+"_error"] {
+			simLogVerbose("DEBUG No handler found for event type: %s", eventType)
+			r.debugLogged[eventType+"_error"] = true
+		}
 	}
 
 	// Return default handler for unknown event types
-	return &DefaultEventHandler{}, fmt.Errorf("no handler found for event type: %s", eventType)
+	return defaultHandler, errNoHandler
 }
 
 // ProcessEvent processes an event using the appropriate handler

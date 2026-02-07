@@ -344,12 +344,12 @@ func TestSeededSimulationReproducibility(t *testing.T) {
 
 	for i := 0; i < 12; i++ {
 		var err error
-		returns1[i], state1, err = GenerateAdvancedStochasticReturnsSeeded(state1, config, rng1)
+		returns1[i], state1, err = GenerateAdvancedStochasticReturnsSeeded(state1, &config, rng1)
 		if err != nil {
 			t.Fatalf("First run month %d: %v", i, err)
 		}
 
-		returns2[i], state2, err = GenerateAdvancedStochasticReturnsSeeded(state2, config, rng2)
+		returns2[i], state2, err = GenerateAdvancedStochasticReturnsSeeded(state2, &config, rng2)
 		if err != nil {
 			t.Fatalf("Second run month %d: %v", i, err)
 		}
@@ -400,12 +400,12 @@ func TestDifferentSeedsProduceDifferentPaths(t *testing.T) {
 	rng2 := NewSeededRNG(99999)
 
 	// Generate one month with each seed
-	returns1, _, err1 := GenerateAdvancedStochasticReturnsSeeded(state, config, rng1)
+	returns1, _, err1 := GenerateAdvancedStochasticReturnsSeeded(state, &config, rng1)
 	if err1 != nil {
 		t.Fatalf("First run: %v", err1)
 	}
 
-	returns2, _, err2 := GenerateAdvancedStochasticReturnsSeeded(state, config, rng2)
+	returns2, _, err2 := GenerateAdvancedStochasticReturnsSeeded(state, &config, rng2)
 	if err2 != nil {
 		t.Fatalf("Second run: %v", err2)
 	}
