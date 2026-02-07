@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>AreumFire Simulation Viewer</title>
+  <title>Chubby Simulation Viewer</title>
   <!-- pako for decompression (local copy) -->
   <script src="/pako.min.js"></script>
   <style>
@@ -545,7 +545,7 @@
   <div class="container">
     <!-- Header -->
     <div class="header">
-      <span class="header-brand">AreumFire</span>
+      <span class="header-brand">Chubby</span>
       <span class="header-tag">Educational simulation</span>
     </div>
 
@@ -811,8 +811,10 @@
       }
 
       try {
-        // Decode base64
-        const binary = atob(payload);
+        // Decode base64 (handle both standard and URL-safe base64)
+        const std = payload.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = std + '='.repeat((4 - std.length % 4) % 4);
+        const binary = atob(padded);
 
         // Convert to Uint8Array
         const bytes = new Uint8Array(binary.length);
@@ -826,13 +828,13 @@
         // Parse JSON
         const data = JSON.parse(decompressed);
 
-        console.log('[AreumFire Viewer] Data loaded from fragment:', data.runId || 'unknown');
+        console.log('[Chubby Viewer] Data loaded from fragment:', data.runId || 'unknown');
 
         // Render widget
         showWidget(data);
 
       } catch (err) {
-        console.error('[AreumFire Viewer] Failed to parse payload:', err);
+        console.error('[Chubby Viewer] Failed to parse payload:', err);
         showError('Failed to decompress simulation data: ' + err.message);
       }
     }

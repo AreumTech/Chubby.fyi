@@ -200,8 +200,8 @@ function generateFragmentUrl(result: any): string | null {
     const jsonStr = JSON.stringify(leanPayload);
     const compressed = pako.deflate(jsonStr);
 
-    // Convert to base64
-    const base64 = Buffer.from(compressed).toString('base64');
+    // Convert to URL-safe base64 (no +/= that break in URL fragments)
+    const base64 = Buffer.from(compressed).toString('base64url');
 
     // Log payload size for monitoring
     const originalSize = jsonStr.length;
@@ -696,24 +696,21 @@ The widget shows trajectories and when assets may be depleted.`;
       const fragmentUrl = generateFragmentUrl(result);
       console.error(`🔗 Fragment URL result: ${fragmentUrl ? 'SUCCESS (' + fragmentUrl.length + ' chars)' : 'FAILED (null)'}`);
 
-      // Build text content with visualization link for Claude
-      // Claude ignores _meta, so we include the link in the text content
-      let textContent = textSummary;
+      // Build content blocks
+      // Fragment URL is a SEPARATE text block so ChatGPT can't swallow it when rendering _meta widget
+      const contentBlocks: Array<{type: string; text: string}> = [
+        { type: 'text', text: textSummary },
+      ];
       if (fragmentUrl) {
-        textContent += `\n\nVisualization: ${fragmentUrl}\n(Your data never leaves your browser.)`;
-        console.error(`📝 Added projections link to response`);
+        contentBlocks.push({ type: 'text', text: `Visualization: ${fragmentUrl}\n(Your data never leaves your browser.)` });
+        console.error(`📝 Added projections link as separate content block`);
       } else {
         console.error(`⚠️ No fragment URL - visualization link NOT added`);
       }
-      console.error(`📤 Final text content length: ${textContent.length} chars`);
+      console.error(`📤 Final content blocks: ${contentBlocks.length}`);
 
       return {
-        content: [
-          {
-            type: 'text',
-            text: textContent,
-          },
-        ],
+        content: contentBlocks,
         // Apps SDK: lean summary for model context (no trajectory arrays)
         structuredContent: modelSummary,
         // Apps SDK: full data for widget rendering + template metadata
