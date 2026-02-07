@@ -795,6 +795,27 @@
       padding: var(--space-2) 0;
     }
 
+    /* Event marker on trajectory bar */
+    .traj-event-marker {
+      position: absolute;
+      top: -3px;
+      width: 6px;
+      height: 6px;
+      background: var(--color-link);
+      border-radius: 50%;
+      z-index: 3;
+      transform: translateX(-3px);
+      pointer-events: none;
+    }
+
+    /* Spending annotation */
+    .traj-spending {
+      font-size: var(--font-size-2xs);
+      color: var(--color-text-muted);
+      min-width: 48px;
+      text-align: right;
+    }
+
     .traj-scale-note {
       font-size: var(--font-size-2xs);
       color: var(--color-text-muted);
@@ -1858,10 +1879,10 @@
       <div class="traj-explanation" id="traj-explanation" style="display: none; font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: var(--space-2);"></div>
       <div id="trajectory-bars"></div>
       <div class="traj-legend">
-        <div class="traj-legend-item" title="The bar spans from P10 (left) to P50 (right). The line marks P50 (typical)."><span class="traj-legend-swatch range"></span> Harder → Typical</div>
-        <div class="traj-legend-item" title="The median: half of simulated outcomes are better, half are worse"><span class="traj-legend-swatch p50"></span> Typical Outcome</div>
+        <div class="traj-legend-item" title="10th to 50th percentile: the range from pessimistic (only 10% of scenarios fall below) to median outcome"><span class="traj-legend-swatch range"></span> Harder → Typical</div>
+        <div class="traj-legend-item" title="50th percentile (median): half of simulated scenarios end above this value, half below"><span class="traj-legend-swatch p50"></span> Typical Outcome</div>
       </div>
-      <div class="traj-legend-note" style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: var(--space-2);" title="Each age shows percentiles across all simulated paths at that point — not one continuous 'typical path' over time">Percentiles recalculated at each age</div>
+      <div class="traj-legend-note" style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: var(--space-2);" title="Each age shows percentiles across all simulated paths at that point. This is not one continuous 'typical path' over time — each age is an independent cross-section of outcomes.">Percentiles recalculated at each age</div>
       <div class="traj-hint">Tap an age to see the math</div>
       <div id="traj-horizon-note" class="traj-horizon-note" style="display: none;"></div>
     </div>
@@ -1870,7 +1891,8 @@
     <!-- <div class="survival" id="survival-section" style="display: none;">
       <div class="survival-title">Futures Still Funded</div>
       <div class="survival-anchor" style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: var(--space-2);">
-        % of simulated futures where assets remain above $0 at each age
+        % of simulated futures where assets remain above $0 at each age.
+        Funded means baseline spending is sustained without depleting investment assets.
       </div>
       <div id="survival-bars"></div>
     </div> -->
@@ -2236,7 +2258,7 @@
 
         answerEl.innerHTML =
           '<div class="duration-saturated">' +
-            '<div class="duration-saturated-headline" title="Assets remain positive through the entire simulation window">This plan stays funded through Age ' + horizonAge + '</div>' +
+            '<div class="duration-saturated-headline" title="Funded means baseline spending is sustained without depleting investment assets. Assets remain positive through the entire simulation window.">This plan stays funded through Age ' + horizonAge + '</div>' +
             '<div class="duration-saturated-details">(end of simulation)</div>' +
             '<div class="duration-saturated-assets">' +
               '<span title="Half of simulated outcomes are better, half are worse">Typical assets at that age: <strong>~' + fmt(p50Assets) + '</strong></span>' +
@@ -2259,8 +2281,8 @@
 
         answerEl.innerHTML =
           '<div class="duration-saturated">' +
-            '<div class="duration-saturated-headline" title="Median path reaches horizon, but many paths deplete earlier">Plan reaches Age ' + horizonAge + ' in favorable scenarios</div>' +
-            '<div class="duration-saturated-details" style="color: var(--color-warning, #d97706);">' + constraintNote + '</div>' +
+            '<div class="duration-saturated-headline" title="Funded means baseline spending is sustained without depleting investment assets. Median path reaches horizon, but many paths deplete earlier.">Plan reaches Age ' + horizonAge + ' in favorable scenarios</div>' +
+            '<div class="duration-saturated-details" style="color: var(--color-warning, #d97706);" title="Depleted means investment assets have been exhausted and baseline spending can no longer be sustained.">' + constraintNote + '</div>' +
             '<div class="duration-saturated-assets">' +
               '<span title="Half of simulated outcomes are better, half are worse">Typical ending assets: <strong>~' + fmt(p50Assets) + '</strong></span>' +
             '</div>' +
@@ -2274,7 +2296,7 @@
 
         answerEl.innerHTML =
           '<div class="duration-saturated">' +
-            '<div class="duration-saturated-headline" title="Assets last through the simulation but are nearly depleted">This plan reaches Age ' + horizonAge + ' with minimal reserves</div>' +
+            '<div class="duration-saturated-headline" title="Funded means baseline spending is sustained without depleting investment assets. Assets last through the simulation but are nearly depleted.">This plan reaches Age ' + horizonAge + ' with minimal reserves</div>' +
             '<div class="duration-saturated-details">(end of simulation)</div>' +
             '<div class="duration-saturated-assets">' +
               '<span title="Half of simulated outcomes are better, half are worse">Typical assets at that age: <strong>~' + fmt(p50Assets) + '</strong></span>' +
@@ -2307,7 +2329,7 @@
               '<li class="typical" title="Half of simulated outcomes last longer, half run out sooner"><span class="age">Age ' + mostAge + '</span> in a typical outcome</li>' +
               '<li title="In 10% of simulated paths, assets are depleted by this age"><span class="age">Age ' + earlierAge + '</span> in harder scenarios</li>' +
             '</ul>' +
-            '<div class="duration-note">After this, baseline spending would become unsustainable.</div>' +
+            '<div class="duration-note" title="Funded means baseline spending is sustained without depleting investment assets.">After this, baseline spending would become unsustainable.</div>' +
             causalNote +
           '</div>';
         noteEl.style.display = 'none';
@@ -2468,6 +2490,13 @@
 
       const milestones = buildMilestones(d, currentAge);
 
+      // Build event marker map: age → event description (for dot markers on bars)
+      const eventMarkers = {};
+      const schedEvents = d.schedule?.scheduledEvents || buildEvents(d);
+      for (const e of schedEvents) {
+        eventMarkers[e.age] = e.label || e.change || 'Event';
+      }
+
       // Sample ages - use 10yr intervals for long horizons (>50yr) to keep ≤7 rows
       const horizonYears = endAge - currentAge;
       const interval = horizonYears > 50 ? 10 : 5;
@@ -2574,14 +2603,38 @@
         const rangeWidth = Math.max(0, pct50 - pct10);
         const showRange = true;
 
+        // Event marker dot (if this age has a scheduled event)
+        let eventMarkerHtml = '';
+        if (eventMarkers[age]) {
+          eventMarkerHtml = '<div class="traj-event-marker" style="left:' + pct50 + '%" title="' + eventMarkers[age] + '"></div>';
+        }
+
+        // Spending annotation (if spending data available on trajectory point)
+        let spendingHtml = '';
+        const spendingP50 = pt.spendingP50;
+        if (spendingP50 != null && spendingP50 > 0) {
+          spendingHtml = '<span class="traj-spending" aria-hidden="true" title="Typical annual spending at this age">' + fmtYr(spendingP50) + '/yr</span>';
+        }
+
+        // Tooltip - include spending if available
+        let fullTooltip = tooltipText;
+        if (spendingP50 != null && spendingP50 > 0) {
+          fullTooltip += ' · Spending ~' + fmtYr(spendingP50) + '/yr';
+        }
+        if (eventMarkers[age]) {
+          fullTooltip += ' · Event: ' + eventMarkers[age];
+        }
+
         html += '<div class="' + rowClass + '" data-age="' + age + '" data-year="' + yearOffset + '" ' +
-          'role="button" tabindex="0" aria-label="' + ariaLabel + '" title="' + tooltipText + '">' +
+          'role="button" tabindex="0" aria-label="' + ariaLabel + '" title="' + fullTooltip + '">' +
           '<span class="traj-age" aria-hidden="true">' + age + '</span>' +
           '<div class="traj-bar-container" aria-hidden="true">' +
             (showRange ? '<div class="traj-bar-range" style="left:' + pct10 + '%; width:' + rangeWidth + '%"></div>' : '') +
             '<div class="traj-bar-p50" style="left:' + pct50 + '%"></div>' +
+            eventMarkerHtml +
           '</div>' +
           '<span class="traj-value" aria-hidden="true">' + fmt(p50) + '</span>' +
+          spendingHtml +
           '<span class="traj-inspect" aria-hidden="true" title="Tap to inspect">ⓘ</span>' +
         '</div>';
       });
@@ -2589,7 +2642,8 @@
       // Add explanatory note if assets depleted
       if (constraintMarkerShown) {
         html += '<div class="traj-constraint-note">' +
-          'At this point, assets are exhausted and spending can no longer be sustained.' +
+          'At this point, assets are exhausted and spending can no longer be sustained. ' +
+          '("Funded" means baseline spending is sustained without depleting investment assets.)' +
         '</div>';
       }
 
@@ -3195,6 +3249,90 @@
     }
 
     // =========================================================================
+    // Render: Assumptions (dynamic)
+    // =========================================================================
+
+    function renderAssumptions(d) {
+      // Tax mode
+      const tax = d.taxMode === 'NOT_APPLIED' ? 'Taxes: not modeled' :
+                  d.taxMode === 'SIMPLIFIED' ? 'Taxes: applied (simplified)' :
+                  d.taxMode === 'USER_DECLARED' ? 'User tax rates' :
+                  d.taxMode ? 'Taxes: ' + d.taxMode : 'Taxes: not modeled';
+
+      // Asset allocation from inputs
+      const alloc = d.inputs?.assetAllocation;
+      let allocLabel = 'Stocks 7% / Bonds 4%';
+      if (alloc) {
+        const stocks = alloc.stocks ?? alloc.equities ?? alloc.stock ?? null;
+        const bonds = alloc.bonds ?? alloc.fixedIncome ?? alloc.bond ?? null;
+        if (stocks != null && bonds != null) {
+          const sPct = Math.round(stocks * (stocks <= 1 ? 100 : 1));
+          const bPct = Math.round(bonds * (bonds <= 1 ? 100 : 1));
+          allocLabel = sPct + '% stocks / ' + bPct + '% bonds';
+        }
+      }
+
+      // Inflation
+      const inflRate = d.inputs?.inflationRate ?? d.inputs?.inflation ?? null;
+      const inflLabel = inflRate != null
+        ? '~' + (inflRate <= 1 ? (inflRate * 100).toFixed(1) : inflRate.toFixed(1)) + '% inflation'
+        : '~2.5% inflation';
+
+      // Summary line
+      document.getElementById('assumptions-summary').innerHTML =
+        '<span>' + allocLabel + '</span><span>' + inflLabel + '</span><span>' + tax + '</span>';
+
+      // Expanded section - update returns model
+      const expandedEl = document.getElementById('assumptions-expanded');
+      if (expandedEl) {
+        let expandedHtml = '<div class="assumptions-section">' +
+          '<div class="assumptions-section-title">Returns Model (nominal)</div>' +
+          '<div class="assumptions-section-content">' +
+            '<ul>' +
+              '<li>Equities: ~7% mean annual return, ~18% volatility</li>' +
+              '<li>Bonds: ~4% mean annual return, ~6% volatility</li>' +
+            '</ul>';
+        if (alloc) {
+          const stocks = alloc.stocks ?? alloc.equities ?? alloc.stock ?? null;
+          const bonds = alloc.bonds ?? alloc.fixedIncome ?? alloc.bond ?? null;
+          if (stocks != null && bonds != null) {
+            const sPct = Math.round(stocks * (stocks <= 1 ? 100 : 1));
+            const bPct = Math.round(bonds * (bonds <= 1 ? 100 : 1));
+            expandedHtml += '<div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-2);">' +
+              'Portfolio allocation: ' + sPct + '% equities, ' + bPct + '% bonds' +
+              (100 - sPct - bPct > 0 ? ', ' + (100 - sPct - bPct) + '% other' : '') + '.</div>';
+          }
+        }
+        expandedHtml += '<div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-2);">' +
+            'Higher volatility means a wider spread between "Harder" and "Optimistic" outcomes over time.' +
+          '</div>' +
+          '<div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-1); font-style: italic;">' +
+            'These are long-run illustrative assumptions — not a prediction of future performance.' +
+          '</div>' +
+          '</div></div>';
+
+        expandedHtml += '<div class="assumptions-section">' +
+          '<div class="assumptions-section-title">Inflation</div>' +
+          '<div class="assumptions-section-content">' + inflLabel + ' applied to spending</div>' +
+        '</div>';
+
+        expandedHtml += '<div class="assumptions-section">' +
+          '<div class="assumptions-section-title">Tax Treatment</div>' +
+          '<div class="assumptions-section-content">' + tax + '</div>' +
+        '</div>';
+
+        expandedHtml += '<div class="assumptions-section">' +
+          '<div class="assumptions-section-title">Withdrawal Order</div>' +
+          '<div class="assumptions-section-content">' +
+            'Taxable → Tax-deferred → Roth (standard sequence)' +
+          '</div>' +
+        '</div>';
+
+        expandedEl.innerHTML = expandedHtml;
+      }
+    }
+
+    // =========================================================================
     // Init
     // =========================================================================
 
@@ -3260,11 +3398,8 @@
       renderScenario(data);
       renderTrajectory(data);
 
-      // Assumptions
-      const tax = data.taxMode === 'NOT_APPLIED' ? 'Taxes: not modeled' :
-                  data.taxMode === 'USER_DECLARED' ? 'User tax rates' : 'Taxes: not modeled';
-      document.getElementById('assumptions-summary').innerHTML =
-        '<span>Stocks 7% / Bonds 4%</span><span>~2.5% inflation</span><span>' + tax + '</span>';
+      // Assumptions - dynamic from widgetData
+      renderAssumptions(data);
 
       // Footer
       const horizonMonths = data.inputs?.horizonMonths || 360;

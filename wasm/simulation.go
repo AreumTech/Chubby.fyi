@@ -141,6 +141,7 @@ type SimulationEngine struct {
 	minCash               float64 // Minimum cash observed during simulation
 	minCashMonth          int     // Month when minimum cash occurred
 	cashFloorBreachedMonth int     // Month when cash first breached floor (-1 if never)
+	taxesDisabled         bool    // True when SimulationInput.TaxConfig is nil or Enabled==false
 	trackMonthlyData      bool    // Whether to store full monthly snapshots (true for deterministic, false for MC)
 	yearEndNetWorth       []float64 // Year-end net worth checkpoints for exemplar selection
 
@@ -1234,6 +1235,9 @@ func (se *SimulationEngine) RunSingleSimulation(input SimulationInput) Simulatio
 	// Store simulation input for access to strategies
 	se.simulationInput = &input
 
+	// Determine if taxes are disabled (SimpleTaxConfig is nil or Enabled==false)
+	se.taxesDisabled = input.TaxConfig == nil || !input.TaxConfig.Enabled
+
 	// Reset state for new simulation run
 	se.ResetSimulationState()
 
@@ -1404,6 +1408,7 @@ func (se *SimulationEngine) RunSingleSimulation(input SimulationInput) Simulatio
 func (se *SimulationEngine) runQueueSimulationLoop(input SimulationInput, accounts AccountHoldingsMonthEnd) SimulationResult {
 	// Store simulation input for access by event handlers
 	se.simulationInput = &input
+	se.taxesDisabled = input.TaxConfig == nil || !input.TaxConfig.Enabled
 
 	// Create and populate the event queue FIRST (before initializing accounts)
 	// This is required because initializeAccountsForQueue checks for investment events
@@ -2619,6 +2624,9 @@ func RunMonteCarloSimulation(input SimulationInput, numberOfRuns int) Simulation
 	// Calculate runway percentiles (conditional on breach)
 	runwayP5, runwayP50, runwayP95, breachedCount := calculateRunwayPercentiles(pathMetrics)
 
+	// Calculate constraint age percentiles (conditional on breach)
+	constraintAgeP10, constraintAgeP50, constraintAgeP90 := calculateConstraintAgePercentiles(pathMetrics, input.InitialAge)
+
 	// Calculate breach time series
 	breachTimeSeries := calculateBreachTimeSeries(pathMetrics, maxMonthsObserved)
 
@@ -2706,6 +2714,11 @@ func RunMonteCarloSimulation(input SimulationInput, numberOfRuns int) Simulation
 
 		// Exemplar path reference
 		ExemplarPath: exemplarPath,
+
+		// Constraint age distribution (conditional on breach)
+		ConstraintAgeP10: constraintAgeP10,
+		ConstraintAgeP50: constraintAgeP50,
+		ConstraintAgeP90: constraintAgeP90,
 
 		// Audit fields
 		BaseSeed:        baseSeed,
@@ -2974,6 +2987,22 @@ func calculateRunwayPercentiles(pathMetrics []MCPathMetrics) (p5, p50, p95 int, 
 	return int(pct[0]), int(pct[3]), int(pct[6]), len(runways)
 }
 
+// calculateConstraintAgePercentiles computes age percentiles for paths that breached cash floor
+func calculateConstraintAgePercentiles(pathMetrics []MCPathMetrics, startAge int) (p10, p50, p90 int) {
+	var ages []float64
+	for _, m := range pathMetrics {
+		if m.CashFloorBreached && m.RunwayMonths >= 0 {
+			age := float64(startAge) + float64(m.RunwayMonths)/12.0
+			ages = append(ages, age)
+		}
+	}
+	if len(ages) == 0 {
+		return 0, 0, 0
+	}
+	pct := calculatePercentilesExtended(ages)
+	return int(pct[1]), int(pct[3]), int(pct[5]) // P10, P50, P90
+}
+
 // deepCopyInputAccounts creates a deep copy of AccountHoldingsMonthEnd for MC path isolation
 // This ensures each path starts with fresh account state, preventing state pollution
 func deepCopyInputAccounts(original AccountHoldingsMonthEnd) AccountHoldingsMonthEnd {
@@ -3047,6 +3076,13 @@ func RunIsolatedPath(input SimulationInput, pathIndex int, opts IsolatedPathOpti
 func (se *SimulationEngine) ProcessAnnualTaxes(accounts *AccountHoldingsMonthEnd, monthOffset int, age int) error {
 	// Only process taxes in December (month % 12 == 11)
 	if monthOffset%12 != 11 {
+		return nil
+	}
+
+	// Skip entire year-end tax calculation when taxes are disabled
+	if se.taxesDisabled {
+		taxYear := monthOffset / 12
+		se.resetTaxYTD(taxYear)
 		return nil
 	}
 

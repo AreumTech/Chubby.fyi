@@ -134,7 +134,7 @@ function isNonNegativeNumber(value: unknown): boolean {
 function getMissingInputFields(params: Partial<RunSimulationParams>): string[] {
   const missing: string[] = [];
 
-  if (!isPositiveNumber(params.investableAssets)) missing.push('investableAssets');
+  if (!isNonNegativeNumber(params.investableAssets)) missing.push('investableAssets');
   if (!isPositiveNumber(params.annualSpending)) missing.push('annualSpending');
   if (!isPositiveNumber(params.currentAge)) missing.push('currentAge');
   if (!isNonNegativeNumber(params.expectedIncome)) missing.push('expectedIncome');
@@ -451,6 +451,13 @@ function createMcpServer(): Server {
         : 0;
       const phase = result.phaseInfo?.phase || 'transition';
 
+      // Deficit warning when spending exceeds income
+      const annualSpending = resolvedParams.annualSpending;
+      const expectedIncome = resolvedParams.expectedIncome;
+      const deficitWarning = (expectedIncome > 0 && annualSpending > expectedIncome)
+        ? `\nNote: Annual spending ($${annualSpending.toLocaleString()}) exceeds income ($${expectedIncome.toLocaleString()}), creating a $${(annualSpending - expectedIncome).toLocaleString()}/year deficit covered by investment withdrawals.`
+        : '';
+
       // Format runway months as human-readable string
       const formatRunwayText = (months?: number): string => {
         if (months === undefined || months === null) return '?';
@@ -465,6 +472,13 @@ function createMcpServer(): Server {
       // Use P75 not P90 (no tail theater)
       const runwayP75 = result.mc?.runwayP75 !== undefined ? result.mc.runwayP75 : result.mc?.runwayP90;
 
+      // Constraint age line (if engine provides it)
+      const mcAny = result.mc as Record<string, unknown> | undefined;
+      const constraintAgeP50 = mcAny?.constraintAgeP50 as number | undefined;
+      const constraintAgeLine = constraintAgeP50
+        ? `\nMedian constraint age: ${constraintAgeP50} (spending reductions needed)`
+        : '';
+
       // Build phase-aware text summary
       let textSummary: string;
       if (!result.success && !result.mc) {
@@ -474,7 +488,7 @@ function createMcpServer(): Server {
         textSummary = `Simulation complete (${result.runId}).
 
 Net worth trajectories show outcome dispersion over ${horizonYears} years.
-Widget displays growth potential across P10/P50/P75 paths.
+Widget displays growth potential across P10/P50/P75 paths.${deficitWarning}${constraintAgeLine}
 
 Ask "what if income changed?" or "what if I retired at X?" to explore.`;
       } else if (phase === 'decumulation') {
@@ -489,7 +503,7 @@ Ask "what if income changed?" or "what if I retired at X?" to explore.`;
 
         textSummary = `Simulation complete (${result.runId}).
 
-${runwayText}. ${breachPct}% of paths depleted assets.${flexNote}
+${runwayText}. ${breachPct}% of paths depleted assets.${flexNote}${deficitWarning}${constraintAgeLine}
 
 Ask "what if spending increased?" to explore scenarios.`;
       } else {
@@ -501,7 +515,7 @@ Ask "what if spending increased?" to explore scenarios.`;
         textSummary = `Simulation complete (${result.runId}).
 
 Runway: ${runwayText}
-Shows growth phase then retirement drawdown.
+Shows growth phase then retirement drawdown.${deficitWarning}${constraintAgeLine}
 
 The widget shows trajectories and when assets may be depleted.`;
       }
@@ -596,6 +610,9 @@ The widget shows trajectories and when assets may be depleted.`;
           runwayP75: result.mc?.runwayP75,
           finalNetWorthP50: result.mc?.finalNetWorthP50,
           everBreachProbability: result.mc?.everBreachProbability,
+          ...(mcAny?.constraintAgeP10 !== undefined && { constraintAgeP10: mcAny.constraintAgeP10 }),
+          ...(mcAny?.constraintAgeP50 !== undefined && { constraintAgeP50: mcAny.constraintAgeP50 }),
+          ...(mcAny?.constraintAgeP90 !== undefined && { constraintAgeP90: mcAny.constraintAgeP90 }),
         },
         // Full trajectory for widget rendering (required for bar chart)
         netWorthTrajectory: result.netWorthTrajectory,
@@ -637,6 +654,24 @@ The widget shows trajectories and when assets may be depleted.`;
       console.error(`   Reduction: ${Math.round((1 - modelSummarySize / fullResultSize) * 100)}%`);
       console.error(`${'='.repeat(60)}\n`);
 
+      // Check outputMode (default: 'full')
+      const outputMode = resolvedParams.outputMode || 'full';
+
+      if (outputMode === 'text') {
+        // Text-only mode: no widget, no fragment URL
+        console.error(`📤 outputMode=text — skipping widget and fragment URL`);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: textSummary,
+            },
+          ],
+          structuredContent: modelSummary,
+        };
+      }
+
+      // Full mode: include widget and fragment URL
       // Generate fragment URL for Claude connector (privacy-first)
       // The fragment payload is NEVER sent to the server
       console.error(`🔗 Generating fragment URL...`);

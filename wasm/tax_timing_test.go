@@ -336,6 +336,7 @@ func TestDecemberTaxFieldsPopulated(t *testing.T) {
 			StartYear:          2024,
 			WithdrawalStrategy: "TAX_EFFICIENT",
 			Goals:              []Goal{},
+			TaxConfig:          &SimpleTaxConfig{Enabled: true, EffectiveRate: 0.22, CapitalGainsRate: 0.15},
 		}
 
 		result := engine.RunSingleSimulation(input)

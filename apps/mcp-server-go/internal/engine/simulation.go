@@ -2579,6 +2579,9 @@ func RunMonteCarloSimulation(input SimulationInput, numberOfRuns int) Simulation
 	// Calculate runway percentiles (conditional on breach)
 	runwayP5, runwayP50, runwayP95, breachedCount := calculateRunwayPercentiles(pathMetrics)
 
+	// Calculate constraint age percentiles (conditional on breach)
+	constraintAgeP10, constraintAgeP50, constraintAgeP90 := calculateConstraintAgePercentiles(pathMetrics, input.InitialAge)
+
 	// Calculate breach time series
 	breachTimeSeries := calculateBreachTimeSeries(pathMetrics, maxMonthsObserved)
 
@@ -2666,6 +2669,11 @@ func RunMonteCarloSimulation(input SimulationInput, numberOfRuns int) Simulation
 
 		// Exemplar path reference
 		ExemplarPath: exemplarPath,
+
+		// Constraint age distribution (conditional on breach)
+		ConstraintAgeP10: constraintAgeP10,
+		ConstraintAgeP50: constraintAgeP50,
+		ConstraintAgeP90: constraintAgeP90,
 
 		// Audit fields
 		BaseSeed:        baseSeed,
@@ -2881,6 +2889,22 @@ func calculateRunwayPercentiles(pathMetrics []MCPathMetrics) (p5, p50, p95 int, 
 	}
 	pct := calculatePercentilesExtended(runways)
 	return int(pct[0]), int(pct[3]), int(pct[6]), len(runways)
+}
+
+// calculateConstraintAgePercentiles computes age percentiles for paths that breached cash floor
+func calculateConstraintAgePercentiles(pathMetrics []MCPathMetrics, startAge int) (p10, p50, p90 int) {
+	var ages []float64
+	for _, m := range pathMetrics {
+		if m.CashFloorBreached && m.RunwayMonths >= 0 {
+			age := float64(startAge) + float64(m.RunwayMonths)/12.0
+			ages = append(ages, age)
+		}
+	}
+	if len(ages) == 0 {
+		return 0, 0, 0
+	}
+	pct := calculatePercentilesExtended(ages)
+	return int(pct[1]), int(pct[3]), int(pct[5]) // P10, P50, P90
 }
 
 // deepCopyInputAccounts creates a deep copy of AccountHoldingsMonthEnd for MC path isolation

@@ -1408,7 +1408,7 @@ export async function handleRunSimulation(
     // Validate required parameters using structured validation
     validate.required(params.seed, 'seed');
     validate.range(params.startYear, 2000, 2100, 'startYear');
-    validate.positive(params.investableAssets, 'investableAssets');
+    validate.nonNegative(params.investableAssets, 'investableAssets');
     validate.positive(params.annualSpending, 'annualSpending');
     validate.range(params.currentAge, 18, 100, 'currentAge');
     // expectedIncome can be 0 for retirement scenarios
@@ -1420,9 +1420,9 @@ export async function handleRunSimulation(
     }
 
     // Configurable max age with sensible defaults
-    // Default: 80, Max allowed: 100
+    // Default: 90, Max allowed: 100
     // Projections beyond 90 carry significant uncertainty
-    const DEFAULT_MAX_AGE = 80;
+    const DEFAULT_MAX_AGE = 90;
     const ABSOLUTE_MAX_AGE = 100;
     let maxEndAge = params.maxAge ?? DEFAULT_MAX_AGE;
 

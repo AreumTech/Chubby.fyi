@@ -31,14 +31,17 @@ func (h *IncomeEventHandler) Process(event FinancialEvent, accounts *AccountHold
 
 	// FOOLPROOF RULE: Income arrives GROSS. Go handles all taxation.
 	// This ensures proper tax tracking (taxWithholdingYTD, year-end reconciliation).
-	payFrequency := getStringFromMetadata(event.Metadata, "payFrequency", "monthly")
-	filingStatus := FilingStatus(getStringFromMetadata(event.Metadata, "filingStatus", string(FilingStatusSingle)))
+	var salaryWithholding float64
+	if !se.taxesDisabled {
+		payFrequency := getStringFromMetadata(event.Metadata, "payFrequency", "monthly")
+		filingStatus := FilingStatus(getStringFromMetadata(event.Metadata, "filingStatus", string(FilingStatusSingle)))
 
-	taxConfig := GetDefaultTaxConfigDetailed()
-	taxConfig.FilingStatus = filingStatus
-	taxCalculator := NewTaxCalculator(taxConfig, nil)
+		taxConfig := GetDefaultTaxConfigDetailed()
+		taxConfig.FilingStatus = filingStatus
+		taxCalculator := NewTaxCalculator(taxConfig, nil)
 
-	salaryWithholding := taxCalculator.CalculateFederalWithholding(event.Amount, payFrequency, filingStatus)
+		salaryWithholding = taxCalculator.CalculateFederalWithholding(event.Amount, payFrequency, filingStatus)
+	}
 	netIncome := event.Amount - salaryWithholding
 
 	// PERF: Guard debug strings with VERBOSE_DEBUG

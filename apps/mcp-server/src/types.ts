@@ -164,6 +164,13 @@ export interface RunSimulationParams {
   verbosity?: VerbosityLevel;
 
   /**
+   * Response format:
+   * - 'full' (default): Includes interactive widget visualization
+   * - 'text': Text summary and structured data only, no widget
+   */
+  outputMode?: 'full' | 'text';
+
+  /**
    * [Advanced / Replay Mode] Specific path seed to replay.
    * If provided, skips MC and directly replays this path with full trace.
    * Use this to "show me that path again" without re-running MC.

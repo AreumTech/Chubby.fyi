@@ -140,27 +140,29 @@ func (h *UnifiedIncomeEventHandler) Process(event FinancialEvent, accounts *Acco
 	// FOOLPROOF RULE: Income arrives GROSS. Go handles all taxation.
 	// This ensures proper tax tracking (taxWithholdingYTD, year-end reconciliation).
 	var withholding float64
-	switch withholdingModel {
-	case "irs_percentage":
-		payFrequency := getStringFromMetadata(event.Metadata, "payFrequency", "monthly")
-		filingStatus := FilingStatus(getStringFromMetadata(event.Metadata, "filingStatus", string(FilingStatusSingle)))
-		taxConfig := GetDefaultTaxConfigDetailed()
-		taxConfig.FilingStatus = filingStatus
-		taxCalculator := NewTaxCalculator(taxConfig, nil)
-		withholding = taxCalculator.CalculateFederalWithholding(event.Amount, payFrequency, filingStatus)
-	case "fixed_rate":
-		rate := getFloat64FromMetadata(event.Metadata, "withholdingRate", 0.22)
-		withholding = event.Amount * rate
-	case "none":
-		withholding = 0
-	default:
-		// Default: use IRS percentage method
-		payFrequency := getStringFromMetadata(event.Metadata, "payFrequency", "monthly")
-		filingStatus := FilingStatus(getStringFromMetadata(event.Metadata, "filingStatus", string(FilingStatusSingle)))
-		taxConfig := GetDefaultTaxConfigDetailed()
-		taxConfig.FilingStatus = filingStatus
-		taxCalculator := NewTaxCalculator(taxConfig, nil)
-		withholding = taxCalculator.CalculateFederalWithholding(event.Amount, payFrequency, filingStatus)
+	if !se.taxesDisabled {
+		switch withholdingModel {
+		case "irs_percentage":
+			payFrequency := getStringFromMetadata(event.Metadata, "payFrequency", "monthly")
+			filingStatus := FilingStatus(getStringFromMetadata(event.Metadata, "filingStatus", string(FilingStatusSingle)))
+			taxConfig := GetDefaultTaxConfigDetailed()
+			taxConfig.FilingStatus = filingStatus
+			taxCalculator := NewTaxCalculator(taxConfig, nil)
+			withholding = taxCalculator.CalculateFederalWithholding(event.Amount, payFrequency, filingStatus)
+		case "fixed_rate":
+			rate := getFloat64FromMetadata(event.Metadata, "withholdingRate", 0.22)
+			withholding = event.Amount * rate
+		case "none":
+			withholding = 0
+		default:
+			// Default: use IRS percentage method
+			payFrequency := getStringFromMetadata(event.Metadata, "payFrequency", "monthly")
+			filingStatus := FilingStatus(getStringFromMetadata(event.Metadata, "filingStatus", string(FilingStatusSingle)))
+			taxConfig := GetDefaultTaxConfigDetailed()
+			taxConfig.FilingStatus = filingStatus
+			taxCalculator := NewTaxCalculator(taxConfig, nil)
+			withholding = taxCalculator.CalculateFederalWithholding(event.Amount, payFrequency, filingStatus)
+		}
 	}
 
 	// Calculate net income

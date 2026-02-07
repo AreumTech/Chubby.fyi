@@ -221,6 +221,44 @@ After rebuild/redeploy, verify these work:
 
 ---
 
+## Priority 3: Backlog (from Feedback Testing)
+
+### 3.1 Debt Payoff Timeline Visibility
+
+**Gap:** Users can't see when each debt gets paid off or how much interest is saved with avalanche vs snowball strategy.
+
+**Current state:** Debt is modeled in the engine (accepted via `debt` parameter in toolDefinition.ts) and affects simulation results, but the widget has zero debt UI — no balances, payoff dates, or interest savings shown.
+
+**Proposed solution:** Add a "Debt Payoff" section to the widget showing a table of debts with projected payoff dates, total interest paid, and a comparison row if strategy differs from current.
+
+**Effort:** Medium — engine already tracks debt; needs new widget section + data passthrough from simulation results.
+
+### 3.2 Employer Match Surfacing
+
+**Gap:** Users pass employer match config (`contributions.employerMatch`) but can't see the employer's contribution amount separately in output.
+
+**Current state:** Match is modeled in engine (contributions parameter, toolDefinition.ts lines 466-503) and affects account growth, but widget shows no indication of employee vs employer contribution breakdown.
+
+**Proposed solution:** Add employer match as a line item in the scheduled events section (e.g., "Employer contributes $X/year via 50% match on first 6%") and include in the assumptions section.
+
+**Effort:** Low-Medium — data exists in input config; needs formatting + widget rendering.
+
+### 3.3 Scenario Compare
+
+**Gap:** Users want to compare two scenarios side-by-side (e.g., "retire at 60 vs 65", "with vs without house purchase") without losing context between runs.
+
+**Current state:** Each simulation is independent. No way to view two results simultaneously. Users must run separately and remember previous results.
+
+**Proposed solution:** Two approaches:
+- **(A) Client-side:** Store previous result in sessionStorage, render two trajectory charts side-by-side with delta annotation.
+- **(B) Server-side:** New `compare_scenarios` tool that runs two simulations and returns a comparison payload with both trajectories + delta metrics.
+
+Recommend starting with (B) since the MCP tool can run two sims and the widget can render comparison data.
+
+**Effort:** High — requires either significant widget state management (A) or new tool + response format (B).
+
+---
+
 ## Files Modified (Round 5)
 
 | File | Changes |

@@ -64,6 +64,18 @@ Red flags to ignore:
 - Hardcoded values are fine if consistent.
 - Don't migrate patterns unless broken.
 
+## Code Style & Approach
+
+Prefer the simplest solution that uses existing data and components. Do not over-engineer with multi-tier fallbacks, async wrappers, or complex format handling unless explicitly requested. When in doubt, ask before adding complexity.
+
+## Git & Commits
+
+When committing, always commit ALL changed files unless the user explicitly specifies a subset. Never selectively commit or leave files out.
+
+## Communication
+
+When user provides feedback or flags issues, always track them — even if they aren't immediately actionable. Never dismiss feedback as 'no action needed' without user confirmation.
+
 ## Documentation
 
 - [docs/PRODUCT_SPEC.md](./docs/PRODUCT_SPEC.md) — Product philosophy and UX

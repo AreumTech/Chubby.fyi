@@ -29,11 +29,11 @@ export const TOOL_DESCRIPTION =
   '\n- KEEP explanations under 100 words - the widget carries the information' +
   '\n- FRAME as "under these assumptions, simulations show..." not "you are/will be..."' +
   '\n\nDESIGN CONTEXT (why we do things this way):' +
-  '\n- Default to age 80: Unless user specifies otherwise via maxAge parameter, simulate until age 80. Use maxAge up to 100 for extended projections (with caveats about uncertainty beyond 90).' +
+  '\n- Default to age 90: Unless user specifies otherwise via maxAge parameter, simulate until age 90. Use maxAge up to 100 for extended projections (with caveats about uncertainty beyond 90).' +
   '\n- P10/P50/P75 not P10/P90: We avoid P90 ("tail theater") because extreme percentiles are noisy and create false confidence. P75 is "optimistic but plausible."' +
   '\n- P75 can be very high: A small number of high-return paths dominate upside percentiles. Most outcomes cluster far below P75. This is expected, not a bug.' +
   '\n- Asymmetric range (10th to 75th): Downside risk matters more than upside luck. P10 shows "harder scenarios" worth planning for; P75 caps optimism.' +
-  '\n- "Constraint" not "failure": Running out of money triggers spending adjustment, not catastrophe. We model when baseline spending becomes unsustainable.' +
+  '\n- "Constraint" not "failure": If assets are fully depleted, the simulation path ends at that point (bankruptcy). We model when baseline spending becomes unsustainable.' +
   '\n- No summary success probability: We don\'t show "X% chance of success" because it implies binary pass/fail. Instead, trajectory shows pctPathsFunded (% of paths still funded at each age) for constraint timing.' +
   '\n- Runway available as MONTHS or AGE: runwayP10Months/P50Months/P75Months are months until constraint. runwayP10Age/P50Age/P75Age are the same as ages (more intuitive).' +
   '\n- Zero/negative P10: When P10 is 0 or negative, say "In 10% of scenarios, assets are depleted by age X" (not "you go broke").' +
@@ -83,7 +83,7 @@ export const TOOL_INPUT_SCHEMA = {
     currentAge: {
       type: 'number',
       description:
-        'Current age in years. Simulation projects to maxAge (default: 80, configurable up to 100). If missing, ask: "What is your current age?"',
+        'Current age in years. Simulation projects to maxAge (default: 90, configurable up to 100). If missing, ask: "What is your current age?"',
       minimum: 0,
     },
     expectedIncome: {
@@ -112,9 +112,9 @@ export const TOOL_INPUT_SCHEMA = {
     maxAge: {
       type: 'number',
       description:
-        'Maximum age for simulation projection (default: 80, max: 100). ' +
+        'Maximum age for simulation projection (default: 90, max: 100). ' +
         'Projections beyond age 90 carry significant uncertainty due to longevity, healthcare, and economic assumptions.',
-      default: 80,
+      default: 90,
       minimum: 50,
       maximum: 100,
     },
@@ -125,6 +125,13 @@ export const TOOL_INPUT_SCHEMA = {
         "Output verbosity: 'annual' (default) = MC aggregates + year-by-year snapshots + first-month events for 'show the math'; " +
         "'summary' = MC aggregates only; 'trace' = add full month-by-month ledger",
       default: 'annual',
+    },
+    outputMode: {
+      type: 'string',
+      enum: ['full', 'text'],
+      description:
+        'Response format. "full" (default) includes interactive widget visualization. "text" returns only text summary and structured data, no widget.',
+      default: 'full',
     },
     pathSeed: {
       type: 'number',

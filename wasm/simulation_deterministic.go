@@ -98,6 +98,7 @@ func (se *SimulationEngine) runDeterministicSimulationWithTrace(input Simulation
 
 	// Store simulation input for access to strategies
 	se.simulationInput = &input
+	se.taxesDisabled = input.TaxConfig == nil || !input.TaxConfig.Enabled
 
 	// Reset state for new simulation run
 	se.ResetSimulationState()
@@ -168,6 +169,7 @@ func (se *SimulationEngine) runDeterministicSimulationWithTrace(input Simulation
 func (se *SimulationEngine) runQueueSimulationLoopWithTrace(input SimulationInput, accounts AccountHoldingsMonthEnd) (SimulationResult, []EventTraceEntry, []DeterministicMonthState) {
 	// Store simulation input
 	se.simulationInput = &input
+	se.taxesDisabled = input.TaxConfig == nil || !input.TaxConfig.Enabled
 
 	// Create and populate the event queue
 	eventQueue := PreprocessAndPopulateQueue(input)

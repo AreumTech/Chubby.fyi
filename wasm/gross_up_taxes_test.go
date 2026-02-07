@@ -1269,7 +1269,7 @@ func TestIncomeWithholding_DifferentIncomeLevels(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			input := createBasicInput()
 			input.InitialAccounts = AccountHoldingsMonthEnd{Cash: 0}
-			input.TaxConfig = nil
+			input.TaxConfig = &SimpleTaxConfig{Enabled: true, EffectiveRate: 0.22, CapitalGainsRate: 0.15}
 
 			input.Events = []FinancialEvent{
 				{
@@ -1317,7 +1317,7 @@ func TestIncomeWithholding_FilingStatus(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			input := createBasicInput()
 			input.InitialAccounts = AccountHoldingsMonthEnd{Cash: 0}
-			input.TaxConfig = nil
+			input.TaxConfig = &SimpleTaxConfig{Enabled: true, EffectiveRate: 0.22, CapitalGainsRate: 0.15}
 
 			input.Events = []FinancialEvent{
 				{
@@ -1669,6 +1669,7 @@ func TestWithholding_MixedIncomeTypes(t *testing.T) {
 	input := createBasicInput()
 	input.MonthsToRun = 1
 	input.InitialAccounts = AccountHoldingsMonthEnd{Cash: 0}
+	input.TaxConfig = &SimpleTaxConfig{Enabled: true, EffectiveRate: 0.22, CapitalGainsRate: 0.15}
 
 	taxProfile := "ordinary_income"
 

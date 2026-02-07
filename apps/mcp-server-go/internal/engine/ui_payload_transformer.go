@@ -291,6 +291,11 @@ func generatePlanSummary(results SimulationResults, input SimulationInput, sampl
 		// Net worth trajectory (v1.5 phase-aware UI)
 		NetWorthTrajectory: netWorthTrajectory,
 
+		// Constraint age distribution (conditional on breach)
+		ConstraintAgeP10: results.ConstraintAgeP10,
+		ConstraintAgeP50: results.ConstraintAgeP50,
+		ConstraintAgeP90: results.ConstraintAgeP90,
+
 		// Audit fields
 		BaseSeed:        results.BaseSeed,
 		SuccessfulPaths: results.SuccessfulPaths,
@@ -2448,11 +2453,38 @@ func aggregateNetWorthTrajectory(samplePaths []SimulationResult, input Simulatio
 			monthOffset = maxMonths - 1 // Use last available month
 		}
 
-		// Collect net worth at this month across all paths
+		// Collect net worth and annual spending at this month across all paths
 		netWorths := make([]float64, 0, len(samplePaths))
+		annualSpending := make([]float64, 0, len(samplePaths))
+		solventCount := 0
+
+		// Year start month for annual spending sum
+		yearStartMonth := monthOffset - 11
+		if yearStartMonth < 0 {
+			yearStartMonth = 0
+		}
+
 		for _, path := range samplePaths {
 			if monthOffset < len(path.MonthlyData) {
 				netWorths = append(netWorths, path.MonthlyData[monthOffset].NetWorth)
+				breachMonth := path.CashFloorBreachedMonth
+				if breachMonth < 0 || breachMonth > monthOffset {
+					solventCount++
+				}
+				// Sum annual spending for this year
+				var yearSpending float64
+				for m := yearStartMonth; m <= monthOffset && m < len(path.MonthlyData); m++ {
+					yearSpending += path.MonthlyData[m].ExpensesThisMonth
+				}
+				annualSpending = append(annualSpending, yearSpending)
+			} else {
+				// Bankrupt path: include as $0 instead of excluding (prevents survivorship bias)
+				netWorths = append(netWorths, 0.0)
+				var yearSpending float64
+				for m := yearStartMonth; m <= monthOffset && m < len(path.MonthlyData); m++ {
+					yearSpending += path.MonthlyData[m].ExpensesThisMonth
+				}
+				annualSpending = append(annualSpending, yearSpending)
 			}
 		}
 
@@ -2462,16 +2494,23 @@ func aggregateNetWorthTrajectory(samplePaths []SimulationResult, input Simulatio
 
 		// Sort and calculate percentiles
 		sort.Float64s(netWorths)
+		sort.Float64s(annualSpending)
+
+		pctPathsFunded := float64(solventCount) / float64(len(samplePaths))
 
 		point := NetWorthTrajectoryPoint{
-			MonthOffset: monthOffset,
-			Year:        startYear + y + 1,
-			Age:         startAge + y + 1,
-			P10:         getPct(netWorths, 0.10),
-			P25:         getPct(netWorths, 0.25),
-			P50:         getPct(netWorths, 0.50),
-			P75:         getPct(netWorths, 0.75),
-			P90:         getPct(netWorths, 0.90),
+			MonthOffset:    monthOffset,
+			Year:           startYear + y + 1,
+			Age:            startAge + y + 1,
+			P10:            getPct(netWorths, 0.10),
+			P25:            getPct(netWorths, 0.25),
+			P50:            getPct(netWorths, 0.50),
+			P75:            getPct(netWorths, 0.75),
+			P90:            getPct(netWorths, 0.90),
+			PctPathsFunded: pctPathsFunded,
+			SpendingP10:    getPct(annualSpending, 0.10),
+			SpendingP50:    getPct(annualSpending, 0.50),
+			SpendingP75:    getPct(annualSpending, 0.75),
 		}
 
 		trajectory = append(trajectory, point)

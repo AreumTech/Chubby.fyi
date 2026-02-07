@@ -803,6 +803,11 @@ type PortfolioStats struct {
 	// Net worth trajectory (percentiles at yearly intervals for fan chart)
 	NetWorthTrajectory []NetWorthTrajectoryPoint `json:"netWorthTrajectory,omitempty"`
 
+	// Constraint age distribution (ONLY for paths that breached cash floor)
+	ConstraintAgeP10 int `json:"constraintAgeP10,omitempty"` // Age at which 10% of breached paths hit constraint
+	ConstraintAgeP50 int `json:"constraintAgeP50,omitempty"` // Median constraint age
+	ConstraintAgeP90 int `json:"constraintAgeP90,omitempty"` // Age at which 90% of breached paths hit constraint
+
 	// Audit fields
 	BaseSeed        int64 `json:"baseSeed,omitempty"`
 	SuccessfulPaths int   `json:"successfulPaths,omitempty"` // Paths with valid data (denominator for percentiles)
@@ -1470,6 +1475,11 @@ type SimulationResults struct {
 	// Net worth trajectory (percentiles at yearly intervals for fan chart)
 	NetWorthTrajectory []NetWorthTrajectoryPoint `json:"netWorthTrajectory,omitempty"`
 
+	// Constraint age distribution (ONLY for paths that breached cash floor)
+	ConstraintAgeP10 int `json:"constraintAgeP10,omitempty"` // Age at which 10% of breached paths hit constraint
+	ConstraintAgeP50 int `json:"constraintAgeP50,omitempty"` // Median constraint age
+	ConstraintAgeP90 int `json:"constraintAgeP90,omitempty"` // Age at which 90% of breached paths hit constraint
+
 	// Audit fields
 	BaseSeed        int64 `json:"baseSeed,omitempty"`
 	SuccessfulPaths int   `json:"successfulPaths,omitempty"` // Paths with valid data (denominator for percentiles)
@@ -1508,7 +1518,11 @@ type NetWorthTrajectoryPoint struct {
 	P25         float64 `json:"p25,omitempty"`
 	P50         float64 `json:"p50"` // Median
 	P75         float64 `json:"p75"`
-	P90         float64 `json:"p90,omitempty"`
+	P90            float64 `json:"p90,omitempty"`
+	PctPathsFunded float64 `json:"pctPathsFunded,omitempty"` // % of paths still funded at this age
+	SpendingP10    float64 `json:"spendingP10,omitempty"`    // Annual spending 10th percentile
+	SpendingP50    float64 `json:"spendingP50,omitempty"`    // Annual spending median
+	SpendingP75    float64 `json:"spendingP75,omitempty"`    // Annual spending 75th percentile
 }
 
 // ExemplarPath holds reference to median path (trace fetched separately)
