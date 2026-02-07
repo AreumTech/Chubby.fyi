@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"strconv"
 )
 
 // SystemEventHandler handles system-generated events (TIME_STEP, MARKET_UPDATE, etc.)
@@ -233,6 +234,17 @@ func (h *SystemEventHandlerSimple) processCashShortfallCheck(accounts *AccountHo
 
 		simLogVerbose("💸 [NEGATIVE_CASH_BACKUP] Month %d: Raised $%.2f from investments, cash now $%.2f",
 			monthOffset, saleResult.TotalProceeds, accounts.Cash)
+
+		// If cash is still negative after liquidation, we are insolvent
+		if accounts.Cash < 0 {
+			h.engine.isBankrupt = true
+			h.engine.bankruptcyMonth = monthOffset
+			h.engine.bankruptcyTrigger = "Bankruptcy triggered during cash shortfall check. Cash balance remains negative ($" + strconv.FormatFloat(accounts.Cash, 'f', 2, 64) + ") after liquidating all available investments. System is insolvent."
+
+			simLogVerbose("💀 [BANKRUPTCY] Month %d - %s", monthOffset, h.engine.bankruptcyTrigger)
+
+			return fmt.Errorf("bankruptcy: %s", h.engine.bankruptcyTrigger)
+		}
 	} else if enforceMinimum && accounts.Cash < minCashBuffer {
 		// Cash is positive but below configured minimum buffer - optionally raise more
 		netAmountNeeded := minCashBuffer - accounts.Cash

@@ -2448,15 +2448,16 @@ func aggregateNetWorthTrajectory(samplePaths []SimulationResult, input Simulatio
 		}
 
 		// Collect net worth at this month across all paths
-		// Count paths that are still "solvent" (net worth > 0) at this month
+		// Count paths that are still funded (haven't breached cash floor) at this month
 		netWorths := make([]float64, 0, len(samplePaths))
 		solventCount := 0
 		for _, path := range samplePaths {
 			if monthOffset < len(path.MonthlyData) {
 				nw := path.MonthlyData[monthOffset].NetWorth
 				netWorths = append(netWorths, nw)
-				// Path is solvent if net worth is positive
-				if nw > 0 {
+				// Path is funded if it hasn't breached cash floor by this month
+				breachMonth := path.CashFloorBreachedMonth
+				if breachMonth < 0 || breachMonth > monthOffset {
 					solventCount++
 				}
 			}

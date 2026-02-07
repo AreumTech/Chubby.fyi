@@ -1733,7 +1733,7 @@ function extractMCResults(
   if (portfolioStats) {
     return normalizePercentileNames({
       // IMPORTANT: Use ?? not || because successRate=0 is valid (0 || 1 = 1, but 0 ?? 1 = 0)
-      everBreachProbability: 1 - (portfolioStats.successRate ?? 1),
+      everBreachProbability: portfolioStats.everBreachProbability ?? (1 - (portfolioStats.successRate ?? 1)),
       finalNetWorthP5: portfolioStats.p5FinalValue,
       finalNetWorthP10: portfolioStats.p10FinalValue,
       finalNetWorthP50: portfolioStats.p50FinalValue,

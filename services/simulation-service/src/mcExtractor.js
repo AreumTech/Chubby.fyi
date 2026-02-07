@@ -84,6 +84,12 @@ function mapPortfolioStatsToMC(portfolioStats) {
     }
   }
 
+  // Use Go engine's directly-computed everBreachProbability if available
+  // (more accurate than the derived 1 - successRate, which measures final net worth)
+  if (portfolioStats.everBreachProbability !== undefined) {
+    result.everBreachProbability = portfolioStats.everBreachProbability;
+  }
+
   // Pass through exemplarPath for trace/replay support
   // This enables "show me that path again" without re-running MC
   if (portfolioStats.exemplarPath) {

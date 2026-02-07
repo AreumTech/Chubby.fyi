@@ -61,86 +61,66 @@ const PanelA: React.FC<{
   const reconcileOk = row.reconcile_delta <= RECONCILE_TOLERANCE;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-1.5">
       <div className="font-semibold text-areum-text-secondary text-xs-areum uppercase tracking-wide">
         Show the math
       </div>
 
-      {/* Cash equation */}
-      <div className="space-y-1">
-        <div className="text-xs-areum text-areum-text-tertiary">
-          End Cash = Start Cash + Operating Flow + Transfer
-        </div>
-        <div className="text-sm-areum font-mono">
-          <span className="text-areum-text-primary">{formatCurrencyShort(row.cash_end)}</span>
-          <span className="text-areum-text-tertiary"> = </span>
-          <span className="text-areum-text-primary">{formatCurrencyShort(row.cash_start)}</span>
-          <span className="text-areum-text-tertiary"> + </span>
-          <span className={row.operating_flow >= 0 ? 'text-areum-success' : 'text-areum-danger'}>
-            ({formatCurrencyShort(row.operating_flow)})
-          </span>
-          <span className="text-areum-text-tertiary"> + </span>
-          <span className={row.transfer_cash >= 0 ? 'text-areum-success' : 'text-areum-danger'}>
-            ({formatCurrencyShort(row.transfer_cash)})
-          </span>
-          <span className="ml-2">
-            {cashOk ? (
-              <span className="text-areum-success">✓</span>
-            ) : (
-              <span className="text-areum-danger">✗ Δ={formatCurrencyShort(row.cash_delta)}</span>
-            )}
-          </span>
-        </div>
-        {verifyMode && (
-          <div className="text-xs-areum text-areum-text-tertiary">
-            Cash equation {cashOk ? '✓' : '✗'}
-          </div>
-        )}
-      </div>
-
-      {/* Invested equation */}
-      <div className="space-y-1">
-        <div className="text-xs-areum text-areum-text-tertiary">
-          End Invested = Start Invested + Market Return Impact − Transfer
-        </div>
-        <div className="text-sm-areum font-mono">
-          <span className="text-areum-text-primary">{formatCurrencyShort(row.inv_end)}</span>
-          <span className="text-areum-text-tertiary"> = </span>
-          <span className="text-areum-text-primary">{formatCurrencyShort(row.inv_start)}</span>
-          <span className="text-areum-text-tertiary"> + </span>
-          <span className={row.market_return_impact >= 0 ? 'text-areum-success' : 'text-areum-danger'}>
-            ({formatCurrencyShort(row.market_return_impact)})
-          </span>
-          <span className="text-areum-text-tertiary"> − </span>
-          <span className={row.transfer_cash >= 0 ? 'text-areum-success' : 'text-areum-danger'}>
-            ({formatCurrencyShort(row.transfer_cash)})
-          </span>
-          <span className="ml-2">
-            {invOk ? (
-              <span className="text-areum-success">✓</span>
-            ) : (
-              <span className="text-areum-danger">✗ Δ={formatCurrencyShort(row.inv_delta)}</span>
-            )}
-          </span>
-        </div>
-        {verifyMode && (
-          <div className="text-xs-areum text-areum-text-tertiary">
-            Invested equation {invOk ? '✓' : '✗'}
-          </div>
-        )}
-      </div>
-
-      {/* Reconcile summary */}
-      <div className="flex items-center gap-2 pt-2 border-t border-areum-border/30">
-        <span className="text-xs-areum text-areum-text-tertiary">Reconcile Δ =</span>
-        <span className={`text-sm-areum font-mono ${reconcileOk ? 'text-areum-success' : 'text-areum-danger font-medium'}`}>
-          {reconcileOk ? '$0.00 ✓' : `$${row.reconcile_delta.toFixed(2)} ✗`}
+      {/* Cash equation: start + opFlow + xfer = end */}
+      <div className="text-xs-areum font-mono leading-snug">
+        <span className="text-areum-text-tertiary">Cash </span>
+        <span className="text-areum-text-primary">{formatCurrencyShort(row.cash_start)}</span>
+        <span className="text-areum-text-tertiary"> + </span>
+        <span className={row.operating_flow >= 0 ? 'text-areum-success' : 'text-areum-danger'}>
+          {formatCurrencyShort(row.operating_flow)}
         </span>
+        <span className="text-areum-text-tertiary"> + </span>
+        <span className={row.transfer_cash >= 0 ? 'text-areum-success' : 'text-areum-danger'}>
+          {formatCurrencyShort(row.transfer_cash)}
+        </span>
+        <span className="text-areum-text-tertiary"> = </span>
+        <span className="text-areum-text-primary">{formatCurrencyShort(row.cash_end)}</span>
+        {' '}
+        {cashOk ? (
+          <span className="text-areum-success">✓</span>
+        ) : (
+          <span className="text-areum-danger">✗Δ{formatCurrencyShort(row.cash_delta)}</span>
+        )}
       </div>
 
-      {/* Ordering stamp */}
-      <div className="text-xs-areum text-areum-text-tertiary italic">
-        Ordering: {TIME_CONVENTION.replace(/->/g, ' → ')}
+      {/* Invested equation: start + mkt − xfer = end */}
+      <div className="text-xs-areum font-mono leading-snug">
+        <span className="text-areum-text-tertiary">Inv </span>
+        <span className="text-areum-text-primary">{formatCurrencyShort(row.inv_start)}</span>
+        <span className="text-areum-text-tertiary"> + </span>
+        <span className={row.market_return_impact >= 0 ? 'text-areum-success' : 'text-areum-danger'}>
+          {formatCurrencyShort(row.market_return_impact)}
+        </span>
+        <span className="text-areum-text-tertiary"> − </span>
+        <span className={row.transfer_cash >= 0 ? 'text-areum-success' : 'text-areum-danger'}>
+          {formatCurrencyShort(row.transfer_cash)}
+        </span>
+        <span className="text-areum-text-tertiary"> = </span>
+        <span className="text-areum-text-primary">{formatCurrencyShort(row.inv_end)}</span>
+        {' '}
+        {invOk ? (
+          <span className="text-areum-success">✓</span>
+        ) : (
+          <span className="text-areum-danger">✗Δ{formatCurrencyShort(row.inv_delta)}</span>
+        )}
+      </div>
+
+      {/* Reconcile + ordering on one line */}
+      <div className="flex items-center gap-3 text-xs-areum text-areum-text-tertiary pt-1 border-t border-areum-border/20">
+        <span className="font-mono">
+          Δ{' '}
+          <span className={reconcileOk ? 'text-areum-success' : 'text-areum-danger'}>
+            {reconcileOk ? '$0 ✓' : `$${row.reconcile_delta.toFixed(2)} ✗`}
+          </span>
+        </span>
+        <span className="truncate" title={TIME_CONVENTION.replace(/->/g, ' → ')}>
+          {TIME_CONVENTION.replace(/->/g, '→')}
+        </span>
       </div>
     </div>
   );

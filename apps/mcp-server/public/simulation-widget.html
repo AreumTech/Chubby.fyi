@@ -1858,7 +1858,7 @@
       <div class="traj-explanation" id="traj-explanation" style="display: none; font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: var(--space-2);"></div>
       <div id="trajectory-bars"></div>
       <div class="traj-legend">
-        <div class="traj-legend-item" title="The bar spans from P10 (left) to P75 (right). The line marks P50 (typical)."><span class="traj-legend-swatch range"></span> Harder → Stronger</div>
+        <div class="traj-legend-item" title="The bar spans from P10 (left) to P50 (right). The line marks P50 (typical)."><span class="traj-legend-swatch range"></span> Harder → Typical</div>
         <div class="traj-legend-item" title="The median: half of simulated outcomes are better, half are worse"><span class="traj-legend-swatch p50"></span> Typical Outcome</div>
       </div>
       <div class="traj-legend-note" style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: var(--space-2);" title="Each age shows percentiles across all simulated paths at that point — not one continuous 'typical path' over time">Percentiles recalculated at each age</div>
@@ -1876,7 +1876,7 @@
     </div> -->
 
     <!-- Year Inspector -->
-    <div class="inspector" id="inspector" role="dialog" aria-modal="true" aria-labelledby="inspector-title">
+    <div class="inspector" id="inspector" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="inspector-title">
       <div class="inspector-header">
         <span class="inspector-title" id="inspector-title">Year 2035 (Age 60)</span>
         <button class="inspector-close" id="inspector-close" aria-label="Close inspector" type="button">×</button>
@@ -2083,6 +2083,7 @@
     // =========================================================================
 
     let data = null;
+    let durationConstraintAge = null; // Set by renderDuration, used by renderTrajectory for consistency
 
     // =========================================================================
     // Render: Duration
@@ -2213,16 +2214,25 @@
       // 2. A constraint marker will fire in the trajectory
       const effectivelySaturated = saturated && p50Assets > nearZeroThreshold && !firstConstraint;
 
+      // Store constraint age for renderTrajectory to use (single source of truth)
+      if (firstConstraint) {
+        durationConstraintAge = firstConstraint.age;
+      } else if (!effectivelySaturated && !saturated) {
+        durationConstraintAge = mostAge;
+      } else {
+        durationConstraintAge = null;
+      }
+
       if (effectivelySaturated) {
-        // MODE: Plan Coverage (saturated case)
+        // MODE: Plan Duration (saturated case)
         // Different header and framing when plan never runs out
-        labelEl.textContent = 'Plan Coverage';
+        labelEl.textContent = 'Plan Duration';
         questionEl.style.display = 'none'; // No question needed - statement mode
 
         // Calculate spending multiplier (pure arithmetic, not advice)
         const spendingMultiple = annualSpending > 0 ? Math.round(p50Assets / annualSpending) : null;
         const multiplierLine = spendingMultiple ?
-          '<div class="duration-multiplier">≈ ' + spendingMultiple + '× current annual spending (for scale)</div>' : '';
+          '<div class="duration-multiplier">≈ ' + spendingMultiple + '× current annual spending (simple ratio, not a recommendation)</div>' : '';
 
         answerEl.innerHTML =
           '<div class="duration-saturated">' +
@@ -2259,7 +2269,7 @@
       } else if (saturated && p50Assets <= nearZeroThreshold) {
         // MODE: Marginal Coverage (technically saturated but ending near $0)
         // Show a more nuanced message
-        labelEl.textContent = 'Plan Coverage';
+        labelEl.textContent = 'Plan Duration';
         questionEl.style.display = 'none';
 
         answerEl.innerHTML =
@@ -2534,13 +2544,16 @@
         // Once constraint is hit, show marker and stop - no point showing $0 repeatedly
         if (isConstrained) {
           if (!constraintMarkerShown) {
+            // Use durationConstraintAge (from renderDuration) as single source of truth
+            // to avoid inconsistency between header and trajectory marker
+            const markerAge = durationConstraintAge || age;
             // Show percentage of paths that have depleted, if available
             const depletedPct = pctPathsFunded !== undefined
               ? Math.round((1 - pctPathsFunded) * 100)
               : null;
             const depletedText = depletedPct !== null
-              ? '⚠️ In ' + depletedPct + '% of scenarios, assets depleted by Age ' + age
-              : '⚠️ In most scenarios, assets depleted by Age ' + age;
+              ? '⚠️ In ' + depletedPct + '% of scenarios, assets depleted by Age ' + markerAge
+              : '⚠️ In most scenarios, assets depleted by Age ' + markerAge;
             html += '<div class="traj-constraint-marker">' + depletedText + '</div>';
             constraintMarkerShown = true;
           }
@@ -2554,7 +2567,7 @@
         const rowClass = 'traj-row';
 
         // Tooltip shows all three scenarios
-        const tooltipText = 'Age ' + age + ': Harder ' + fmt(p10) + ' · Typical ' + fmt(p50) + ' · Optimistic ' + fmt(p75) + ' (reflects stronger markets in this model)';
+        const tooltipText = 'Age ' + age + ': Harder ' + fmt(p10) + ' · Typical ' + fmt(p50) + ' · Optimistic ' + fmt(p75);
         const ariaLabel = 'Age ' + age + ', median net worth ' + fmt(p50) + '. Press Enter or tap to view details.';
 
         // Show P10→P50 range bar with P50 marker
@@ -3033,9 +3046,15 @@
       }
 
       inspector.classList.add('visible');
+      inspector.setAttribute('aria-hidden', 'false');
 
-      // Scroll inspector into view
+      // Track triggering element for focus return
+      inspector._triggerEl = document.activeElement;
+
+      // Scroll inspector into view, then focus close button
       inspector.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const closeBtn = document.getElementById('inspector-close');
+      if (closeBtn) closeBtn.focus();
     }
 
     function renderNeedsInput(payload) {
@@ -3070,15 +3089,16 @@
             <div class="input-row">
               <label class="input-label" for="input-annualSpending">Annual spending (USD)</label>
               <input id="input-annualSpending" class="input-control" type="number" inputmode="decimal" step="any" min="0" placeholder="60000" value="${inputDraft.annualSpending ?? ''}">
+              <div class="input-helper">Inflates automatically with modeled inflation (~2.5%/yr).</div>
             </div>
             <div class="input-row">
               <label class="input-label" for="input-currentAge">Current age</label>
               <input id="input-currentAge" class="input-control" type="number" inputmode="numeric" step="1" min="0" placeholder="35" value="${inputDraft.currentAge ?? ''}">
             </div>
             <div class="input-row">
-              <label class="input-label" for="input-expectedIncome">Annual income (USD)</label>
+              <label class="input-label" for="input-expectedIncome">Annual gross income (USD)</label>
               <input id="input-expectedIncome" class="input-control" type="number" inputmode="decimal" step="any" min="0" placeholder="120000" value="${inputDraft.expectedIncome ?? ''}">
-              <div class="input-helper">Use 0 if retired.</div>
+              <div class="input-helper">Before taxes. Use 0 if retired.</div>
             </div>
             <div class="input-actions">
               <button id="inputSubmit" class="input-button" type="submit">Run simulation</button>
@@ -3384,8 +3404,28 @@
     // =========================================================================
 
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('inspector-close').addEventListener('click', () => {
-        document.getElementById('inspector').classList.remove('visible');
+      function closeInspector() {
+        const inspector = document.getElementById('inspector');
+        inspector.classList.remove('visible');
+        inspector.setAttribute('aria-hidden', 'true');
+        // Return focus to the row that opened the inspector
+        if (inspector._triggerEl) {
+          inspector._triggerEl.focus();
+          inspector._triggerEl = null;
+        }
+      }
+
+      document.getElementById('inspector-close').addEventListener('click', closeInspector);
+
+      // Escape key closes inspector
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          const inspector = document.getElementById('inspector');
+          if (inspector.classList.contains('visible')) {
+            e.preventDefault();
+            closeInspector();
+          }
+        }
       });
 
       document.getElementById('copy-summary-btn').addEventListener('click', copySummaryToClipboard);
