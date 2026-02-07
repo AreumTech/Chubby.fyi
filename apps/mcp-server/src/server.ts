@@ -167,6 +167,15 @@ function generateFragmentUrl(result: any): string | null {
         finalNetWorthP10: result.mc.finalNetWorthP10,
         finalNetWorthP50: result.mc.finalNetWorthP50,
         finalNetWorthP75: result.mc.finalNetWorthP75,
+        // Runway in months (preferred)
+        runwayP10Months: result.mc.runwayP10Months,
+        runwayP50Months: result.mc.runwayP50Months,
+        runwayP75Months: result.mc.runwayP75Months,
+        // Runway as ages
+        runwayP10Age: result.mc.runwayP10Age,
+        runwayP50Age: result.mc.runwayP50Age,
+        runwayP75Age: result.mc.runwayP75Age,
+        // Deprecated (backward compat)
         runwayP10: result.mc.runwayP10,
         runwayP50: result.mc.runwayP50,
         runwayP75: result.mc.runwayP75,
@@ -605,6 +614,15 @@ The widget shows trajectories and when assets may be depleted.`;
         inputs: result.inputs,
         // MC percentiles
         mc: {
+          // Runway in months (preferred)
+          runwayP10Months: result.mc?.runwayP10Months,
+          runwayP50Months: result.mc?.runwayP50Months,
+          runwayP75Months: result.mc?.runwayP75Months,
+          // Runway as ages (more intuitive)
+          runwayP10Age: result.mc?.runwayP10Age,
+          runwayP50Age: result.mc?.runwayP50Age,
+          runwayP75Age: result.mc?.runwayP75Age,
+          // Deprecated runway names (backward compat)
           runwayP10: result.mc?.runwayP10,
           runwayP50: result.mc?.runwayP50,
           runwayP75: result.mc?.runwayP75,

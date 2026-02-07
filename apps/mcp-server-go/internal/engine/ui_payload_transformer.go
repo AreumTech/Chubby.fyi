@@ -398,6 +398,11 @@ func generateAnnualSnapshots(medianPath SimulationResult, input SimulationInput)
 			previousNetWorth = prevYearData[len(prevYearData)-1].NetWorth
 		}
 
+		cashFlow := generateCashFlowAnalysis(months, lastMonth)
+
+		// Compute baseline spending = total living expenses minus healthcare
+		baselineSpending := cashFlow.ExpenseSources.Living.Total - cashFlow.ExpenseSources.Living.Healthcare
+
 		snapshot := AnnualDeepDiveSnapshot{
 			Age:  calculateAge(lastMonth.MonthOffset, input.InitialAge),
 			Year: year,
@@ -409,7 +414,11 @@ func generateAnnualSnapshots(medianPath SimulationResult, input SimulationInput)
 			},
 
 			BalanceSheet: generateBalanceSheet(lastMonth),
-			CashFlow:     generateCashFlowAnalysis(months, lastMonth),
+			CashFlow:     cashFlow,
+
+			BaselineSpending:   baselineSpending,
+			HealthcareExpenses: cashFlow.ExpenseSources.Living.Healthcare,
+			TaxesPaid:          cashFlow.ExpenseSources.Taxes.Total,
 
 			DivestmentProceeds: lastMonth.DivestmentProceedsThisMonth * 12, // Approximate annual
 			StrategyAnalysis:   generateStrategyAnalysis(lastMonth),
@@ -986,6 +995,7 @@ func generateCashFlowAnalysis(monthlyData []MonthlyDataSimulation, lastMonth Mon
 
 	// Detailed expense breakdowns
 	housingExpenses := 0.0
+	healthcareExpenses := 0.0
 	otherExpenses := 0.0
 	contributionsTaxable := 0.0
 	contributionsTaxDeferred := 0.0
@@ -1010,7 +1020,8 @@ func generateCashFlowAnalysis(monthlyData []MonthlyDataSimulation, lastMonth Mon
 
 		// Aggregate detailed expenses
 		housingExpenses += month.HousingExpensesThisMonth
-		otherExpenses += month.ExpensesThisMonth - month.HousingExpensesThisMonth
+		healthcareExpenses += month.HealthcareExpensesThisMonth
+		otherExpenses += month.ExpensesThisMonth - month.HousingExpensesThisMonth - month.HealthcareExpensesThisMonth
 
 		// Aggregate contributions by account type
 		contributionsTaxable += month.ContributionsTaxableThisMonth
@@ -1081,9 +1092,10 @@ func generateCashFlowAnalysis(monthlyData []MonthlyDataSimulation, lastMonth Mon
 				CapitalGains: getFloatValue(lastMonth.CapitalGainsTaxLongTermAnnual) + getFloatValue(lastMonth.CapitalGainsTaxShortTermAnnual),
 			},
 			Living: LivingExpenses{
-				Total:   totalExpenses,
-				Housing: housingExpenses,
-				Other:   otherExpenses,
+				Total:      totalExpenses,
+				Housing:    housingExpenses,
+				Healthcare: healthcareExpenses,
+				Other:      otherExpenses,
 			},
 			Investments: InvestmentExpenses{
 				Total:       totalContributions,

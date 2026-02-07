@@ -77,6 +77,7 @@ func (h *HealthcareCostEventHandler) Process(event FinancialEvent, accounts *Acc
 	// Process healthcare expenses
 	accounts.Cash -= event.Amount
 	*cashFlow -= event.Amount
+	se.currentMonthFlows.HealthcareExpensesThisMonth += event.Amount
 	// Healthcare costs may be tax-deductible
 	se.processHealthcareExpense(event.Amount, event.Metadata)
 

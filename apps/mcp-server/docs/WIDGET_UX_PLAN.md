@@ -257,6 +257,66 @@ Recommend starting with (B) since the MCP tool can run two sims and the widget c
 
 **Effort:** High — requires either significant widget state management (A) or new tool + response format (B).
 
+### 3.4 Spending Curve (Go-Go / Slow-Go / No-Go)
+
+**Gap:** Users want to model multiple spending phases in retirement — higher spending early (travel, activities), moderate middle years, lower late-life.
+
+**Current state:** Single annual spending with optional one-time spendingChange event. No multi-phase spending curve.
+
+**Proposed solution:** Add spendingPhases array — each phase has startAge, endAge, annualSpending. Engine interpolates between phases. Could also support percentage-based decline (e.g., -2%/year after age 75).
+
+**Effort:** Medium — needs new input type, engine spending logic change, widget visualization.
+
+### 3.5 Adaptive Spending / Guardrails Strategy
+
+**Gap:** Engine is currently binary — funded or bankrupt. No spending reduction when portfolio drops. Users expect dynamic adjustment.
+
+**Current state:** No guardrails. When assets deplete, paths survive on fixed income or go bankrupt. Tool definition previously (incorrectly) claimed spending adjusts.
+
+**Proposed solution:** Implement guardrails strategy: define floor/ceiling spending rates. When portfolio drops below threshold, reduce spending to floor. When above, allow ceiling. Track adjusted vs baseline spending separately.
+
+**Effort:** High — core engine mechanics change, new strategy type, widget needs adjusted-spending visualization.
+
+### 3.6 Home / Mortgage Modeling
+
+**Gap:** #1 feature users ask about. Home equity, mortgage payments, property taxes, downsizing events not modeled.
+
+**Current state:** Not supported. Can approximate via spending events (mortgage as expense, downsizing as one-time income) but no home-as-asset tracking.
+
+**Proposed solution:** Add housing module — primary residence with purchase price, current value, appreciation rate, mortgage (P&I, remaining term), property taxes, insurance. Optional downsizing event (sell, buy smaller, net equity released). Home equity shown separately from investable assets.
+
+**Effort:** High — new asset class, amortization logic, tax implications (capital gains exclusion), widget display.
+
+### 3.7 Portfolio Fees
+
+**Gap:** Users expect a fee slider. Advisory fees, fund expense ratios reduce returns.
+
+**Current state:** Not modeled. Returns are gross of fees.
+
+**Proposed solution:** Add annualFeePercent parameter (0-2%). Deducted monthly from portfolio (feePercent/12 * balance). Show fee drag in assumptions and annual snapshots.
+
+**Effort:** Low — simple monthly deduction in engine loop, schema + widget change.
+
+### 3.8 Inflation / Return Regime Changes
+
+**Gap:** Users want "what if inflation is 5% for the next decade?" or "bad decade early in retirement" stress tests.
+
+**Current state:** Stochastic model generates returns/inflation from distribution. No way to force regimes.
+
+**Proposed solution:** Add optional regimeOverrides array — each with startMonth, endMonth, overrideInflation, overrideEquityReturn. Engine applies override during specified period, then reverts to stochastic.
+
+**Effort:** Medium — engine needs regime override in monthly return generation.
+
+### 3.9 Popular Scenario Templates / Presets
+
+**Gap:** Most users ask the same 10 questions. Pre-built templates would reduce friction and demonstrate tool capabilities.
+
+**Current state:** No templates. Every simulation requires full parameter specification.
+
+**Proposed solution:** Add scenarioTemplate parameter or separate tool. Templates: "Retire at X", "Partial retirement", "Big purchase", "Sabbatical/career break", "Dual income household", "RSU concentration risk", "Debt payoff plan", "Social Security optimization", "Healthcare bridge to Medicare", "Coast FIRE". Each maps to pre-filled parameters that user can override.
+
+**Effort:** Low-Medium — template definitions + parameter merge logic, no engine changes.
+
 ---
 
 ## Files Modified (Round 5)

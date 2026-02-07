@@ -911,6 +911,29 @@ function extractSchedule(params: RunSimulationParams): SimulationSchedule {
     }
   }
 
+  // Income streams
+  if (params.incomeStreams) {
+    for (const stream of params.incomeStreams) {
+      const startAge = monthToAge(stream.startMonthOffset || 0);
+      scheduledEvents.push({
+        age: startAge,
+        type: 'income',
+        change: `+$${(stream.annualAmount / 1000).toFixed(0)}k/yr`,
+        label: stream.description,
+        icon: '💰',
+      });
+      if (stream.endMonthOffset !== undefined) {
+        scheduledEvents.push({
+          age: monthToAge(stream.endMonthOffset),
+          type: 'income',
+          change: `$0`,
+          label: `${stream.description} ends`,
+          icon: '💰',
+        });
+      }
+    }
+  }
+
   // Sort by age
   scheduledEvents.sort((a, b) => a.age - b.age);
 
@@ -1178,6 +1201,8 @@ async function runSingleSimulation(
     rebalancing: params.rebalancing,
     // Debt (v11)
     debt: params.debt,
+    // Income Streams (v12)
+    incomeStreams: params.incomeStreams,
   };
 
   // Call simulation service with timeout
@@ -1405,6 +1430,29 @@ export async function handleRunSimulation(
   params: RunSimulationParams
 ): Promise<SimulationPacketResult> {
   try {
+    // Numeric safety: reject NaN/Infinity on key inputs
+    if (!Number.isFinite(params.investableAssets)) {
+      throw new SimulationError(
+        ErrorCode.INVALID_TYPE,
+        `investableAssets must be a finite number, got ${params.investableAssets}`,
+        { field: 'investableAssets', value: params.investableAssets }
+      );
+    }
+    if (!Number.isFinite(params.annualSpending)) {
+      throw new SimulationError(
+        ErrorCode.INVALID_TYPE,
+        `annualSpending must be a finite number, got ${params.annualSpending}`,
+        { field: 'annualSpending', value: params.annualSpending }
+      );
+    }
+    if (!Number.isFinite(params.expectedIncome)) {
+      throw new SimulationError(
+        ErrorCode.INVALID_TYPE,
+        `expectedIncome must be a finite number, got ${params.expectedIncome}`,
+        { field: 'expectedIncome', value: params.expectedIncome }
+      );
+    }
+
     // Validate required parameters using structured validation
     validate.required(params.seed, 'seed');
     validate.range(params.startYear, 2000, 2100, 'startYear');
@@ -1417,6 +1465,96 @@ export async function handleRunSimulation(
     // Validate optional parameters if provided
     if (params.mcPaths !== undefined) {
       validate.range(params.mcPaths, 1, 10000, 'mcPaths');
+    }
+
+    // Low path count warning (logged, not an error)
+    if (params.mcPaths !== undefined && params.mcPaths < 50) {
+      console.error(`\u26a0\ufe0f mcPaths=${params.mcPaths} is low. Results may vary significantly between runs. Consider using >= 50 paths.`);
+    }
+
+    // Resolve age-based inputs (atAge -> monthOffset)
+    if (params.incomeChange) {
+      if (params.incomeChange.atAge !== undefined) {
+        if (params.incomeChange.monthOffset !== undefined && params.incomeChange.monthOffset !== 0) {
+          throw new SimulationError(
+            ErrorCode.INVALID_RANGE,
+            'incomeChange: provide either atAge or monthOffset, not both',
+            { atAge: params.incomeChange.atAge, monthOffset: params.incomeChange.monthOffset }
+          );
+        }
+        if (params.incomeChange.atAge <= params.currentAge) {
+          throw new SimulationError(
+            ErrorCode.INVALID_RANGE,
+            `incomeChange.atAge (${params.incomeChange.atAge}) must be greater than currentAge (${params.currentAge})`,
+            { atAge: params.incomeChange.atAge, currentAge: params.currentAge }
+          );
+        }
+        params.incomeChange.monthOffset = (params.incomeChange.atAge - params.currentAge) * 12;
+      }
+      if (params.incomeChange.monthOffset === undefined) {
+        throw new SimulationError(
+          ErrorCode.MISSING_INPUT,
+          'incomeChange requires either monthOffset or atAge',
+          { field: 'incomeChange.monthOffset' }
+        );
+      }
+    }
+
+    if (params.spendingChange) {
+      if (params.spendingChange.atAge !== undefined) {
+        if (params.spendingChange.monthOffset !== undefined && params.spendingChange.monthOffset !== 0) {
+          throw new SimulationError(
+            ErrorCode.INVALID_RANGE,
+            'spendingChange: provide either atAge or monthOffset, not both',
+            { atAge: params.spendingChange.atAge, monthOffset: params.spendingChange.monthOffset }
+          );
+        }
+        if (params.spendingChange.atAge <= params.currentAge) {
+          throw new SimulationError(
+            ErrorCode.INVALID_RANGE,
+            `spendingChange.atAge (${params.spendingChange.atAge}) must be greater than currentAge (${params.currentAge})`,
+            { atAge: params.spendingChange.atAge, currentAge: params.currentAge }
+          );
+        }
+        params.spendingChange.monthOffset = (params.spendingChange.atAge - params.currentAge) * 12;
+      }
+      if (params.spendingChange.monthOffset === undefined) {
+        throw new SimulationError(
+          ErrorCode.MISSING_INPUT,
+          'spendingChange requires either monthOffset or atAge',
+          { field: 'spendingChange.monthOffset' }
+        );
+      }
+    }
+
+    if (params.oneTimeEvents) {
+      for (let i = 0; i < params.oneTimeEvents.length; i++) {
+        const ote = params.oneTimeEvents[i];
+        if (ote.atAge !== undefined) {
+          if (ote.monthOffset !== undefined && ote.monthOffset !== 0) {
+            throw new SimulationError(
+              ErrorCode.INVALID_RANGE,
+              `oneTimeEvents[${i}]: provide either atAge or monthOffset, not both`,
+              { atAge: ote.atAge, monthOffset: ote.monthOffset }
+            );
+          }
+          if (ote.atAge <= params.currentAge) {
+            throw new SimulationError(
+              ErrorCode.INVALID_RANGE,
+              `oneTimeEvents[${i}].atAge (${ote.atAge}) must be greater than currentAge (${params.currentAge})`,
+              { atAge: ote.atAge, currentAge: params.currentAge }
+            );
+          }
+          ote.monthOffset = (ote.atAge - params.currentAge) * 12;
+        }
+        if (ote.monthOffset === undefined) {
+          throw new SimulationError(
+            ErrorCode.MISSING_INPUT,
+            `oneTimeEvents[${i}] requires either monthOffset or atAge`,
+            { field: `oneTimeEvents[${i}].monthOffset` }
+          );
+        }
+      }
     }
 
     // Configurable max age with sensible defaults
@@ -1559,15 +1697,6 @@ export async function handleRunSimulation(
         ErrorCode.INVALID_RANGE,
         `Invalid incomeStreams: ${incomeStreamErrors.join('; ')}`,
         { errors: incomeStreamErrors }
-      );
-    }
-
-    // Reject incomeStreams until the adapter supports them
-    if (params.incomeStreams && params.incomeStreams.length > 0) {
-      throw new SimulationError(
-        ErrorCode.INVALID_RANGE,
-        'incomeStreams is not yet supported. Use expectedIncome + incomeChange to model income transitions.',
-        { hint: 'incomeStreams will be supported in a future release' }
       );
     }
 

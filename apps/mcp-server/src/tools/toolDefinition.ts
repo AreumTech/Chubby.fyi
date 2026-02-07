@@ -330,8 +330,12 @@ export const TOOL_INPUT_SCHEMA = {
           type: 'string',
           description: 'Human-readable label (e.g., "Retire at 60")',
         },
+        atAge: {
+          type: 'number',
+          description: 'Age at which this event occurs. Alternative to monthOffset — provide one or the other, not both.',
+        },
       },
-      required: ['monthOffset', 'newAnnualIncome'],
+      required: ['newAnnualIncome'],
     },
     spendingChange: {
       type: 'object',
@@ -349,8 +353,12 @@ export const TOOL_INPUT_SCHEMA = {
           type: 'string',
           description: 'Description of the change',
         },
+        atAge: {
+          type: 'number',
+          description: 'Age at which this event occurs. Alternative to monthOffset — provide one or the other, not both.',
+        },
       },
-      required: ['monthOffset', 'newAnnualSpending'],
+      required: ['newAnnualSpending'],
     },
     oneTimeEvents: {
       type: 'array',
@@ -392,8 +400,12 @@ export const TOOL_INPUT_SCHEMA = {
             },
             required: ['count'],
           },
+          atAge: {
+            type: 'number',
+            description: 'Age at which this event occurs. Alternative to monthOffset — provide one or the other, not both.',
+          },
         },
-        required: ['monthOffset', 'amount', 'type', 'description'],
+        required: ['amount', 'type', 'description'],
       },
     },
     concentration: {

@@ -75,6 +75,8 @@ export function bronzeParamsToSimulationInput(params) {
     rebalancing = null,
     // Debt (v11)
     debt = null,
+    // Income Streams (v12)
+    incomeStreams = null,
   } = params;
 
   // Validate required params
@@ -117,6 +119,8 @@ export function bronzeParamsToSimulationInput(params) {
     // Debt (v11)
     debt,
     horizonMonths,
+    // Income Streams (v12)
+    incomeStreams,
   });
 
   // Build stochastic config with seed (pass annualSpending for cash floor calculation)
@@ -518,6 +522,7 @@ function buildBronzeEvents({
   socialSecurity,
   rothConversions,
   debt,
+  incomeStreams,
 }) {
   const events = [];
 
@@ -746,6 +751,39 @@ function buildBronzeEvents({
       seed
     );
     events.push(...healthcareEvents);
+  }
+
+  // ==========================================================================
+  // INCOME STREAMS (v12)
+  // ==========================================================================
+
+  if (incomeStreams && incomeStreams.length > 0) {
+    for (let i = 0; i < incomeStreams.length; i++) {
+      const stream = incomeStreams[i];
+      const monthlyAmount = stream.annualAmount / 12;
+      const startMonth = stream.startMonthOffset || 0;
+      const endMonth = stream.endMonthOffset !== undefined
+        ? Math.min(stream.endMonthOffset, horizonMonths)
+        : horizonMonths;
+
+      if (monthlyAmount > 0 && startMonth < endMonth) {
+        events.push({
+          id: `income-stream-${i}-${seed}`,
+          type: 'INCOME',
+          description: stream.description || `Income stream ${i + 1}`,
+          monthOffset: startMonth,
+          amount: monthlyAmount,
+          frequency: 'monthly',
+          metadata: {
+            endDateOffset: endMonth - 1,
+            applyInflation: true,
+          },
+          incomeType: 'salary',
+          taxProfile: stream.taxable === false ? 'tax_free' : 'ordinary_income',
+          driverKey: 'income:employment',
+        });
+      }
+    }
   }
 
   // ==========================================================================
@@ -1233,6 +1271,8 @@ export function extractBronzeParams(packetBuildRequest) {
     rothConversions,
     // Withdrawal Strategy (MCP v11)
     withdrawalStrategy,
+    // Income Streams (MCP v12)
+    incomeStreams,
   } = packetBuildRequest;
 
   // Helper to extract value from confirmedChanges by fieldPath
@@ -1277,5 +1317,7 @@ export function extractBronzeParams(packetBuildRequest) {
     rothConversions: rothConversions || null,
     // Withdrawal Strategy (v11)
     withdrawalStrategy: withdrawalStrategy || 'TAX_EFFICIENT',
+    // Income Streams (v12)
+    incomeStreams: incomeStreams || null,
   };
 }

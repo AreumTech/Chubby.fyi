@@ -567,6 +567,7 @@ type MonthlyDataSimulation struct {
 	HousingExpensesThisMonth            float64           `json:"housingExpensesThisMonth"`
 	TransportationExpensesThisMonth     float64           `json:"transportationExpensesThisMonth"`
 	FoodExpensesThisMonth               float64           `json:"foodExpensesThisMonth"`
+	HealthcareExpensesThisMonth         float64           `json:"healthcareExpensesThisMonth"`
 	OtherExpensesThisMonth              float64           `json:"otherExpensesThisMonth"`
 	ContributionsToInvestmentsThisMonth float64           `json:"contributionsToInvestmentsThisMonth"`
 
@@ -1224,6 +1225,11 @@ type AnnualDeepDiveSnapshot struct {
 	// Cash flow analysis - grounded in WASM MonthSnapshot data
 	CashFlow         CashFlowAnalysis     `json:"cashFlow"`
 
+	// Top-level expense breakdown for easy access
+	BaselineSpending   float64 `json:"baselineSpending,omitempty"`
+	HealthcareExpenses float64 `json:"healthcareExpenses,omitempty"`
+	TaxesPaid          float64 `json:"taxesPaid,omitempty"`
+
 	// Divestment proceeds from forced asset sales (calculated by simulation engine)
 	DivestmentProceeds float64            `json:"divestmentProceeds"`
 
@@ -1327,6 +1333,7 @@ type ExpenseSources struct {
 type LivingExpenses struct {
 	Total       float64 `json:"total"`       // Sum of all living expenses
 	Housing     float64 `json:"housing"`     // From WASM HousingExpensesThisMonth
+	Healthcare  float64 `json:"healthcare"`  // From WASM HealthcareExpensesThisMonth
 	Other       float64 `json:"other"`       // All other expenses
 }
 

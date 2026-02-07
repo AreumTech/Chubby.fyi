@@ -181,6 +181,7 @@ type MonthlyFlows struct {
 	HousingExpensesThisMonth            float64
 	TransportationExpensesThisMonth     float64
 	FoodExpensesThisMonth               float64
+	HealthcareExpensesThisMonth         float64
 	OtherExpensesThisMonth              float64
 
 	// Investment growth tracking (for Trace View)
@@ -412,6 +413,7 @@ func (se *SimulationEngine) resetMonthlyFlows() {
 		HousingExpensesThisMonth:            0,
 		TransportationExpensesThisMonth:     0,
 		FoodExpensesThisMonth:               0,
+		HealthcareExpensesThisMonth:         0,
 		OtherExpensesThisMonth:              0,
 	}
 }
@@ -1564,6 +1566,7 @@ func (se *SimulationEngine) runQueueSimulationLoopWithEvents(input SimulationInp
 					currentMonthData.HousingExpensesThisMonth = se.currentMonthFlows.HousingExpensesThisMonth
 					currentMonthData.TransportationExpensesThisMonth = se.currentMonthFlows.TransportationExpensesThisMonth
 					currentMonthData.FoodExpensesThisMonth = se.currentMonthFlows.FoodExpensesThisMonth
+					currentMonthData.HealthcareExpensesThisMonth = se.currentMonthFlows.HealthcareExpensesThisMonth
 					currentMonthData.OtherExpensesThisMonth = se.currentMonthFlows.OtherExpensesThisMonth
 
 					// Copy contribution breakdown by account type
@@ -1699,6 +1702,7 @@ func (se *SimulationEngine) runQueueSimulationLoopWithEvents(input SimulationInp
 		currentMonthData.HousingExpensesThisMonth = se.currentMonthFlows.HousingExpensesThisMonth
 		currentMonthData.TransportationExpensesThisMonth = se.currentMonthFlows.TransportationExpensesThisMonth
 		currentMonthData.FoodExpensesThisMonth = se.currentMonthFlows.FoodExpensesThisMonth
+		currentMonthData.HealthcareExpensesThisMonth = se.currentMonthFlows.HealthcareExpensesThisMonth
 		currentMonthData.OtherExpensesThisMonth = se.currentMonthFlows.OtherExpensesThisMonth
 		currentMonthData.ContributionsTaxableThisMonth = se.currentMonthFlows.ContributionsTaxableThisMonth
 		currentMonthData.ContributionsTaxDeferredThisMonth = se.currentMonthFlows.ContributionsTaxDeferredThisMonth

@@ -651,6 +651,8 @@ export interface IncomeChange {
   durationMonths?: number;
   /** Description (e.g., "Job change", "Sabbatical") */
   description?: string;
+  /** Age at which this event occurs. Alternative to monthOffset -- provide one or the other, not both. */
+  atAge?: number;
 }
 
 /**
@@ -692,6 +694,8 @@ export interface SpendingChange {
   newAnnualSpending: number;
   /** Description (e.g., "Retirement", "Kids arrive") */
   description?: string;
+  /** Age at which this event occurs. Alternative to monthOffset -- provide one or the other, not both. */
+  atAge?: number;
 }
 
 /**
@@ -719,6 +723,8 @@ export interface OneTimeEvent {
     /** Months between occurrences. Optional if count=1, defaults to 1 (monthly). */
     intervalMonths?: number;
   };
+  /** Age at which this event occurs. Alternative to monthOffset -- provide one or the other, not both. */
+  atAge?: number;
 }
 
 // =============================================================================

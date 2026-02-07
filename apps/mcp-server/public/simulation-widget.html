@@ -569,7 +569,7 @@
       overflow: visible; /* Allow P10 marker to show fully */
     }
 
-    /* Boxplot style: P10→P50 range (downside scenarios) */
+    /* Boxplot style: P10→P75 range (full uncertainty band) */
     .traj-bar-range {
       position: absolute;
       height: 100%;
@@ -577,11 +577,7 @@
       border-radius: var(--radius-sm);
     }
 
-    /* P50→P75 range removed - optimistic upside available via tooltip only
-       "Chubby emphasizes downside and typical outcomes; extreme upside is
-        available on demand but never drives the visual narrative." */
-
-    /* P50 marker (vertical line showing median within the range) */
+    /* P50 marker (vertical line showing median within the P10→P75 range) */
     .traj-bar-p50 {
       position: absolute;
       height: 100%;
@@ -1879,8 +1875,8 @@
       <div class="traj-explanation" id="traj-explanation" style="display: none; font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: var(--space-2);"></div>
       <div id="trajectory-bars"></div>
       <div class="traj-legend">
-        <div class="traj-legend-item" title="10th to 50th percentile: the range from pessimistic (only 10% of scenarios fall below) to median outcome"><span class="traj-legend-swatch range"></span> Harder → Typical</div>
-        <div class="traj-legend-item" title="50th percentile (median): half of simulated scenarios end above this value, half below"><span class="traj-legend-swatch p50"></span> Typical Outcome</div>
+        <div class="traj-legend-item" title="10th to 75th percentile: the range from pessimistic (P10) to optimistic (P75)"><span class="traj-legend-swatch range"></span> Pessimistic (P10) → Optimistic (P75)</div>
+        <div class="traj-legend-item" title="50th percentile (median): half of simulated scenarios end above this value, half below"><span class="traj-legend-swatch p50"></span> Typical (P50)</div>
       </div>
       <div class="traj-legend-note" style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: var(--space-2);" title="Each age shows percentiles across all simulated paths at that point. This is not one continuous 'typical path' over time — each age is an independent cross-section of outcomes.">Percentiles recalculated at each age</div>
       <div class="traj-hint">Tap an age to see the math</div>
@@ -2106,6 +2102,7 @@
 
     let data = null;
     let durationConstraintAge = null; // Set by renderDuration, used by renderTrajectory for consistency
+    let durationConstraintPct = null; // Depleted %, single source of truth for header + trajectory marker
 
     // =========================================================================
     // Render: Duration
@@ -2236,13 +2233,16 @@
       // 2. A constraint marker will fire in the trajectory
       const effectivelySaturated = saturated && p50Assets > nearZeroThreshold && !firstConstraint;
 
-      // Store constraint age for renderTrajectory to use (single source of truth)
+      // Store constraint age + pct for renderTrajectory to use (single source of truth)
       if (firstConstraint) {
         durationConstraintAge = firstConstraint.age;
+        durationConstraintPct = firstConstraint.pctDepleted;
       } else if (!effectivelySaturated && !saturated) {
         durationConstraintAge = mostAge;
+        durationConstraintPct = null;
       } else {
         durationConstraintAge = null;
+        durationConstraintPct = null;
       }
 
       if (effectivelySaturated) {
@@ -2254,11 +2254,11 @@
         // Calculate spending multiplier (pure arithmetic, not advice)
         const spendingMultiple = annualSpending > 0 ? Math.round(p50Assets / annualSpending) : null;
         const multiplierLine = spendingMultiple ?
-          '<div class="duration-multiplier">≈ ' + spendingMultiple + '× current annual spending (simple ratio, not a recommendation)</div>' : '';
+          '<div class="duration-multiplier">Ending assets / current annual spending: ' + spendingMultiple + '</div>' : '';
 
         answerEl.innerHTML =
           '<div class="duration-saturated">' +
-            '<div class="duration-saturated-headline" title="Funded means baseline spending is sustained without depleting investment assets. Assets remain positive through the entire simulation window.">This plan stays funded through Age ' + horizonAge + '</div>' +
+            '<div class="duration-saturated-headline" title="Assets remain positive across all simulated paths through the end of the simulation window.">Assets remain above $0 through Age ' + horizonAge + ' (simulation horizon)</div>' +
             '<div class="duration-saturated-details">(end of simulation)</div>' +
             '<div class="duration-saturated-assets">' +
               '<span title="Half of simulated outcomes are better, half are worse">Typical assets at that age: <strong>~' + fmt(p50Assets) + '</strong></span>' +
@@ -2441,7 +2441,7 @@
     }
 
     // =========================================================================
-    // Render: Trajectory with P10/P50/P75 bands
+    // Render: Trajectory with P10→P75 bar + P50 marker
     // =========================================================================
 
     function renderTrajectory(d) {
@@ -2513,21 +2513,21 @@
 
       const sortedAges = [...ages].sort((a, b) => a - b);
 
-      // Find max for scaling - use P50 (median) as scale anchor
-      // P75 (optimistic) is available via tooltip but doesn't drive the visual
-      let maxP50 = 0;
+      // Find max for scaling - use P75 since the bar now spans P10→P75
+      let maxP75 = 0;
       let firstConstraintAge = null; // Age when median first hits 0
       trajectory.forEach(pt => {
-        const p50 = pt.p50 || 0;
-        if (p50 > maxP50) maxP50 = p50;
+        const p75 = (pt.p75 != null ? pt.p75 : (pt.p50 || 0) * 1.5) || 0;
+        if (p75 > maxP75) maxP75 = p75;
         // Detect first constraint (when P50 goes to 0 or below)
+        const p50 = pt.p50 || 0;
         if (firstConstraintAge === null && p50 <= 0) {
           const monthOffset = pt.monthOffset || pt.month || 0;
           firstConstraintAge = currentAge + Math.floor(monthOffset / 12);
         }
       });
-      // Scale to P50 max + 10% padding
-      const maxVal = maxP50 > 0 ? maxP50 * 1.1 : 1;
+      // Scale to P75 max + 10% padding
+      const maxVal = maxP75 > 0 ? maxP75 * 1.1 : 1;
 
       let html = '';
       let lastMilestone = null;
@@ -2573,13 +2573,10 @@
         // Once constraint is hit, show marker and stop - no point showing $0 repeatedly
         if (isConstrained) {
           if (!constraintMarkerShown) {
-            // Use durationConstraintAge (from renderDuration) as single source of truth
-            // to avoid inconsistency between header and trajectory marker
+            // Use durationConstraintAge + durationConstraintPct (from renderDuration)
+            // as single source of truth to avoid % mismatch between header and trajectory
             const markerAge = durationConstraintAge || age;
-            // Show percentage of paths that have depleted, if available
-            const depletedPct = pctPathsFunded !== undefined
-              ? Math.round((1 - pctPathsFunded) * 100)
-              : null;
+            const depletedPct = durationConstraintPct;
             const depletedText = depletedPct !== null
               ? '⚠️ In ' + depletedPct + '% of scenarios, assets depleted by Age ' + markerAge
               : '⚠️ In most scenarios, assets depleted by Age ' + markerAge;
@@ -2592,6 +2589,7 @@
         // Scale to percentage
         const pct10 = Math.round((p10 / maxVal) * 100);
         const pct50 = Math.min(100, Math.round((p50 / maxVal) * 100));
+        const pct75 = Math.min(100, Math.round((p75 / maxVal) * 100));
 
         const rowClass = 'traj-row';
 
@@ -2599,8 +2597,8 @@
         const tooltipText = 'Age ' + age + ': Harder ' + fmt(p10) + ' · Typical ' + fmt(p50) + ' · Optimistic ' + fmt(p75);
         const ariaLabel = 'Age ' + age + ', median net worth ' + fmt(p50) + '. Press Enter or tap to view details.';
 
-        // Show P10→P50 range bar with P50 marker
-        const rangeWidth = Math.max(0, pct50 - pct10);
+        // Show P10→P75 range bar with P50 marker inside
+        const rangeWidth = Math.max(0, pct75 - pct10);
         const showRange = true;
 
         // Event marker dot (if this age has a scheduled event)
@@ -2642,8 +2640,8 @@
       // Add explanatory note if assets depleted
       if (constraintMarkerShown) {
         html += '<div class="traj-constraint-note">' +
-          'At this point, assets are exhausted and spending can no longer be sustained. ' +
-          '("Funded" means baseline spending is sustained without depleting investment assets.)' +
+          'After this point, paths continue on fixed income only (e.g., Social Security). ' +
+          'No spending reduction is modeled.' +
         '</div>';
       }
 
@@ -3490,7 +3488,7 @@
 
       // Trajectory with bar visualization
       lines.push('');
-      lines.push('TRAJECTORY (P10–P50)');
+      lines.push('TRAJECTORY (P10–P75)');
       rows.forEach(r => {
         lines.push('Age ' + r.age + ': ' + r.p10 + '–' + r.p50 + ' ' + r.bar);
       });
