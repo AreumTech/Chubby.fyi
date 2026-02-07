@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Claude Setup — Chubby</title>
-  <meta name="description" content="Connect Chubby Monte Carlo simulation to Claude Desktop or claude.ai.">
+  <title>ChatGPT Setup — Chubby</title>
+  <meta name="description" content="Connect Chubby Monte Carlo simulation to ChatGPT as an App.">
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -44,14 +44,14 @@
   <section class="intro">
     <div class="container">
       <div class="doc-kicker mono">Setup Guide</div>
-      <h1>Connect to Claude</h1>
+      <h1>Connect to ChatGPT</h1>
 
       <p class="lead">
-        Run Monte Carlo simulations in Claude Desktop or claude.ai. Fragment URLs mean your data never leaves your browser.
+        Add Chubby as a ChatGPT App to run Monte Carlo simulations in conversation with an interactive widget.
       </p>
 
       <p class="lead-sm">
-        Requires Claude Pro/Max/Team/Enterprise with Connectors enabled.
+        Requires ChatGPT Plus/Pro/Team with Developer Mode enabled in Advanced Settings.
       </p>
     </div>
   </section>
@@ -59,23 +59,26 @@
   <!-- Setup Steps -->
   <section class="section section-muted">
     <div class="container">
-      <h2 class="section-title">Claude Desktop</h2>
+      <h2 class="section-title">One-Time Setup</h2>
 
-      <div class="steps mb-12">
+      <div class="steps">
         <div class="step">
           <div class="step-number">1</div>
           <div class="step-content">
-            <h3 class="step-title">Open Claude Desktop</h3>
-            <p class="step-description">Launch the Claude Desktop application.</p>
+            <h3 class="step-title">Enable Developer Mode</h3>
+            <p class="step-description">
+              Go to <strong>Settings → Advanced</strong> and toggle <strong>Developer Mode</strong> on.
+              This lets you create custom Apps.
+            </p>
           </div>
         </div>
 
         <div class="step">
           <div class="step-number">2</div>
           <div class="step-content">
-            <h3 class="step-title">Add Connector</h3>
+            <h3 class="step-title">Create the App</h3>
             <p class="step-description">
-              Go to <strong>Settings → Connectors → Add connector</strong>
+              Go to <strong>Settings → Apps → Create App</strong>
             </p>
           </div>
         </div>
@@ -88,7 +91,7 @@
               https://api.chubby.fyi/mcp
             </div>
             <p class="step-description" style="margin-top: var(--space-2);">
-              Authentication: <span class="mono">None</span> (no API key required)
+              Authentication: <span class="mono">None</span> (no API key or OAuth required)
             </p>
           </div>
         </div>
@@ -96,97 +99,73 @@
         <div class="step">
           <div class="step-number">4</div>
           <div class="step-content">
-            <h3 class="step-title">Save and Chat</h3>
-            <p class="step-description">The connector is available in your next conversation.</p>
+            <h3 class="step-title">Name it</h3>
+            <p class="step-description">
+              Call it <strong>chubby.fyi</strong> (or whatever you like). Save the App.
+            </p>
           </div>
         </div>
       </div>
+    </div>
+  </section>
 
-      <div class="divider"></div>
-
-      <h2 class="section-title">Claude.ai (Browser)</h2>
+  <!-- Using It -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Using Chubby in a Chat</h2>
 
       <div class="steps">
         <div class="step">
           <div class="step-number">1</div>
           <div class="step-content">
-            <h3 class="step-title">Go to claude.ai</h3>
-            <p class="step-description">Sign in at <a href="https://claude.ai" target="_blank" class="doc-link">claude.ai</a></p>
+            <h3 class="step-title">Start a new chat</h3>
+            <p class="step-description">Open <a href="https://chatgpt.com" target="_blank" class="doc-link">chatgpt.com</a> and start a new conversation.</p>
           </div>
         </div>
 
         <div class="step">
           <div class="step-number">2</div>
           <div class="step-content">
-            <h3 class="step-title">Add Connector</h3>
-            <p class="step-description"><strong>Settings → Connectors → Add connector</strong></p>
+            <h3 class="step-title">Attach the App</h3>
+            <p class="step-description">
+              Click the <strong>+ button</strong> (add files and more) → <strong>More</strong> → select <strong>chubby.fyi</strong>
+            </p>
           </div>
         </div>
 
         <div class="step">
           <div class="step-number">3</div>
           <div class="step-content">
-            <h3 class="step-title">Paste URL</h3>
-            <div class="trust-inline-code mono" style="margin-top: var(--space-3);">
-              https://api.chubby.fyi/mcp
-            </div>
-          </div>
-        </div>
-
-        <div class="step">
-          <div class="step-number">4</div>
-          <div class="step-content">
-            <h3 class="step-title">Enable and Start</h3>
-            <p class="step-description">Toggle the connector on and start chatting.</p>
+            <h3 class="step-title">Ask your question</h3>
+            <p class="step-description">
+              Type a question like "Can I retire at 50?" and ChatGPT will run the simulation and show an interactive widget inline.
+            </p>
           </div>
         </div>
       </div>
-
-      <p class="step-description" style="margin-top: var(--space-6);">
-        Mobile tip: add the connector on web/desktop first, then use it on mobile.
-      </p>
     </div>
   </section>
 
   <!-- Test -->
-  <section class="section">
+  <section class="section section-muted">
     <div class="container">
       <h2 class="section-title">Test Your Connection</h2>
 
-      <p class="lead-sm mb-6">Try this prompt to verify the connector is working:</p>
+      <p class="lead-sm mb-6">Try this prompt to verify the App is working:</p>
 
       <div class="test-prompt-box" data-copy="test-prompt">
-        <span class="test-prompt-text mono">Run a simulation: age 55, $400k saved, no income, spending $80k/year. Seed 22222.</span>
+        <span class="test-prompt-text mono">I'm 35, make $150k, spend $50k, saved $800k. Can I retire at 50? Seed 12345.</span>
         <span class="prompt-chip-action copy-btn">
           <svg class="copy-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           <svg class="copy-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
         </span>
       </div>
 
-      <span id="test-prompt" class="visually-hidden">Run a simulation: age 55, $400k saved, no income, spending $80k/year. Seed 22222.</span>
+      <span id="test-prompt" class="visually-hidden">I'm 35, make $150k, spend $50k, saved $800k. Can I retire at 50? Seed 12345.</span>
 
       <p class="step-description" style="margin-top: var(--space-4);">
-        Claude should invoke the <span class="mono">run_simulation_packet</span> tool and return a fragment URL pointing to <span class="mono">widget.chubby.fyi</span>.
+        ChatGPT should invoke the <span class="mono">run_simulation_packet</span> tool and display an interactive simulation widget with trajectory bands.
       </p>
-    </div>
-  </section>
-
-  <!-- Privacy -->
-  <section class="section section-muted">
-    <div class="container">
-      <h2 class="section-title">Privacy Advantage</h2>
-
-      <div class="trust-essay">
-        <p class="trust-paragraph">
-          Claude's connector returns fragment URLs. The <span class="mono">#fragment</span> portion of a URL is never sent to servers — this is browser security, not a choice we make.
-        </p>
-        <div class="trust-inline-code mono">
-          https://widget.chubby.fyi/#d=eJxLTEo...  <span class="trust-note">#fragment never reaches servers</span>
-        </div>
-        <p class="trust-paragraph">
-          This means your simulation data exists only in your browser. We can't see it, store it, or share it.
-        </p>
-      </div>
     </div>
   </section>
 
