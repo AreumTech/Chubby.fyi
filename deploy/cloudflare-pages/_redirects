@@ -1,4 +1,3 @@
 # Cloudflare Pages redirects
-
-# Viewer shortcut (widget.chubby.fyi/viewer → viewer.html)
-/viewer   /viewer.html   200
+# Note: CF Pages "pretty URLs" automatically serves /viewer → viewer.html
+# No custom redirects needed.
