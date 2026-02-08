@@ -1364,39 +1364,6 @@
       overflow: hidden;
     }
 
-    .footer-advanced {
-      display: inline;
-      flex-shrink: 0;
-    }
-
-    .footer-advanced summary {
-      cursor: pointer;
-      list-style: none;
-      display: inline;
-      color: var(--color-link);
-    }
-
-    .footer-advanced summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .footer-advanced summary::after {
-      content: ' ▸';
-      font-size: 8px;
-    }
-
-    .footer-advanced[open] summary::after {
-      content: ' ▾';
-    }
-
-    .footer-advanced-content {
-      display: inline;
-      margin-left: var(--space-1);
-    }
-
-    .footer-advanced-content span + span::before {
-      content: " · ";
-    }
 
     /* =========================================================================
      * COLLAPSIBLE SECTIONS (Progressive Enhancement)
@@ -1964,12 +1931,7 @@
       </span>
       <span>Age <span id="horizon-age">—</span></span>
       <span>·</span>
-      <details class="footer-advanced">
-        <summary><span id="paths-run">100</span> paths</summary>
-        <div class="footer-advanced-content">
-          <span>Seed: <span id="seed">—</span></span>
-        </div>
-      </details>
+      <span id="paths-run-wrap"><span id="paths-run">100</span> paths</span>
       <span id="viewer-link-sep" style="display:none;">·</span>
       <a id="viewer-link" href="#" target="_blank" rel="noopener" style="display:none; color: var(--color-link); text-decoration: none;">Share ↗</a>
       <span style="flex: 1;"></span>
@@ -3466,7 +3428,6 @@
       // runId removed — unnecessary metadata
       document.getElementById('horizon-age').textContent = horizonAgeVal;
       document.getElementById('paths-run').textContent = data.pathsRun || 100;
-      document.getElementById('seed').textContent = data.baseSeed || data.seed || '—';
 
       // Generate fragment URL for "Share" link
       generateViewerLink(data);
@@ -3623,8 +3584,7 @@
 
       // Footer
       lines.push('');
-      lines.push('seed: ' + (data.baseSeed || data.seed || '—') + ' · ' + (data.pathsRun || 100) + ' paths');
-      lines.push('chubby.finance');
+      lines.push((data.pathsRun || 100) + ' paths · chubby.fyi');
 
       return lines.join('\n');
     }
