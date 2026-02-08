@@ -2218,21 +2218,11 @@
         labelEl.textContent = 'Plan Duration';
         questionEl.style.display = 'none'; // No question needed - statement mode
 
-        // Calculate spending multiplier (pure arithmetic, not advice)
-        const spendingMultiple = annualSpending > 0 ? Math.round(p50Assets / annualSpending) : null;
-        const multiplierLine = spendingMultiple ?
-          '<div class="duration-multiplier">Ending assets / current annual spending: ' + spendingMultiple + '</div>' : '';
-
         answerEl.innerHTML =
           '<div class="duration-saturated">' +
-            '<div class="duration-saturated-headline" title="Assets remain positive across all simulated paths through the end of the simulation window.">Assets remain above $0 through Age ' + horizonAge + ' (simulation horizon)</div>' +
-            '<div class="duration-saturated-details">(end of simulation)</div>' +
-            '<div class="duration-saturated-assets">' +
-              '<span title="Half of simulated outcomes are better, half are worse">Typical assets at that age: <strong>~' + fmt(p50Assets) + '</strong></span>' +
-              multiplierLine +
-            '</div>' +
-            '<div class="duration-horizon-note">' +
-              'The simulation stops at Age ' + horizonAge + '. Outcomes beyond are not modeled.' +
+            '<div class="duration-saturated-headline" title="Assets remain positive across all simulated paths through the end of the simulation window.">Assets remain above $0 through Age ' + horizonAge + '</div>' +
+            '<div class="duration-saturated-assets" style="border-top: none; margin-top: var(--space-1); padding-top: 0;">' +
+              '<span title="Half of simulated outcomes are better, half are worse">Typical assets at Age ' + horizonAge + ': <strong>~' + fmt(p50Assets) + '</strong></span>' +
             '</div>' +
           '</div>';
         noteEl.style.display = 'none';
@@ -2264,7 +2254,6 @@
         answerEl.innerHTML =
           '<div class="duration-saturated">' +
             '<div class="duration-saturated-headline" title="Funded means baseline spending is sustained without depleting investment assets. Assets last through the simulation but are nearly depleted.">This plan reaches Age ' + horizonAge + ' with minimal reserves</div>' +
-            '<div class="duration-saturated-details">(end of simulation)</div>' +
             '<div class="duration-saturated-assets">' +
               '<span title="Half of simulated outcomes are better, half are worse">Typical assets at that age: <strong>~' + fmt(p50Assets) + '</strong></span>' +
             '</div>' +
@@ -2347,8 +2336,7 @@
       } else {
         eventsEl.innerHTML =
           '<div class="events-empty">' +
-            'No future changes scheduled.<br>' +
-            '<span class="events-empty-note">(Income and spending assumed constant)</span>' +
+            'Current income and spending continue through Age ' + horizonAge +
           '</div>';
       }
     }
