@@ -1077,7 +1077,7 @@ func generateCashFlowAnalysis(monthlyData []MonthlyDataSimulation, lastMonth Mon
 				SocialSecurity: socialSecurity,
 				Pension:        pension,
 				Annuities:      0.0, // TODO: Track annuities in monthly data
-				Withdrawals:    divestmentProceeds, // Asset liquidations to fund spending
+				Withdrawals:    0, // Tracked at top level as DivestmentProceeds; not retirement income
 			},
 			DivestmentProceeds: divestmentProceeds,
         },
@@ -2480,9 +2480,8 @@ func aggregateNetWorthTrajectory(samplePaths []SimulationResult, input Simulatio
 			if monthOffset < len(path.MonthlyData) {
 				nw := path.MonthlyData[monthOffset].NetWorth
 				netWorths = append(netWorths, nw)
-				// Path is funded if it hasn't breached cash floor by this month
-				breachMonth := path.CashFloorBreachedMonth
-				if breachMonth < 0 || breachMonth > monthOffset {
+				// Path is funded if net worth is positive at this age
+				if nw > 0 {
 					solventCount++
 				}
 				// Sum annual spending for this year

@@ -1,0 +1,3 @@
+# Cloudflare Pages redirects
+# Note: CF Pages "pretty URLs" automatically serves /viewer → viewer.html
+# No custom redirects needed.

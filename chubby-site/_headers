@@ -1,0 +1,48 @@
+# Cloudflare Pages custom headers
+# https://developers.cloudflare.com/pages/configuration/headers/
+
+# All pages: security headers
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# Viewer: allow framing from any origin (embedded in ChatGPT/Claude responses)
+# CSP frame-ancestors supersedes X-Frame-Options per spec
+/viewer
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors *
+  Cache-Control: no-store
+/viewer.html
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors *
+  Cache-Control: no-store
+/simulation-widget
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors *
+  Cache-Control: no-store
+/simulation-widget.html
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors *
+  Cache-Control: no-store
+
+# WASM binary: aggressive caching (content-hashed by build)
+/pathfinder.wasm
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: application/wasm
+
+# Brotli-compressed WASM
+/pathfinder.wasm.br
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: application/wasm
+  Content-Encoding: br
+
+# Static assets (JS/CSS chunks are content-hashed by Vite)
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Config JSON files: cache but allow revalidation
+/config/*
+  Cache-Control: public, max-age=86400
+
+# Viewer and widget are deployment-sensitive. Avoid edge/browser staleness.
