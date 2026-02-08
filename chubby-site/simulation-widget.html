@@ -1850,15 +1850,15 @@
             <div class="start-item-value" id="start-age">50</div>
           </div>
           <div>
-            <div class="start-item-label">Assets</div>
+            <div class="start-item-label" title="Total investable assets (excludes home equity)">Assets</div>
             <div class="start-item-value" id="start-assets">$1.2M</div>
           </div>
           <div>
-            <div class="start-item-label">Income</div>
+            <div class="start-item-label" title="Annual gross income before taxes">Income</div>
             <div class="start-item-value" id="start-income">$180K</div>
           </div>
           <div>
-            <div class="start-item-label">Spending</div>
+            <div class="start-item-label" title="Annual spending (inflates with modeled inflation)">Spending</div>
             <div class="start-item-value" id="start-spending">$80K</div>
           </div>
         </div>
@@ -1880,6 +1880,7 @@
       </div>
       <div class="traj-legend-note" style="font-size: var(--font-size-xs); color: var(--color-text-muted); margin-top: var(--space-2);" title="Each age shows percentiles across all simulated paths at that point. This is not one continuous 'typical path' over time — each age is an independent cross-section of outcomes.">Percentiles recalculated at each age</div>
       <div class="traj-hint">Tap an age to see the math</div>
+      <div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-1);">Nominal (future) dollars · Year-end values</div>
       <div id="traj-horizon-note" class="traj-horizon-note" style="display: none;"></div>
     </div>
 
@@ -1943,7 +1944,7 @@
         <div class="assumptions-section">
           <div class="assumptions-section-title">Inflation</div>
           <div class="assumptions-section-content">
-            ~2.5% annual inflation applied to spending
+            ~2.5% annual inflation applied to spending. All dollar values shown are nominal (not adjusted for inflation).
           </div>
         </div>
         <div class="assumptions-section">
