@@ -1291,6 +1291,15 @@ export interface SimulationPacketResult {
   /** Roth conversions (echoed from input for widget display) */
   rothConversions?: RothConversionConfig[];
 
+  /** Withdrawal strategy (echoed from input for widget display) */
+  withdrawalStrategy?: WithdrawalStrategy;
+
+  /** Cash reserve config (echoed from input for widget display) */
+  cashReserve?: CashReserveConfig;
+
+  /** Rebalancing config (echoed from input for widget display) */
+  rebalancing?: RebalancingConfig;
+
   /**
    * Modeling choices made for this simulation.
    * Shown in widget under "Modeling Assumptions" section.

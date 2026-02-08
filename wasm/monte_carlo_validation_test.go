@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"testing"
 )
@@ -503,4 +504,128 @@ func TestSequenceOfReturnsRisk(t *testing.T) {
 		t.Log("   Same average return, vastly different outcomes")
 		t.Log("   This is why Monte Carlo simulation is essential")
 	})
+}
+
+// TestAR1MonthlyConversion validates that AR(1) annual-to-monthly parameter
+// conversion preserves the unconditional mean in the correct units.
+// This catches a past bug where the annual unconditional mean (e.g. 2%) was
+// used as the monthly unconditional mean (2%/month = 26.8%/year).
+func TestAR1MonthlyConversion(t *testing.T) {
+	cases := []struct {
+		name           string
+		annualConstant float64
+		annualPhi      float64
+	}{
+		{"Inflation", 0.01, 0.5},
+		{"HomeValue", 0.01, 0.6},
+		{"RentalIncome", 0.008, 0.5},
+		{"HighPersistence", 0.005, 0.9},
+		{"LowPersistence", 0.02, 0.2},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			annualMean := tc.annualConstant / (1 - tc.annualPhi)
+			expectedMonthlyMean := AnnualToMonthlyRate(annualMean)
+
+			monthlyPhi := math.Pow(tc.annualPhi, 1.0/12.0)
+			monthlyConstant := ar1MonthlyConstant(tc.annualConstant, tc.annualPhi, monthlyPhi)
+
+			// Unconditional mean of monthly AR(1) = c_monthly / (1 - phi_monthly)
+			actualMonthlyMean := monthlyConstant / (1 - monthlyPhi)
+
+			t.Logf("Annual mean: %.4f, expected monthly mean: %.6f, actual monthly mean: %.6f",
+				annualMean, expectedMonthlyMean, actualMonthlyMean)
+
+			// Must match within 0.01% (floating point tolerance)
+			if math.Abs(actualMonthlyMean-expectedMonthlyMean) > expectedMonthlyMean*0.0001 {
+				t.Errorf("Monthly unconditional mean mismatch: got %.8f, want %.8f (annual mean %.4f)",
+					actualMonthlyMean, expectedMonthlyMean, annualMean)
+			}
+
+			// Sanity: monthly mean must be << annual mean (the old bug made them equal)
+			if actualMonthlyMean > annualMean*0.5 {
+				t.Errorf("Monthly mean (%.6f) is suspiciously close to annual mean (%.4f) — likely not converted",
+					actualMonthlyMean, annualMean)
+			}
+		})
+	}
+}
+
+// TestLongHorizonNetWorthSanity runs a 30-year accumulation simulation and
+// validates that P50 net worth stays within economically plausible bounds.
+// This catches systemic calibration bugs (e.g. 27% inflation, explosive returns)
+// that are invisible over 1-2 years but catastrophic over decades.
+func TestLongHorizonNetWorthSanity(t *testing.T) {
+	// Scenario: 35-year-old, $250K assets, $110K income, $60K spending, 30-year horizon
+	// Expected: ~$2M–$8M after 30 years (7% real return, $50K/yr surplus)
+	// Must NOT be $1B+ (indicates compounding bug)
+	input := createTestInput(250000, 60000, 360, 54321)
+
+	// Add income event
+	input.Events = append(input.Events, FinancialEvent{
+		ID:          "income",
+		Type:        "INCOME",
+		MonthOffset: 0,
+		Amount:      110000.0 / 12,
+		Frequency:   "monthly",
+		Metadata: map[string]interface{}{
+			"endDateOffset":  359,
+			"applyInflation": true,
+		},
+	})
+	// Mark spending as inflation-adjusted too
+	input.Events[0].Metadata["applyInflation"] = true
+
+	// Run 10 paths and check P50
+	netWorths := make([]float64, 0, 10)
+	for i := 0; i < 10; i++ {
+		result := RunIsolatedPath(input, i, IsolatedPathOptions{TrackMonthlyData: true})
+		if !result.Success {
+			t.Fatalf("Path %d failed: %s", i, result.Error)
+		}
+		netWorths = append(netWorths, result.FinalNetWorth)
+	}
+
+	// Sort to get approximate percentiles
+	for i := 0; i < len(netWorths); i++ {
+		for j := i + 1; j < len(netWorths); j++ {
+			if netWorths[i] > netWorths[j] {
+				netWorths[i], netWorths[j] = netWorths[j], netWorths[i]
+			}
+		}
+	}
+
+	median := netWorths[len(netWorths)/2]
+	t.Logf("30-year net worth distribution (10 paths):")
+	for i, nw := range netWorths {
+		t.Logf("  Path %d: $%s", i, formatDollars(nw))
+	}
+	t.Logf("Approximate median: $%s", formatDollars(median))
+
+	// Sanity bounds: median should be between $500K and $50M
+	// $500K = pessimistic (poor returns, high inflation)
+	// $50M = very optimistic (great returns) but NOT billions
+	if median > 50_000_000 {
+		t.Errorf("SANITY FAILURE: 30-year median net worth $%s exceeds $50M — likely a compounding or inflation bug",
+			formatDollars(median))
+	}
+	if median < 500_000 {
+		t.Errorf("SANITY FAILURE: 30-year median net worth $%s below $500K — returns may be too low or broken",
+			formatDollars(median))
+	}
+}
+
+func formatDollars(v float64) string {
+	abs := math.Abs(v)
+	switch {
+	case abs >= 1e9:
+		return fmt.Sprintf("%.1fB", v/1e9)
+	case abs >= 1e6:
+		return fmt.Sprintf("%.1fM", v/1e6)
+	case abs >= 1e3:
+		return fmt.Sprintf("%.0fK", v/1e3)
+	default:
+		return fmt.Sprintf("%.0f", v)
+	}
 }

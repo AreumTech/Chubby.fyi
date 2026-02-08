@@ -44,6 +44,20 @@ func AnnualToMonthlyVolatility(annualVolatility float64) float64 {
 	return annualVolatility / math.Sqrt(12)
 }
 
+// ar1MonthlyConstant converts annual AR(1) constant to monthly.
+// The annual unconditional mean is c_annual / (1 - φ_annual).
+// We convert that mean to a monthly rate, then derive the monthly constant
+// so the monthly AR(1) has the same unconditional mean (in monthly units).
+func ar1MonthlyConstant(annualConstant, annualPhi, monthlyPhi float64) float64 {
+	annualPhiDenom := 1 - annualPhi
+	if annualPhiDenom < 1e-9 {
+		annualPhiDenom = 1e-9
+	}
+	annualMean := annualConstant / annualPhiDenom
+	monthlyMean := AnnualToMonthlyRate(annualMean)
+	return monthlyMean * (1 - monthlyPhi)
+}
+
 // GaussianRandom generates a random number from Gaussian distribution
 func GaussianRandom(mean, stdev float64) float64 {
 	normal := distuv.Normal{Mu: mean, Sigma: stdev}
@@ -851,29 +865,30 @@ func GenerateAdvancedStochasticReturns(state StochasticState, config *Stochastic
 
 	// AR(1) for Inflation with proper frequency transformation
 	// For AR(1): X_t = c + φ * X_{t-1} + ε_t
-	// When converting from annual to monthly:
-	// φ_monthly = φ_annual^(1/12)
-	// c_monthly = c_annual * (1 - φ_monthly) / (1 - φ_annual)
+	// Annual unconditional mean = c_annual / (1 - φ_annual)
+	// Convert unconditional mean to monthly, then derive monthly constant:
+	//   φ_monthly = φ_annual^(1/12)
+	//   monthly_mean = AnnualToMonthlyRate(annual_mean)
+	//   c_monthly = monthly_mean * (1 - φ_monthly)
 	monthlyLastInflation := AnnualToMonthlyRate(state.LastInflation)
 	monthlyInflationPhi := math.Pow(math.Max(0, math.Min(0.999, config.AR1InflationPhi)), 1.0/12.0)
-	phiDenom := math.Max(1e-9, 1-config.AR1InflationPhi)
-	monthlyInflationConstant := config.AR1InflationConstant * (1 - monthlyInflationPhi) / phiDenom
+	monthlyInflationConstant := ar1MonthlyConstant(config.AR1InflationConstant, config.AR1InflationPhi, monthlyInflationPhi)
 	monthlyInflationReturn := monthlyInflationConstant +
 		monthlyInflationPhi*monthlyLastInflation +
 		monthlyVolatilityInflation*zInflation
 
-	// FIXED: AR(1) for Home Value Appreciation - Proper parameter transformation
+	// AR(1) for Home Value Appreciation
 	monthlyLastHomeValue := AnnualToMonthlyRate(state.LastHomeValueGrowth)
-	monthlyHomeConstant := config.AR1HomeValueConstant * (1 - math.Pow(config.AR1HomeValuePhi, 1.0/12.0)) / math.Max(1e-9, (1-config.AR1HomeValuePhi))
-	monthlyHomePhi := math.Pow(config.AR1HomeValuePhi, 1.0/12.0)
+	monthlyHomePhi := math.Pow(math.Max(0, math.Min(0.999, config.AR1HomeValuePhi)), 1.0/12.0)
+	monthlyHomeConstant := ar1MonthlyConstant(config.AR1HomeValueConstant, config.AR1HomeValuePhi, monthlyHomePhi)
 	monthlyHomeReturn := monthlyHomeConstant +
 		monthlyHomePhi*monthlyLastHomeValue +
 		monthlyVolatilityHomeValue*zHome
 
-	// FIXED: AR(1) for Rental Income Growth - Proper parameter transformation
+	// AR(1) for Rental Income Growth
 	monthlyLastRental := AnnualToMonthlyRate(state.LastRentalIncomeGrowth)
-	monthlyRentalConstant := config.AR1RentalIncomeGrowthConstant * (1 - math.Pow(config.AR1RentalIncomeGrowthPhi, 1.0/12.0)) / math.Max(1e-9, (1-config.AR1RentalIncomeGrowthPhi))
-	monthlyRentalPhi := math.Pow(config.AR1RentalIncomeGrowthPhi, 1.0/12.0)
+	monthlyRentalPhi := math.Pow(math.Max(0, math.Min(0.999, config.AR1RentalIncomeGrowthPhi)), 1.0/12.0)
+	monthlyRentalConstant := ar1MonthlyConstant(config.AR1RentalIncomeGrowthConstant, config.AR1RentalIncomeGrowthPhi, monthlyRentalPhi)
 	monthlyRentalReturn := monthlyRentalConstant +
 		monthlyRentalPhi*monthlyLastRental +
 		monthlyVolatilityRental*zRent
@@ -1211,24 +1226,23 @@ func GenerateAdvancedStochasticReturnsSeeded(state StochasticState, config *Stoc
 	// AR(1) for Inflation
 	monthlyLastInflation := AnnualToMonthlyRate(state.LastInflation)
 	monthlyInflationPhi := math.Pow(math.Max(0, math.Min(0.999, config.AR1InflationPhi)), 1.0/12.0)
-	phiDenom := math.Max(1e-9, 1-config.AR1InflationPhi)
-	monthlyInflationConstant := config.AR1InflationConstant * (1 - monthlyInflationPhi) / phiDenom
+	monthlyInflationConstant := ar1MonthlyConstant(config.AR1InflationConstant, config.AR1InflationPhi, monthlyInflationPhi)
 	monthlyInflationReturn := monthlyInflationConstant +
 		monthlyInflationPhi*monthlyLastInflation +
 		monthlyVolatilityInflation*zInflation
 
 	// AR(1) for Home Value Appreciation
 	monthlyLastHomeValue := AnnualToMonthlyRate(state.LastHomeValueGrowth)
-	monthlyHomeConstant := config.AR1HomeValueConstant * (1 - math.Pow(config.AR1HomeValuePhi, 1.0/12.0)) / math.Max(1e-9, (1-config.AR1HomeValuePhi))
-	monthlyHomePhi := math.Pow(config.AR1HomeValuePhi, 1.0/12.0)
+	monthlyHomePhi := math.Pow(math.Max(0, math.Min(0.999, config.AR1HomeValuePhi)), 1.0/12.0)
+	monthlyHomeConstant := ar1MonthlyConstant(config.AR1HomeValueConstant, config.AR1HomeValuePhi, monthlyHomePhi)
 	monthlyHomeReturn := monthlyHomeConstant +
 		monthlyHomePhi*monthlyLastHomeValue +
 		monthlyVolatilityHomeValue*zHome
 
 	// AR(1) for Rental Income Growth
 	monthlyLastRental := AnnualToMonthlyRate(state.LastRentalIncomeGrowth)
-	monthlyRentalConstant := config.AR1RentalIncomeGrowthConstant * (1 - math.Pow(config.AR1RentalIncomeGrowthPhi, 1.0/12.0)) / math.Max(1e-9, (1-config.AR1RentalIncomeGrowthPhi))
-	monthlyRentalPhi := math.Pow(config.AR1RentalIncomeGrowthPhi, 1.0/12.0)
+	monthlyRentalPhi := math.Pow(math.Max(0, math.Min(0.999, config.AR1RentalIncomeGrowthPhi)), 1.0/12.0)
+	monthlyRentalConstant := ar1MonthlyConstant(config.AR1RentalIncomeGrowthConstant, config.AR1RentalIncomeGrowthPhi, monthlyRentalPhi)
 	monthlyRentalReturn := monthlyRentalConstant +
 		monthlyRentalPhi*monthlyLastRental +
 		monthlyVolatilityRental*zRent

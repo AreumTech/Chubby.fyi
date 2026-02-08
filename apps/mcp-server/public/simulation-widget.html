@@ -1909,6 +1909,7 @@
       <summary>
         <span class="assumptions-summary" id="assumptions-summary">
           <span>Stocks 7% / Bonds 4%</span>
+          <span>Surplus auto-invested</span>
           <span>~2.5% inflation</span>
           <span>Taxes: not modeled</span>
         </span>
@@ -1927,6 +1928,16 @@
             <div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-1); font-style: italic;">
               These are long-run illustrative assumptions — not a prediction of future performance.
             </div>
+          </div>
+        </div>
+        <div class="assumptions-section">
+          <div class="assumptions-section-title">Investment Behavior</div>
+          <div class="assumptions-section-content">
+            <ul>
+              <li>Income surplus is deposited as cash</li>
+              <li>Cash above ~6 months of expenses is auto-invested into portfolio (per asset allocation)</li>
+              <li>Portfolio rebalanced quarterly when drift exceeds 5%</li>
+            </ul>
           </div>
         </div>
         <div class="assumptions-section">
@@ -3282,7 +3293,7 @@
 
       // Summary line
       document.getElementById('assumptions-summary').innerHTML =
-        '<span>' + allocLabel + '</span><span>' + inflLabel + '</span><span>' + tax + '</span>';
+        '<span>' + allocLabel + '</span><span>Surplus auto-invested</span><span>' + inflLabel + '</span><span>' + tax + '</span>';
 
       // Expanded section - update returns model
       const expandedEl = document.getElementById('assumptions-expanded');
@@ -3313,6 +3324,42 @@
           '</div>' +
           '</div></div>';
 
+        // Investment behavior
+        var cashReserveDesc = '~6 months of expenses';
+        if (d.cashReserve) {
+          if (d.cashReserve.targetAmount) {
+            cashReserveDesc = '$' + fmt(d.cashReserve.targetAmount);
+          } else if (d.cashReserve.targetMonths) {
+            cashReserveDesc = '~' + d.cashReserve.targetMonths + ' months of expenses';
+          }
+        }
+        var rebalDesc = 'quarterly when drift exceeds 5%';
+        if (d.rebalancing) {
+          if (d.rebalancing.method === 'none') {
+            rebalDesc = 'none (no rebalancing)';
+          } else {
+            var freq = d.rebalancing.frequency || 'quarterly';
+            var thresh = d.rebalancing.thresholdPct != null
+              ? Math.round(d.rebalancing.thresholdPct * 100) + '%'
+              : '5%';
+            if (d.rebalancing.method === 'periodic') {
+              rebalDesc = freq;
+            } else {
+              rebalDesc = freq + ' when drift exceeds ' + thresh;
+            }
+          }
+        }
+        expandedHtml += '<div class="assumptions-section">' +
+          '<div class="assumptions-section-title">Investment Behavior</div>' +
+          '<div class="assumptions-section-content">' +
+            '<ul>' +
+              '<li>Income surplus is deposited as cash</li>' +
+              '<li>Cash above ' + cashReserveDesc + ' is auto-invested into portfolio (per asset allocation)</li>' +
+              '<li>Portfolio rebalanced ' + rebalDesc + '</li>' +
+            '</ul>' +
+          '</div>' +
+        '</div>';
+
         expandedHtml += '<div class="assumptions-section">' +
           '<div class="assumptions-section-title">Inflation</div>' +
           '<div class="assumptions-section-content">' + inflLabel + ' applied to spending</div>' +
@@ -3323,10 +3370,17 @@
           '<div class="assumptions-section-content">' + tax + '</div>' +
         '</div>';
 
+        // Withdrawal order
+        var withdrawalDesc = 'Cash → Taxable → Tax-deferred → Roth (tax-efficient)';
+        if (d.withdrawalStrategy === 'pro_rata') {
+          withdrawalDesc = 'Proportional from all accounts (pro rata)';
+        } else if (d.withdrawalStrategy === 'roth_first') {
+          withdrawalDesc = 'Roth → Taxable → Tax-deferred → Cash (Roth first)';
+        }
         expandedHtml += '<div class="assumptions-section">' +
           '<div class="assumptions-section-title">Withdrawal Order</div>' +
           '<div class="assumptions-section-content">' +
-            'Taxable → Tax-deferred → Roth (standard sequence)' +
+            withdrawalDesc +
           '</div>' +
         '</div>';
 

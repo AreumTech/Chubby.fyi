@@ -7,7 +7,7 @@
 
 // Widget template URI (ChatGPT Apps SDK pattern)
 // Version suffix for cache busting - increment when widget changes
-export const WIDGET_VERSION = 'v28';
+export const WIDGET_VERSION = 'v29';
 export const WIDGET_TEMPLATE_URI = `ui://widget/simulation-summary-${WIDGET_VERSION}.html`;
 
 /**
@@ -40,6 +40,7 @@ export const TOOL_DESCRIPTION =
   '\n- Paths STOP at bankruptcy: When a path cannot meet spending (all assets depleted), simulation STOPS for that path. It does NOT continue or resurrect. Display floors bankrupt paths to $0 (runway tells you WHEN it happened).' +
   '\n- Phase meanings: "accumulation" = income exceeds spending (building wealth), "decumulation" = spending exceeds income (drawing down), "transition" = mixed (some years accumulating, some drawing down)' +
   '\n- Default assumptions: Tax=federal single filer (~22%), returns=stocks 7%/bonds 3% nominal, inflation=3%, account mix=10% cash/30% taxable/60% tax-deferred, asset mix=70% stocks/30% bonds' +
+  '\n- Investment behavior: Income surplus goes to cash, then auto-invested into portfolio (per asset allocation) once cash exceeds ~6 months of expenses. Portfolio rebalanced quarterly when drift exceeds 5%. Withdrawals follow tax-efficient order (Cash → Taxable → Tax-Deferred → Roth).' +
   '\n\nREQUIRED INPUTS: investableAssets, annualSpending, currentAge, expectedIncome (gross, 0 if retired), seed (use Date.now()), startYear' +
   '\n\nEXAMPLE - "I\'m 40 with $300k, make $100k, spend $50k. Can I retire at 60?":' +
   '\n{"seed": 1738368000, "startYear": 2026, "investableAssets": 300000, "annualSpending": 50000, "currentAge": 40, "expectedIncome": 100000, "incomeChange": {"monthOffset": 240, "newAnnualIncome": 0, "description": "Retire at 60"}}' +
