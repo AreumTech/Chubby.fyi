@@ -1330,11 +1330,10 @@ type RetirementIncome struct {
 
 // TaxDetails represents detailed tax breakdown
 type TaxDetails struct {
-	Total        float64 `json:"total"`        // Sum of all tax components
-	Federal      float64 `json:"federal"`      // From WASM federalIncomeTaxAnnual
-	State        float64 `json:"state"`        // From WASM stateIncomeTaxAnnual
-	Fica         float64 `json:"fica"`         // From WASM totalFicaTaxAnnual
-	CapitalGains float64 `json:"capitalGains"` // From WASM capital gains tax fields
+	Total   float64 `json:"total"`   // Sum of all tax components
+	Federal float64 `json:"federal"` // Total federal liability (income + cap gains + NIIT + IRMAA + AMT)
+	State   float64 `json:"state"`   // From WASM stateIncomeTaxAnnual
+	Fica    float64 `json:"fica"`    // From WASM totalFicaTaxAnnual
 }
 
 // ExpenseSources represents detailed expense breakdown

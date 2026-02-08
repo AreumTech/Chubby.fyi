@@ -1084,11 +1084,10 @@ func generateCashFlowAnalysis(monthlyData []MonthlyDataSimulation, lastMonth Mon
 
 		ExpenseSources: ExpenseSources{
 			Taxes: TaxDetails{
-				Total:        totalTaxes,
-				Federal:      getFloatValue(lastMonth.FederalIncomeTaxAnnual),
-				State:        getFloatValue(lastMonth.StateIncomeTaxAnnual),
-				Fica:         getFloatValue(lastMonth.TotalFICATaxAnnual),
-				CapitalGains: getFloatValue(lastMonth.CapitalGainsTaxLongTermAnnual) + getFloatValue(lastMonth.CapitalGainsTaxShortTermAnnual),
+				Total:   totalTaxes,
+				Federal: totalTaxes - getFloatValue(lastMonth.StateIncomeTaxAnnual) - getFloatValue(lastMonth.TotalFICATaxAnnual),
+				State:   getFloatValue(lastMonth.StateIncomeTaxAnnual),
+				Fica:    getFloatValue(lastMonth.TotalFICATaxAnnual),
 			},
 			Living: LivingExpenses{
 				Total:      totalExpenses,
@@ -1292,7 +1291,6 @@ func generateCashFlowChart(medianPath SimulationResult, startYear int) CashFlowC
         income := 0.0
         expenses := 0.0
         taxes := 0.0
-        fed := 0.0
         st := 0.0
         fica := 0.0
         for m := 0; m < 12; m++ {
@@ -1302,9 +1300,6 @@ func generateCashFlowChart(medianPath SimulationResult, startYear int) CashFlowC
             expenses += md.ExpensesThisMonth
             if md.TaxPaidAnnual != nil {
                 taxes += *md.TaxPaidAnnual
-                if md.FederalIncomeTaxAnnual != nil {
-                    fed = *md.FederalIncomeTaxAnnual
-                }
                 if md.StateIncomeTaxAnnual != nil {
                     st = *md.StateIncomeTaxAnnual
                 }
@@ -1319,7 +1314,9 @@ func generateCashFlowChart(medianPath SimulationResult, startYear int) CashFlowC
             sr = (income - expenses) / income
         }
         yr := startYear + y
-        pts = append(pts, CashFlowTimeSeriesPoint{Year: yr, Income: income, Expenses: expenses, NetSavings: net, SavingsRate: sr, Taxes: taxes, TaxBreakdown: TaxBreakdown{Total: taxes, Federal: fed, State: st, Fica: fica}})
+        fedTotal := taxes - st - fica // Federal = total minus state and FICA (includes cap gains, NIIT, IRMAA, AMT)
+        if fedTotal < 0 { fedTotal = 0 }
+        pts = append(pts, CashFlowTimeSeriesPoint{Year: yr, Income: income, Expenses: expenses, NetSavings: net, SavingsRate: sr, Taxes: taxes, TaxBreakdown: TaxBreakdown{Total: taxes, Federal: fedTotal, State: st, Fica: fica}})
         totalSavings += net
         avgSR += sr
         if net > best {

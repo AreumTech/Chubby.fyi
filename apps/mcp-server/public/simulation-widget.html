@@ -2774,12 +2774,11 @@
     // Build tax breakdown from snapshot
     function renderTaxBreakdown(snap) {
       const t = snap.cashFlow?.expenseSources?.taxes || {};
-      if (!t.total && !t.federal && !t.state && !t.capitalGains) return '';
+      if (!t.total && !t.federal && !t.state) return '';
 
       let html = '';
       if (t.federal > 0) html += subItem('├─', 'Federal', t.federal);
       if (t.state > 0) html += subItem('├─', 'State', t.state);
-      if (t.capitalGains > 0) html += subItem('├─', 'Capital gains', t.capitalGains);
       if (t.fica > 0) html += subItem('├─', 'FICA', t.fica);
       // Replace last ├─ with └─
       html = html.replace(/├─([^├]+)$/, '└─$1');
