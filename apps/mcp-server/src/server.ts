@@ -626,7 +626,11 @@ The widget shows trajectories and when assets may be depleted.`;
           runwayP10: result.mc?.runwayP10,
           runwayP50: result.mc?.runwayP50,
           runwayP75: result.mc?.runwayP75,
+          // Final net worth percentiles (P10/P50/P75)
+          finalNetWorthP10: result.mc?.finalNetWorthP10,
           finalNetWorthP50: result.mc?.finalNetWorthP50,
+          finalNetWorthP75: result.mc?.finalNetWorthP75,
+          constraintProbability: (result.mc as any)?.constraintProbability,
           everBreachProbability: result.mc?.everBreachProbability,
           ...(mcAny?.constraintAgeP10 !== undefined && { constraintAgeP10: mcAny.constraintAgeP10 }),
           ...(mcAny?.constraintAgeP50 !== undefined && { constraintAgeP50: mcAny.constraintAgeP50 }),
