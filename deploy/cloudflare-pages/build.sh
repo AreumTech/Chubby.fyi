@@ -16,8 +16,9 @@ echo "=== Cloudflare Pages Build ==="
 
 # chubby-site/ is already a complete static site — just copy extras into it
 
-# 1) Copy viewer files so widget.chubby.fyi/viewer works
+# 1) Copy viewer + widget files so widget.chubby.fyi/viewer works
 cp apps/mcp-server/public/viewer.html chubby-site/
+cp apps/mcp-server/public/simulation-widget.html chubby-site/
 cp apps/mcp-server/public/pako.min.js chubby-site/
 
 # 2) Copy CF Pages routing files
