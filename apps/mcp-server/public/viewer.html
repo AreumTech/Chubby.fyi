@@ -801,9 +801,13 @@
         return;
       }
 
-      // Parse the hash - expected format: #d=<base64-compressed-payload>
-      const params = new URLSearchParams(hash.slice(1));
-      const payload = params.get('d');
+      // Extract payload directly — do NOT use URLSearchParams (it converts + to space)
+      const raw = hash.slice(1); // remove #
+      if (!raw.startsWith('d=')) {
+        showError('Invalid URL format. Expected #d=<payload>');
+        return;
+      }
+      const payload = raw.slice(2); // everything after 'd='
 
       if (!payload) {
         showError('Invalid URL format. Expected #d=<payload>');
