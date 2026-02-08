@@ -168,9 +168,9 @@
       --gray-700: #afafaf;
       --gray-1000: #ffffff;
       --color-text: #ffffff;
-      --color-text-secondary: #5d5d5d;
-      --color-text-tertiary: #414141;
-      --color-text-muted: #414141;
+      --color-text-secondary: #9a9a9a;
+      --color-text-tertiary: #6b6b6b;
+      --color-text-muted: #6b6b6b;
       --color-surface: #0d0d0d;
       --color-surface-secondary: #131313;
       --color-surface-elevated: #1a1a1a;
@@ -2090,15 +2090,7 @@
       return sign + '$' + Math.round(abs);
     }
 
-    function fmtYr(v) {
-      if (v == null) return '—';
-      // Handle negative values with proper K/M suffix
-      const sign = v < 0 ? '-' : '';
-      const abs = Math.abs(v);
-      if (abs >= 1e6) return sign + '$' + (abs / 1e6).toFixed(1) + 'M';
-      if (abs >= 1e3) return sign + '$' + Math.round(abs / 1e3) + 'K';
-      return sign + '$' + Math.round(abs);
-    }
+    var fmtYr = fmt;
 
     function fmtSigned(v) {
       if (v == null) return '—';
@@ -2613,7 +2605,7 @@
         const ariaLabel = 'Age ' + age + ', median net worth ' + fmt(p50) + '. Press Enter or tap to view details.';
 
         // Show P10→P75 range bar with P50 marker inside
-        const rangeWidth = Math.max(0, pct75 - pct10);
+        const rangeWidth = p75 > p10 ? Math.max(1, pct75 - pct10) : 0;
         const showRange = true;
 
         // Event marker dot (if this age has a scheduled event)
