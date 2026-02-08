@@ -1092,18 +1092,44 @@ function limitAnnualSnapshots(
     })
     .map((snap) => {
       // Merge rich cashFlow + balanceSheet from full payload (if available)
+      // Only pass fields the widget actually uses (keeps fragment URL under ~8KB)
       const yearKey = String(snap.year);
       const fullSnap = fullPayloadSnapshots?.[yearKey];
+      const cf = fullSnap?.cashFlow;
+      const bs = fullSnap?.balanceSheet;
 
       return {
         ...snap,
         // Floor balance fields to 0 for consistency with chart
         startBalance: floor0(snap.startBalance),
         endBalance: floor0(snap.endBalance),
-        // Rich data from full payload (enables detailed ledger + account split)
-        ...(fullSnap?.cashFlow && { cashFlow: fullSnap.cashFlow }),
-        ...(fullSnap?.balanceSheet && { balanceSheet: fullSnap.balanceSheet }),
-        ...(fullSnap?.divestmentProceeds != null && { divestmentProceeds: fullSnap.divestmentProceeds }),
+        // Cash flow breakdown (income sources, expense sources, portfolio flows)
+        ...(cf && { cashFlow: {
+          incomeSources: {
+            employment: cf.incomeSources?.employment,
+            retirement: cf.incomeSources?.retirement,
+            investment: cf.incomeSources?.investment,
+            divestmentProceeds: cf.incomeSources?.divestmentProceeds,
+          },
+          expenseSources: {
+            taxes: cf.expenseSources?.taxes,
+            living: cf.expenseSources?.living,
+          },
+          savingsAnalysis: cf.savingsAnalysis?.totalContributions
+            ? { totalContributions: cf.savingsAnalysis.totalContributions }
+            : undefined,
+        }}),
+        // Account balances (cash + investment accounts, no allocation arrays)
+        ...(bs && { balanceSheet: {
+          cash: bs.cash,
+          investmentAccounts: bs.investmentAccounts
+            ? {
+                taxableBrokerage: bs.investmentAccounts.taxableBrokerage,
+                account401k: bs.investmentAccounts.account401k,
+                rothIRA: bs.investmentAccounts.rothIRA,
+              }
+            : undefined,
+        }}),
       };
     });
 
