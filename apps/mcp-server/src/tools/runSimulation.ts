@@ -1057,7 +1057,8 @@ async function computeFlexibilityCurve(
  */
 function limitAnnualSnapshots(
   snapshots: any[] | undefined,
-  currentAge?: number
+  currentAge?: number,
+  fullPayloadSnapshots?: Record<string, any>
 ): any[] | undefined {
   if (!snapshots || snapshots.length === 0) return undefined;
 
@@ -1083,18 +1084,28 @@ function limitAnnualSnapshots(
   const floor0 = (v: number | undefined | null): number | undefined =>
     v == null ? undefined : Math.max(0, v);
 
-  // Filter to displayed ages and normalize balance fields
+  // Filter to displayed ages, enrich with cashFlow/balanceSheet from full payload
   const filtered = snapshots
     .filter((snap) => {
       const age = snap.age ?? (startAge + (snap.year ?? 0));
       return keepAges.has(age);
     })
-    .map((snap) => ({
-      ...snap,
-      // Floor balance fields to 0 for consistency with chart
-      startBalance: floor0(snap.startBalance),
-      endBalance: floor0(snap.endBalance),
-    }));
+    .map((snap) => {
+      // Merge rich cashFlow + balanceSheet from full payload (if available)
+      const yearKey = String(snap.year);
+      const fullSnap = fullPayloadSnapshots?.[yearKey];
+
+      return {
+        ...snap,
+        // Floor balance fields to 0 for consistency with chart
+        startBalance: floor0(snap.startBalance),
+        endBalance: floor0(snap.endBalance),
+        // Rich data from full payload (enables detailed ledger + account split)
+        ...(fullSnap?.cashFlow && { cashFlow: fullSnap.cashFlow }),
+        ...(fullSnap?.balanceSheet && { balanceSheet: fullSnap.balanceSheet }),
+        ...(fullSnap?.divestmentProceeds != null && { divestmentProceeds: fullSnap.divestmentProceeds }),
+      };
+    });
 
   return filtered.length > 0 ? filtered : undefined;
 }
@@ -1386,7 +1397,11 @@ async function runSingleSimulation(
     exemplarPath: extractExemplarPath(result, mcResults),
     // Include annualSnapshots for displayed ages (5-year intervals)
     // Matches widget trajectory sampling to enable Year Inspector for all clickable rows
-    annualSnapshots: limitAnnualSnapshots(result.annualSnapshots, params.currentAge),
+    annualSnapshots: limitAnnualSnapshots(
+      result.annualSnapshots,
+      params.currentAge,
+      result.payload?.planProjection?.analysis?.annualSnapshots
+    ),
     // Include first-month events for "show the math" in widget inspector
     // Lightweight: only first month per year, ~420 bytes compressed total
     firstMonthEvents: result.firstMonthEvents,

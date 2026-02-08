@@ -2921,41 +2921,60 @@
     function renderMinimalLedger(snap) {
       const start = snap.startBalance || 0;
       const end = snap.endBalance || 0;
-      const income = snap.totalIncome ?? snap.contributions ?? 0;
-      const expenses = snap.totalExpenses ?? snap.withdrawals ?? 0;
+      const income = snap.totalIncome ?? 0;
+      const expenses = snap.totalExpenses ?? 0;
       const growth = snap.investmentGrowth ?? (end - start - income + expenses);
       const pct = snap.returnPct ? (Math.abs(snap.returnPct) > 1 ? snap.returnPct : snap.returnPct * 100) : 0;
-      const taxes = snap.cashFlow?.expenseSources?.taxes?.total || 0;
+
+      // Rich data from full payload (if available)
+      const cf = snap.cashFlow || {};
+      const src = cf.incomeSources || {};
+      const exp = cf.expenseSources || {};
+      const hasCashFlow = Object.keys(cf).length > 0;
+
+      // Taxes
+      const taxes = exp.taxes?.total || 0;
+
+      // Divestment proceeds (sold from portfolio to fund spending gap)
+      const divestment = src.divestmentProceeds || snap.divestmentProceeds || 0;
+
+      // Contributions (deposits into investment accounts)
+      const contributions = cf.savingsAnalysis?.totalContributions || snap.contributions || 0;
 
       // Build income line items
-      const src = snap.cashFlow?.incomeSources || {};
       let incomeLines = [];
-      if (src.employment > 0) incomeLines.push({ label: 'Salary', value: src.employment });
-      if (src.socialSecurity > 0) incomeLines.push({ label: 'Social Security', value: src.socialSecurity });
-      if (src.investment > 0) incomeLines.push({ label: 'Investment income', value: src.investment });
-      if (incomeLines.length === 0 && income > 0) incomeLines.push({ label: 'Income', value: income });
+      if (hasCashFlow) {
+        const employment = src.employment?.total ?? 0;
+        const ss = src.retirement?.socialSecurity ?? 0;
+        const pension = src.retirement?.pension ?? 0;
+        const invest = src.investment?.total ?? 0;
+        if (employment > 0) incomeLines.push({ label: 'Salary', value: employment });
+        if (ss > 0) incomeLines.push({ label: 'Social Security', value: ss });
+        if (pension > 0) incomeLines.push({ label: 'Pension', value: pension });
+        if (invest > 0) incomeLines.push({ label: 'Investment income', value: invest });
+      } else if (income > 0) {
+        incomeLines.push({ label: 'Income', value: income });
+      }
 
       // Build expense line items
-      const exp = snap.cashFlow?.expenseSources || {};
       let expenseLines = [];
-      const living = exp.living || 0;
-      const healthcare = exp.healthcare || 0;
-      if (living > 0) expenseLines.push({ label: 'Living expenses', value: living });
-      if (healthcare > 0) expenseLines.push({ label: 'Healthcare', value: healthcare });
-      if (expenseLines.length === 0 && expenses > 0) expenseLines.push({ label: 'Living expenses', value: expenses });
+      if (hasCashFlow) {
+        const livingTotal = exp.living?.total ?? 0;
+        const healthcare = exp.living?.healthcare ?? 0;
+        const otherLiving = livingTotal - healthcare;
+        if (otherLiving > 0) expenseLines.push({ label: 'Living expenses', value: otherLiving });
+        if (healthcare > 0) expenseLines.push({ label: 'Healthcare', value: healthcare });
+      } else if (expenses > 0) {
+        expenseLines.push({ label: 'Living expenses', value: expenses });
+      }
 
-      // Build accounts inline text
-      const acct = snap.accountBalances || {};
-      const cash = acct.cash || 0;
-      const taxable = acct.taxable || 0;
-      const taxDeferred = acct.taxDeferred || acct['tax-deferred'] || 0;
-      const roth = acct.roth || 0;
-
-      let accountParts = [];
-      if (cash > 0) accountParts.push('Cash <span class="val">' + fmt(cash) + '</span>');
-      if (taxable > 0) accountParts.push('Taxable <span class="val">' + fmt(taxable) + '</span>');
-      if (taxDeferred > 0) accountParts.push('Tax-def <span class="val">' + fmt(taxDeferred) + '</span>');
-      if (roth > 0) accountParts.push('Roth <span class="val">' + fmt(roth) + '</span>');
+      // Account balances from balanceSheet (rich) or accountBalances (legacy)
+      const bs = snap.balanceSheet || {};
+      const accts = bs.investmentAccounts || snap.accountBalances || {};
+      const cashBal = bs.cash || accts.cash || 0;
+      const taxable = accts.taxableBrokerage || accts.taxable || 0;
+      const taxDeferred = accts.account401k || accts.taxDeferred || accts['tax-deferred'] || 0;
+      const roth = accts.rothIRA || accts.roth || 0;
 
       // Build HTML
       let html = '<div class="minimal-ledger">';
@@ -2973,9 +2992,17 @@
         html += '<div class="minimal-ledger-row indent"><span>− ' + item.label + '</span><span class="negative">−' + fmtFull(item.value) + '</span></div>';
       }
 
-      // Taxes (if applied)
+      // Taxes
       if (taxes > 0) {
         html += '<div class="minimal-ledger-row indent"><span>− Taxes</span><span class="negative">−' + fmtFull(taxes) + '</span></div>';
+      }
+
+      // Portfolio flows: sold from portfolio / deposited into accounts
+      if (divestment > 0) {
+        html += '<div class="minimal-ledger-row indent"><span>− Sold from portfolio</span><span class="negative">−' + fmtFull(divestment) + '</span></div>';
+      }
+      if (contributions > 0) {
+        html += '<div class="minimal-ledger-row indent"><span>+ Invested into accounts</span><span class="positive">+' + fmtFull(contributions) + '</span></div>';
       }
 
       // Market return
@@ -2986,7 +3013,12 @@
       // End (total row)
       html += '<div class="minimal-ledger-row total"><span>End</span><span>' + fmtFull(end) + '</span></div>';
 
-      // Accounts inline under End
+      // Account breakdown under End (from balanceSheet)
+      let accountParts = [];
+      if (cashBal > 0) accountParts.push('Cash <span class="val">' + fmt(cashBal) + '</span>');
+      if (taxable > 0) accountParts.push('Taxable <span class="val">' + fmt(taxable) + '</span>');
+      if (taxDeferred > 0) accountParts.push('Tax-def <span class="val">' + fmt(taxDeferred) + '</span>');
+      if (roth > 0) accountParts.push('Roth <span class="val">' + fmt(roth) + '</span>');
       if (accountParts.length > 0) {
         html += '<div class="minimal-ledger-accounts">' + accountParts.join(' · ') + '</div>';
       }
