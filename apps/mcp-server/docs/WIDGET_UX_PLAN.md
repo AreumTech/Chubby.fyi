@@ -131,6 +131,66 @@ Based on continued "life story" scenario testing.
   - Also fixed same bug in `validateRothConversions`
   - Improved error message to show actual horizon end age and suggest fix
 
+### Round 10 (Data Consistency)
+- ~~`pctPathsFunded` contradicted percentile bands~~ (used cumulative breach, now uses `nw > 0`)
+- ~~`RetirementIncome.Withdrawals` mislabeled divestment proceeds~~ (zeroed in MC path)
+- ~~Widget `agesIdentical` override caused false "Plan sustains through horizon"~~ (removed from both widget copies)
+
+---
+
+## Round 10: Open Items
+
+### 10.1 "Show the math" ledger missing investment flow breakdown (P0)
+
+**Status:** Not started
+
+The exemplar path ledger (`renderMinimalLedger`) shows:
+```
+Start → +Income → −Expenses → −Taxes → ±Market → End
+```
+But doesn't show how money moved between cash and portfolio:
+- How much was **divested** (sold from portfolio to fund spending gap)
+- How much was **invested** (surplus cash deployed into portfolio)
+- Which accounts the flows came from (taxable, tax-deferred, Roth)
+
+**Root cause (two issues):**
+
+1. **Simplified `annualSnapshots` don't carry `cashFlow`.**
+   `extractAnnualSnapshots()` in `services/simulation-service/src/server.js:54` only has top-level aggregates. The rich `cashFlow` breakdown exists in `payload.planProjection.analysis.annualSnapshots` but the widget reads the simplified version. The widget *tries* `snap.cashFlow.incomeSources` (line 2931) but it's always empty.
+
+2. **`withdrawals` in deterministic path = `DivestmentProceedsThisMonth`.**
+   At `wasm/simulation_deterministic.go:445`: `WithdrawalsThisMonth: md.DivestmentProceedsThisMonth`. Same mislabeling fixed for MC in `ui_payload_transformer.go` but still present here. Divestment proceeds include cash-buffer refills, not just spending-driven withdrawals.
+
+**Fix approach:** Pass `cashFlow` from full payload snapshots into the simplified `annualSnapshots`, or have the widget read from the full payload. Then surface in `renderMinimalLedger`:
+```
+Start                          $1,200,000
+  + Salary                       +$80,000
+  − Living expenses              −$65,000
+  − Taxes                        −$12,000
+  − Portfolio liquidations       −$43,000   ← divestmentProceeds
+  + Deposits to accounts          +$5,000   ← contributions
+  ± Market (+6.2%)              +$74,000
+End                            $1,239,000
+```
+
+### 10.2 Rename confusing labels (P1)
+
+- **"Contributions"** only counts explicit contribution events (401k, IRA deposits). Surplus cash doesn't register. Users expect it to mean "any money going in." → Rename or add tooltip: "Scheduled contributions to tax-advantaged accounts"
+- **"Withdrawals"** in deterministic path means all `DivestmentProceedsThisMonth` including cash-buffer refills. → Rename to "Portfolio liquidations"
+- **Runway as months**: `runwayP10Months: 2` shows "Age 45" which sounds like "right now." → Show "Age 45y 2m" for sub-year precision.
+- **Trajectory start/end of year**: First datapoint age unclear. → Add caption "Values shown at end of each year."
+
+### 10.3 Explainer / educational UX (P2)
+
+- **"What do these bands mean?"** — always-accessible one-click explainer: "P50 is the median outcome. % funded = share of paths with positive net worth at this age."
+- **Nominal vs today's dollars** — add clear label or toggle. Users will assume wrong one.
+- **Input guidance** — "Annual spending: before tax, include rent/mortgage/healthcare" and "Investable assets: exclude home equity."
+
+### 10.4 Scenario features (P3)
+
+- **Presets**: "Retire at X", "One-time expense", "Income change", "Add Social Security"
+- **Save & compare**: Side-by-side diff view ("Baseline vs Retire at 60") with runway + band differences
+
 ---
 
 ## Priority 1: Verify Deployed Fixes

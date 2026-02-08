@@ -2200,16 +2200,13 @@
       }
 
       // Additional saturation detection:
-      // 1. If all three ages are identical or nearly identical (within 2 years),
-      //    no meaningful constraint was observed - treat as saturated
-      // 2. If spending constraint probability is very low (<5%), effectively saturated
-      const agesIdentical = Math.abs(mostAge - earlierAge) <= 2 && Math.abs(mostAge - laterAge) <= 2;
+      // If spending constraint probability is very low (<5%), effectively saturated
       const lowConstraintProb = (d.mc?.everBreachProbability ?? 1) < 0.05;
 
-      if (!saturated && (agesIdentical || lowConstraintProb)) {
+      if (!saturated && lowConstraintProb) {
         saturated = true;
         console.log('[Chubby Widget] Detected effective saturation:',
-          { agesIdentical, lowConstraintProb, mostAge, earlierAge, laterAge });
+          { lowConstraintProb, mostAge, earlierAge, laterAge });
       }
 
       // Get DOM elements for mode switching
