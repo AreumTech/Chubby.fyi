@@ -3078,12 +3078,11 @@
           '<summary>One random example path — not the median</summary>' +
           '<div class="event-detail-content">' +
             renderMinimalLedger(snap) +
+            renderStackedAccounts(snap) +
           '</div>' +
         '</details>';
-        accountsSection.innerHTML = renderStackedAccounts(snap);
-      } else {
-        accountsSection.innerHTML = '';
       }
+      accountsSection.innerHTML = '';
 
       ledger.innerHTML = ledgerHtml;
 
