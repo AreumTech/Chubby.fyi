@@ -6,7 +6,8 @@
 
 ```
 chubby/
-├── apps/mcp-server/           # ChatGPT App (MCP server + widget)
+├── apps/mcp-server/           # ChatGPT App (MCP server + widget) ← ACTIVE, this is the one we use
+├── apps/mcp-server-go/        # EXPERIMENTAL ONLY — do NOT modify unless explicitly asked
 ├── services/simulation-service/  # WASM HTTP wrapper
 ├── wasm/                      # Go Monte Carlo engine
 ├── src/                       # React workbench (AreumFire UI) — browser-only

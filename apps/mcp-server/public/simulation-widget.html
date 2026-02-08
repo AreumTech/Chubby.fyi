@@ -1960,6 +1960,8 @@
           <span>Seed: <span id="seed">—</span></span>
         </div>
       </details>
+      <span id="viewer-link-sep" style="display:none;">·</span>
+      <a id="viewer-link" href="#" target="_blank" rel="noopener" style="display:none; color: var(--color-link); text-decoration: none;">View online ↗</a>
     </div>
     </div><!-- end content-state -->
   </div>
@@ -3406,6 +3408,65 @@
       document.getElementById('horizon-age').textContent = horizonAgeVal;
       document.getElementById('paths-run').textContent = data.pathsRun || 100;
       document.getElementById('seed').textContent = data.baseSeed || data.seed || '—';
+
+      // Generate fragment URL for "View online" link
+      generateViewerLink(data);
+    }
+
+    // =========================================================================
+    // Fragment URL (privacy-first — #fragment never sent to servers)
+    // =========================================================================
+
+    async function generateViewerLink(d) {
+      try {
+        var payload = {
+          runId: d.runId,
+          success: d.success,
+          inputs: d.inputs,
+          mc: d.mc ? {
+            finalNetWorthP10: d.mc.finalNetWorthP10,
+            finalNetWorthP50: d.mc.finalNetWorthP50,
+            finalNetWorthP75: d.mc.finalNetWorthP75,
+            runwayP10Months: d.mc.runwayP10Months,
+            runwayP50Months: d.mc.runwayP50Months,
+            runwayP75Months: d.mc.runwayP75Months,
+            runwayP10Age: d.mc.runwayP10Age,
+            runwayP50Age: d.mc.runwayP50Age,
+            runwayP75Age: d.mc.runwayP75Age,
+            runwayP10: d.mc.runwayP10,
+            runwayP50: d.mc.runwayP50,
+            runwayP75: d.mc.runwayP75,
+            constraintProbability: d.mc.constraintProbability,
+            netWorthTrajectory: d.mc.netWorthTrajectory,
+          } : undefined,
+          netWorthTrajectory: d.netWorthTrajectory,
+          planDuration: d.planDuration,
+          schedule: d.schedule,
+          phaseInfo: d.phaseInfo,
+          pathsRun: d.pathsRun,
+          baseSeed: d.baseSeed,
+          startYear: d.startYear,
+          annualSnapshots: d.annualSnapshots,
+          firstMonthEvents: d.firstMonthEvents,
+        };
+
+        var jsonStr = JSON.stringify(payload);
+        var blob = new Blob([jsonStr]);
+        var cs = new CompressionStream('deflate');
+        var compressed = await new Response(blob.stream().pipeThrough(cs)).arrayBuffer();
+        var bytes = new Uint8Array(compressed);
+        var binary = '';
+        for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        var b64 = btoa(binary);
+
+        var url = 'https://widget.chubby.fyi/viewer#d=' + b64;
+        document.getElementById('viewer-link').href = url;
+        document.getElementById('viewer-link').style.display = '';
+        document.getElementById('viewer-link-sep').style.display = '';
+        console.log('[Chubby Widget] Viewer link ready (' + b64.length + ' chars compressed)');
+      } catch (err) {
+        console.warn('[Chubby Widget] Could not generate viewer link:', err);
+      }
     }
 
     // =========================================================================

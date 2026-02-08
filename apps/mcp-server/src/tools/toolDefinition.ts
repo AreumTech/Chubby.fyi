@@ -7,7 +7,7 @@
 
 // Widget template URI (ChatGPT Apps SDK pattern)
 // Version suffix for cache busting - increment when widget changes
-export const WIDGET_VERSION = 'v27';
+export const WIDGET_VERSION = 'v28';
 export const WIDGET_TEMPLATE_URI = `ui://widget/simulation-summary-${WIDGET_VERSION}.html`;
 
 /**

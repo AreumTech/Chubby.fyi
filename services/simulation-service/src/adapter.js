@@ -870,10 +870,10 @@ function buildBronzeConfig(seed, mcPaths, annualSpending) {
     // (users implicitly expect some buffer, not literally $0)
     cashFloor: annualSpending ? annualSpending / 2 : 0,
 
-    // PERFORMANCE: Enable lite mode for Bronze tier
-    // Skips GARCH volatility dynamics, uses constant volatility
-    // Provides ~3x speedup while maintaining realistic distributions
-    liteMode: true,
+    // Full mode: GARCH volatility dynamics for realistic fat-tailed distributions
+    // LiteMode was ~7% faster but produced artificially tight distributions
+    // with no bankruptcy paths — not worth the accuracy tradeoff
+    liteMode: false,
 
     // DO NOT send mean/volatility values - let Go apply complete defaults
     // including GARCH parameters, correlation matrix, fat tail parameters, etc.

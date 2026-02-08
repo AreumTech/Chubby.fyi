@@ -1254,7 +1254,7 @@ async function runSingleSimulation(
     );
   }
 
-  const result = await response.json();
+  const result = await response.json() as any;
 
   // Check for service-level errors
   if (!result.success) {

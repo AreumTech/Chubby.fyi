@@ -28,6 +28,7 @@ echo "=== Deploying Chubby MCP Server to ${SERVER_IP} ==="
 # Build MCP server locally
 echo "Building Node.js MCP server..."
 cd apps/mcp-server
+npm install --ignore-scripts
 npm run build
 npm prune --omit=dev
 cd ../..
