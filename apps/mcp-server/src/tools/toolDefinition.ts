@@ -7,7 +7,7 @@
 
 // Widget template URI (ChatGPT Apps SDK pattern)
 // Version suffix for cache busting - increment when widget changes
-export const WIDGET_VERSION = 'v29';
+export const WIDGET_VERSION = 'v30';
 export const WIDGET_TEMPLATE_URI = `ui://widget/simulation-summary-${WIDGET_VERSION}.html`;
 
 /**
@@ -39,7 +39,7 @@ export const TOOL_DESCRIPTION =
   '\n- Zero/negative P10: When P10 is 0 or negative, say "In 10% of scenarios, assets are depleted by age X" (not "you go broke").' +
   '\n- Paths STOP at bankruptcy: When a path cannot meet spending (all assets depleted), simulation STOPS for that path. It does NOT continue or resurrect. Display floors bankrupt paths to $0 (runway tells you WHEN it happened).' +
   '\n- Phase meanings: "accumulation" = income exceeds spending (building wealth), "decumulation" = spending exceeds income (drawing down), "transition" = mixed (some years accumulating, some drawing down)' +
-  '\n- Default assumptions: Tax=federal single filer (~22%), returns=stocks 7%/bonds 3% nominal, inflation=3%, account mix=10% cash/30% taxable/60% tax-deferred, asset mix=70% stocks/30% bonds' +
+  '\n- Default assumptions: Tax=federal single filer (~22%), returns=stocks 7%/bonds 3% nominal, inflation=2.5% (overridable via returnAssumptions), account mix=10% cash/30% taxable/60% tax-deferred, asset mix=70% stocks/30% bonds' +
   '\n- Investment behavior: Income surplus goes to cash, then auto-invested into portfolio (per asset allocation) once cash exceeds ~6 months of expenses. Portfolio rebalanced quarterly when drift exceeds 5%. Withdrawals follow tax-efficient order (Cash → Taxable → Tax-Deferred → Roth).' +
   '\n\nREQUIRED INPUTS: investableAssets, annualSpending, currentAge, expectedIncome (gross, 0 if retired), seed (use Date.now()), startYear' +
   '\n\nEXAMPLE - "I\'m 40 with $300k, make $100k, spend $50k. Can I retire at 60?":' +
@@ -51,7 +51,6 @@ export const TOOL_DESCRIPTION =
   '\n- Social Security: socialSecurity with claimingAge and monthlyBenefit' +
   '\n\nOUTPUT STRUCTURE:' +
   '\n- success: boolean' +
-  '\n- runId: unique identifier (e.g., "AF-7K3P9")' +
   '\n- inputs.savingsRate: (income - spending) / income. Positive = accumulating, negative = drawing down.' +
   '\n- inputs.annualSurplus: income - spending. Positive = saving, negative = deficit.' +
   '\n- mc.finalNetWorthP10/P50/P75: ending net worth by percentile (floored at $0 - bankrupt paths show as 0)' +
@@ -624,6 +623,34 @@ export const TOOL_INPUT_SCHEMA = {
           enum: ['avalanche', 'snowball'],
         },
         extraMonthlyPayment: { type: 'number' },
+      },
+    },
+    returnAssumptions: {
+      type: 'object',
+      description:
+        'Override default return and inflation assumptions. ' +
+        'All values are annual rates as decimals. ' +
+        'Default: stocks 7% (0.07), bonds 3% (0.03), inflation 2.5% (0.025). ' +
+        'Only specify fields you want to override — omitted fields use defaults.',
+      properties: {
+        stockReturn: {
+          type: 'number',
+          description: 'Mean annual stock return (nominal). E.g., 0.07 = 7%. Default: 0.07',
+          minimum: 0,
+          maximum: 0.30,
+        },
+        bondReturn: {
+          type: 'number',
+          description: 'Mean annual bond return (nominal). E.g., 0.03 = 3%. Default: 0.03',
+          minimum: 0,
+          maximum: 0.30,
+        },
+        inflationRate: {
+          type: 'number',
+          description: 'Mean annual inflation rate. E.g., 0.025 = 2.5%. Default: 0.025',
+          minimum: 0,
+          maximum: 0.30,
+        },
       },
     },
     rothConversions: {

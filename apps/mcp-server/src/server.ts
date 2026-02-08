@@ -160,7 +160,6 @@ function generateFragmentUrl(result: any): string | null {
     // Build lean payload for fragment (minimize size)
     // Target: <2KB compressed for URL safety
     const leanPayload = {
-      runId: result.runId,
       success: result.success,
       inputs: result.inputs,
       mc: result.mc ? {
@@ -203,22 +202,8 @@ function generateFragmentUrl(result: any): string | null {
     // Convert to URL-safe base64 (no +/= that break in URL fragments)
     const base64 = Buffer.from(compressed).toString('base64url');
 
-    // Log payload size for monitoring
-    const originalSize = jsonStr.length;
-    const compressedSize = base64.length;
-    console.error(`📦 Fragment payload: ${originalSize} bytes → ${compressedSize} bytes (${Math.round(compressedSize / originalSize * 100)}%)`);
-
-    // Warn if payload is too large for URL
-    if (compressedSize > 8000) {
-      console.error(`⚠️ Fragment payload may be too large for some browsers (${compressedSize} bytes)`);
-    }
-
     return `${WIDGET_VIEWER_BASE_URL}/viewer#d=${base64}`;
   } catch (err) {
-    console.error('❌ Failed to generate fragment URL:');
-    console.error('   Error:', err);
-    console.error('   pako available:', typeof pako);
-    console.error('   pako.deflate:', typeof pako.deflate);
     return null;
   }
 }
@@ -266,7 +251,6 @@ let widgetHtml: string;
 try {
   widgetHtml = readWidgetHtml();
 } catch (e) {
-  console.error('Warning: Widget HTML not loaded. Widget resources will not be available.');
   widgetHtml = '<html><body>Widget not available</body></html>';
 }
 
@@ -365,12 +349,7 @@ function createMcpServer(): Server {
   server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
     const { name, arguments: args } = request.params;
 
-    // Log incoming request for debugging
-    console.error(`\n${'='.repeat(60)}`);
-    console.error(`📨 MCP Request: ${name}`);
-    console.error(`${'='.repeat(60)}`);
-    console.error(`Arguments: ${JSON.stringify(args, null, 2)}`);
-    console.error(`${'='.repeat(60)}\n`);
+    // Ops: count requests (no input data logged)
 
     if (name === 'run_simulation_packet') {
       const rawParams = args as Partial<RunSimulationParams>;
@@ -380,24 +359,10 @@ function createMcpServer(): Server {
         startYear: rawParams.startYear ?? new Date().getFullYear(),
       } as RunSimulationParams;
 
-      // Log key params for quick debugging
-      console.error(`🔧 Simulation params:`);
-      console.error(`   seed: ${resolvedParams.seed}`);
-      console.error(`   currentAge: ${resolvedParams.currentAge}`);
-      console.error(`   investableAssets: ${resolvedParams.investableAssets}`);
-      console.error(`   annualSpending: ${resolvedParams.annualSpending}`);
-      console.error(`   expectedIncome: ${resolvedParams.expectedIncome}`);
-      console.error(`   horizonMonths: ${resolvedParams.horizonMonths || 360}`);
-      console.error(`   mcPaths: ${resolvedParams.mcPaths || 100}`);
-      if (resolvedParams.incomeChange) console.error(`   incomeChange: ${JSON.stringify(resolvedParams.incomeChange)}`);
-      if (resolvedParams.spendingChange) console.error(`   spendingChange: ${JSON.stringify(resolvedParams.spendingChange)}`);
-      if (resolvedParams.socialSecurity) console.error(`   socialSecurity: ${JSON.stringify(resolvedParams.socialSecurity)}`);
-
       const startTime = Date.now();
       const result = await handleRunSimulation(resolvedParams);
       const elapsed = Date.now() - startTime;
-
-      console.error(`✅ Simulation complete in ${elapsed}ms`);
+      requestCount++;
 
       const resultCode = (result as { code?: string }).code;
       const missingFields = getMissingInputFields(rawParams);
@@ -494,7 +459,7 @@ function createMcpServer(): Server {
         textSummary = `Simulation failed: ${result.error}`;
       } else if (phase === 'accumulation') {
         // Mode A: Lead with net worth growth, runway is secondary
-        textSummary = `Simulation complete (${result.runId}).
+        textSummary = `Simulation complete.
 
 Net worth trajectories show outcome dispersion over ${horizonYears} years.
 Widget displays growth potential across P10/P50/P75 paths.${deficitWarning}${constraintAgeLine}
@@ -510,7 +475,7 @@ Ask "what if income changed?" or "what if I retired at X?" to explore.`;
           ? ' Flexibility curve shows spending headroom.'
           : '';
 
-        textSummary = `Simulation complete (${result.runId}).
+        textSummary = `Simulation complete.
 
 ${runwayText}. ${breachPct}% of paths depleted assets.${flexNote}${deficitWarning}${constraintAgeLine}
 
@@ -521,7 +486,7 @@ Ask "what if spending increased?" to explore scenarios.`;
           ? `≥${horizonYears} years (stays funded)`
           : `${formatRunwayText(result.mc?.runwayP50)} median, ${formatRunwayText(result.mc?.runwayP10)}–${formatRunwayText(runwayP75)} range`;
 
-        textSummary = `Simulation complete (${result.runId}).
+        textSummary = `Simulation complete.
 
 Runway: ${runwayText}
 Shows growth phase then retirement drawdown.${deficitWarning}${constraintAgeLine}
@@ -605,9 +570,7 @@ The widget shows trajectories and when assets may be depleted.`;
       // Widget needs full trajectory; model gets sampled trajectoryByAge for narration
       const modelSummary = {
         success: result.success,
-        runId: result.runId,
-        pathsRun: result.pathsRun,
-        baseSeed: result.baseSeed,
+        // Note: runId/pathsRun/baseSeed stripped — unnecessary metadata per OpenAI guidelines
         // Plan duration summary (primary output)
         planDuration: result.planDuration,
         // Key inputs for context
@@ -622,10 +585,7 @@ The widget shows trajectories and when assets may be depleted.`;
           runwayP10Age: result.mc?.runwayP10Age,
           runwayP50Age: result.mc?.runwayP50Age,
           runwayP75Age: result.mc?.runwayP75Age,
-          // Deprecated runway names (backward compat)
-          runwayP10: result.mc?.runwayP10,
-          runwayP50: result.mc?.runwayP50,
-          runwayP75: result.mc?.runwayP75,
+          // Note: deprecated runwayP10/P50/P75 stripped — use *Months/*Age above
           // Final net worth percentiles (P10/P50/P75)
           finalNetWorthP10: result.mc?.finalNetWorthP10,
           finalNetWorthP50: result.mc?.finalNetWorthP50,
@@ -646,42 +606,22 @@ The widget shows trajectories and when assets may be depleted.`;
         annualSnapshots: result.annualSnapshots,
         // Phase info
         phaseInfo: result.phaseInfo,
+        // Return assumptions — always show what the simulation ran with
+        returnAssumptions: {
+          stockReturn: result.returnAssumptions?.stockReturn ?? 0.07,
+          bondReturn: result.returnAssumptions?.bondReturn ?? 0.03,
+          inflationRate: result.returnAssumptions?.inflationRate ?? 0.025,
+        },
         // Error if any
         ...(result.error && { error: result.error }),
       };
 
-      // Log response summary
-      const modelSummarySize = JSON.stringify(modelSummary).length;
-      const fullResultSize = JSON.stringify(result).length;
-      console.error(`📤 Response summary:`);
-      console.error(`   success: ${result.success}`);
-      console.error(`   runId: ${result.runId}`);
-      if (result.mc) {
-        console.error(`   finalNetWorthP50: ${result.mc.finalNetWorthP50?.toLocaleString()}`);
-        console.error(`   runwayP50: ${result.mc.runwayP50}`);
-        console.error(`   trajectoryPoints: ${result.netWorthTrajectory?.length || 0}`);
-      }
-      // Debug: Log annualSnapshots and firstMonthEvents presence
-      console.error(`   annualSnapshots: ${result.annualSnapshots?.length || 0} entries`);
-      console.error(`   firstMonthEvents: ${Object.keys(result.firstMonthEvents || {}).length} ages`);
-      if (result.traceNote) {
-        console.error(`   ⚠️ traceNote: ${result.traceNote.message}`);
-      }
-      if (result.error) {
-        console.error(`   ❌ error: ${result.error}`);
-      }
-      console.error(`📊 Payload optimization:`);
-      console.error(`   structuredContent (model): ${modelSummarySize} bytes`);
-      console.error(`   _meta.widgetData (widget): ${fullResultSize} bytes`);
-      console.error(`   Reduction: ${Math.round((1 - modelSummarySize / fullResultSize) * 100)}%`);
-      console.error(`${'='.repeat(60)}\n`);
+      // No input/output data logged — privacy policy compliance
 
       // Check outputMode (default: 'full')
       const outputMode = resolvedParams.outputMode || 'full';
 
       if (outputMode === 'text') {
-        // Text-only mode: no widget, no fragment URL
-        console.error(`📤 outputMode=text — skipping widget and fragment URL`);
         return {
           content: [
             {
@@ -693,25 +633,16 @@ The widget shows trajectories and when assets may be depleted.`;
         };
       }
 
-      // Full mode: include widget and fragment URL
-      // Generate fragment URL for Claude connector (privacy-first)
-      // The fragment payload is NEVER sent to the server
-      console.error(`🔗 Generating fragment URL...`);
+      // Generate fragment URL for Claude connector (data stays in browser via URL fragment)
       const fragmentUrl = generateFragmentUrl(result);
-      console.error(`🔗 Fragment URL result: ${fragmentUrl ? 'SUCCESS (' + fragmentUrl.length + ' chars)' : 'FAILED (null)'}`);
 
-      // Build content blocks
       // Fragment URL is a SEPARATE text block so ChatGPT can't swallow it when rendering _meta widget
       const contentBlocks: Array<{type: string; text: string}> = [
         { type: 'text', text: textSummary },
       ];
       if (fragmentUrl) {
         contentBlocks.push({ type: 'text', text: `Visualization: ${fragmentUrl}\n(Your data never leaves your browser.)` });
-        console.error(`📝 Added projections link as separate content block`);
-      } else {
-        console.error(`⚠️ No fragment URL - visualization link NOT added`);
       }
-      console.error(`📤 Final content blocks: ${contentBlocks.length}`);
 
       return {
         content: contentBlocks,
@@ -743,6 +674,10 @@ type SessionRecord = {
 
 const sessions = new Map<string, SessionRecord>();
 
+// Ops counters — no user data, just capacity metrics
+let requestCount = 0;
+let activeSessions = 0;
+
 // HTTP endpoints
 const SSE_PATH = '/mcp';
 const POST_PATH = '/mcp/messages';
@@ -761,23 +696,19 @@ async function handleSseRequest(res: ServerResponse) {
 
   transport.onclose = () => {
     sessions.delete(sessionId);
-    console.error(`🔌 Session closed: ${sessionId}`);
+    activeSessions--;
     // Note: Don't call server.close() here as it creates a circular call
     // The session is already being cleaned up by deleting from sessions map
   };
 
   transport.onerror = (error) => {
-    console.error('SSE transport error:', error);
   };
 
   try {
     await server.connect(transport);
-    console.error(`\n${'🔗'.repeat(20)}`);
-    console.error(`🔗 MCP Client Connected! Session: ${sessionId}`);
-    console.error(`${'🔗'.repeat(20)}\n`);
+    activeSessions++;
   } catch (error) {
     sessions.delete(sessionId);
-    console.error('Failed to start SSE session:', error);
     if (!res.headersSent) {
       res.writeHead(500).end('Failed to establish SSE connection');
     }
@@ -808,7 +739,6 @@ async function handlePostMessage(req: IncomingMessage, res: ServerResponse, url:
   try {
     await session.transport.handlePostMessage(req, res);
   } catch (error) {
-    console.error('Failed to process message:', error);
     if (!res.headersSent) {
       res.writeHead(500).end('Failed to process message');
     }
@@ -896,7 +826,7 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
   // Health check
   if (req.method === 'GET' && url.pathname === '/health') {
     res.setHeader('Content-Type', 'application/json');
-    res.writeHead(200).end(JSON.stringify({ status: 'ok', sessions: sessions.size }));
+    res.writeHead(200).end(JSON.stringify({ status: 'ok', sessions: activeSessions, requests: requestCount }));
     return;
   }
 
@@ -959,7 +889,6 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
 });
 
 httpServer.on('clientError', (err: Error, socket) => {
-  console.error('HTTP client error:', err);
   socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
 });
 

@@ -858,33 +858,27 @@ func runDeterministicSimulationJSON(this js.Value, args []js.Value) interface{} 
 		input.InitialAccounts.Roth = &Account{Holdings: []Holding{}, TotalValue: 0}
 	}
 
-	// Apply default config if GARCH parameters are missing
-	if input.Config.GarchSPYOmega == 0 || input.Config.MeanSPYReturn == 0 || len(input.Config.CorrelationMatrix) == 0 {
-		simLogVerbose("🔧 [DETERMINISTIC-JSON] Applying default config parameters")
-		defaultConfig := GetDefaultStochasticConfig()
-
-		if input.Config.GarchSPYOmega == 0 { input.Config.GarchSPYOmega = defaultConfig.GarchSPYOmega }
-		if input.Config.GarchSPYAlpha == 0 { input.Config.GarchSPYAlpha = defaultConfig.GarchSPYAlpha }
-		if input.Config.GarchSPYBeta == 0 { input.Config.GarchSPYBeta = defaultConfig.GarchSPYBeta }
-		if input.Config.GarchBondOmega == 0 { input.Config.GarchBondOmega = defaultConfig.GarchBondOmega }
-		if input.Config.GarchBondAlpha == 0 { input.Config.GarchBondAlpha = defaultConfig.GarchBondAlpha }
-		if input.Config.GarchBondBeta == 0 { input.Config.GarchBondBeta = defaultConfig.GarchBondBeta }
-		if input.Config.GarchIntlStockOmega == 0 { input.Config.GarchIntlStockOmega = defaultConfig.GarchIntlStockOmega }
-		if input.Config.GarchIntlStockAlpha == 0 { input.Config.GarchIntlStockAlpha = defaultConfig.GarchIntlStockAlpha }
-		if input.Config.GarchIntlStockBeta == 0 { input.Config.GarchIntlStockBeta = defaultConfig.GarchIntlStockBeta }
-		if input.Config.GarchOtherOmega == 0 { input.Config.GarchOtherOmega = defaultConfig.GarchOtherOmega }
-		if input.Config.GarchOtherAlpha == 0 { input.Config.GarchOtherAlpha = defaultConfig.GarchOtherAlpha }
-		if input.Config.GarchOtherBeta == 0 { input.Config.GarchOtherBeta = defaultConfig.GarchOtherBeta }
-		if input.Config.MeanSPYReturn == 0 { input.Config.MeanSPYReturn = defaultConfig.MeanSPYReturn }
-		if input.Config.MeanBondReturn == 0 { input.Config.MeanBondReturn = defaultConfig.MeanBondReturn }
-		if input.Config.MeanIntlStockReturn == 0 { input.Config.MeanIntlStockReturn = defaultConfig.MeanIntlStockReturn }
-		if input.Config.MeanInflation == 0 { input.Config.MeanInflation = defaultConfig.MeanInflation }
-		if input.Config.VolatilitySPY == 0 { input.Config.VolatilitySPY = defaultConfig.VolatilitySPY }
-		if input.Config.VolatilityBond == 0 { input.Config.VolatilityBond = defaultConfig.VolatilityBond }
-		if input.Config.VolatilityIntlStock == 0 { input.Config.VolatilityIntlStock = defaultConfig.VolatilityIntlStock }
-		if len(input.Config.CorrelationMatrix) == 0 { input.Config.CorrelationMatrix = defaultConfig.CorrelationMatrix }
-		// CRITICAL: FatTailParameter must be positive for Student-t distribution
-		if input.Config.FatTailParameter <= 0 { input.Config.FatTailParameter = defaultConfig.FatTailParameter }
+	// Always apply full defaults, then restore user-provided overrides.
+	// This ensures GARCH, volatility, correlation, FatTailParameter are always populated
+	// even when the caller only sends mean return overrides.
+	{
+		savedSeed := input.Config.RandomSeed
+		savedMode := input.Config.SimulationMode
+		savedCashFloor := input.Config.CashFloor
+		savedLiteMode := input.Config.LiteMode
+		savedMeanSPY := input.Config.MeanSPYReturn
+		savedMeanBond := input.Config.MeanBondReturn
+		savedMeanInflation := input.Config.MeanInflation
+		input.Config = GetDefaultStochasticConfig()
+		input.Config.RandomSeed = savedSeed
+		input.Config.SimulationMode = savedMode
+		input.Config.CashFloor = savedCashFloor
+		input.Config.LiteMode = savedLiteMode
+		if savedMeanSPY != 0 { input.Config.MeanSPYReturn = savedMeanSPY }
+		if savedMeanBond != 0 { input.Config.MeanBondReturn = savedMeanBond }
+		if savedMeanInflation != 0 { input.Config.MeanInflation = savedMeanInflation }
+		simLogVerbose("🔧 [DETERMINISTIC-JSON] Applied default config with overrides: meanSPY=%.4f, meanBond=%.4f, meanInflation=%.4f",
+			input.Config.MeanSPYReturn, input.Config.MeanBondReturn, input.Config.MeanInflation)
 	}
 
 	simLogVerbose("🎯 [DETERMINISTIC-JSON] Running simulation with %d months, seed=%d, mode=%s",

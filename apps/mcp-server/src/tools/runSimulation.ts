@@ -41,6 +41,7 @@ import type {
   CashReserveConfig,
   RebalancingConfig,
   DebtConfig,
+  ReturnAssumptions,
 } from '../types.js';
 import { SimulationError, ErrorCode, validate } from '../errors.js';
 
@@ -255,13 +256,6 @@ function validateAssetAllocation(assetAllocation?: AssetAllocation): string[] {
     const pct = assetAllocation.stockPercentage;
     if (pct < 0 || pct > 100) {
       errors.push('assetAllocation.stockPercentage must be between 0 and 100');
-    }
-    // Warnings for extreme values (logged but not errors)
-    if (pct < 20 && pct >= 0) {
-      console.error(`⚠️ assetAllocation.stockPercentage (${pct}%) is very conservative`);
-    }
-    if (pct > 95) {
-      console.error(`⚠️ assetAllocation.stockPercentage (${pct}%) is very aggressive`);
     }
   }
 
@@ -653,6 +647,31 @@ function validateRothConversions(params: RunSimulationParams, effectiveHorizon: 
     if (conv.amount <= 0) {
       errors.push(`rothConversions[${i}].amount must be > 0`);
     }
+  }
+
+  return errors;
+}
+
+/**
+ * Validate return assumptions inputs
+ * Returns array of validation errors (empty if valid)
+ *
+ * Rules:
+ * - Each value must be between 0 and 0.30 (0-30%)
+ */
+function validateReturnAssumptions(params: RunSimulationParams): string[] {
+  const errors: string[] = [];
+  if (!params.returnAssumptions) return errors;
+
+  const ra = params.returnAssumptions;
+  if (ra.stockReturn !== undefined && (ra.stockReturn < 0 || ra.stockReturn > 0.30)) {
+    errors.push('returnAssumptions.stockReturn must be between 0 and 0.30 (0-30%)');
+  }
+  if (ra.bondReturn !== undefined && (ra.bondReturn < 0 || ra.bondReturn > 0.30)) {
+    errors.push('returnAssumptions.bondReturn must be between 0 and 0.30 (0-30%)');
+  }
+  if (ra.inflationRate !== undefined && (ra.inflationRate < 0 || ra.inflationRate > 0.30)) {
+    errors.push('returnAssumptions.inflationRate must be between 0 and 0.30 (0-30%)');
   }
 
   return errors;
@@ -1080,19 +1099,7 @@ function limitAnnualSnapshots(
   return filtered.length > 0 ? filtered : undefined;
 }
 
-/**
- * Generate a random runId for auditability
- * Format: AF-XXXXX (e.g., AF-7K3P9)
- * Random, not hash-based (privacy safe)
- */
-function generateRunId(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Omit confusing chars: 0/O, 1/I/L
-  let id = '';
-  for (let i = 0; i < 5; i++) {
-    id += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return `AF-${id}`;
-}
+// generateRunId removed — unnecessary metadata per OpenAI guidelines
 
 /**
  * Simulation service URL - defaults to local service
@@ -1203,6 +1210,8 @@ async function runSingleSimulation(
     debt: params.debt,
     // Income Streams (v12)
     incomeStreams: params.incomeStreams,
+    // Return Assumptions (v13)
+    returnAssumptions: params.returnAssumptions,
   };
 
   // Call simulation service with timeout
@@ -1282,8 +1291,7 @@ async function runSingleSimulation(
       : undefined,
   } : undefined;
 
-  // Generate runId at MCP layer (not from service)
-  const runId = generateRunId();
+  // runId removed — unnecessary metadata per OpenAI guidelines
 
   // Modeling choices
   const dollarsMode: DollarsMode = 'NOMINAL';
@@ -1347,7 +1355,6 @@ async function runSingleSimulation(
 
   const mcpResult: SimulationPacketResult = {
     success: true,
-    runId,
     dollarsMode,
     taxMode,
     taxConfig: taxConfig ?? undefined,
@@ -1402,6 +1409,11 @@ async function runSingleSimulation(
     withdrawalStrategy: params.withdrawalStrategy,
     cashReserve: params.cashReserve,
     rebalancing: params.rebalancing,
+    returnAssumptions: {
+      stockReturn: params.returnAssumptions?.stockReturn ?? 0.07,
+      bondReturn: params.returnAssumptions?.bondReturn ?? 0.03,
+      inflationRate: params.returnAssumptions?.inflationRate ?? 0.025,
+    },
     modelingChoices: modelingChoices.length > 0 ? modelingChoices : undefined,
     blockedOutputs: result.blockedOutputs || [],
     engineInputsHash: result.engineInputsHash,
@@ -1472,7 +1484,7 @@ export async function handleRunSimulation(
 
     // Low path count warning (logged, not an error)
     if (params.mcPaths !== undefined && params.mcPaths < 50) {
-      console.error(`\u26a0\ufe0f mcPaths=${params.mcPaths} is low. Results may vary significantly between runs. Consider using >= 50 paths.`);
+      // low mcPaths — results may vary, but not our problem to log
     }
 
     // Resolve age-based inputs (atAge -> monthOffset)
@@ -1569,7 +1581,6 @@ export async function handleRunSimulation(
 
     // Validate and clamp maxAge
     if (maxEndAge > ABSOLUTE_MAX_AGE) {
-      console.error(`⚠️ Capping maxAge from ${maxEndAge} to ${ABSOLUTE_MAX_AGE}`);
       maxEndAge = ABSOLUTE_MAX_AGE;
     }
     if (maxEndAge < params.currentAge + 1) {
@@ -1587,7 +1598,6 @@ export async function handleRunSimulation(
 
     // Cap horizon to not exceed maxAge (if user explicitly set a longer horizon)
     if (effectiveHorizon > maxHorizonMonths) {
-      console.error(`⚠️ Capping horizon from ${effectiveHorizon} to ${maxHorizonMonths} months (age ${maxEndAge} limit)`);
       effectiveHorizon = maxHorizonMonths;
     }
 
@@ -1703,6 +1713,16 @@ export async function handleRunSimulation(
       );
     }
 
+    // Validate return assumptions (if provided)
+    const returnAssumptionErrors = validateReturnAssumptions(params);
+    if (returnAssumptionErrors.length > 0) {
+      throw new SimulationError(
+        ErrorCode.INVALID_RANGE,
+        `Invalid returnAssumptions: ${returnAssumptionErrors.join('; ')}`,
+        { errors: returnAssumptionErrors }
+      );
+    }
+
     // Resolve tax assumptions (shared context for all runs)
     const { taxMode, taxConfig } = resolveTaxAssumptions(params.taxAssumptions);
     const context: SimulationContext = { taxMode, taxConfig };
@@ -1751,7 +1771,7 @@ export async function handleRunSimulation(
             }
           } catch (e) {
             // Flexibility curve is optional - don't fail the main simulation
-            console.error('Flexibility curve computation failed:', e);
+            // flexibility curve failed — optional, don't break main sim
           }
         }
       }
@@ -1804,11 +1824,9 @@ export async function handleRunSimulation(
     const comparison: ComparisonData = {
       baseline: {
         mc: baselineResult.mc,
-        runId: baselineResult.runId!,
       },
       afterLoss: {
         mc: afterLossResult.mc,
-        runId: afterLossResult.runId!,
       },
       lossParams: {
         instantLossPct,

@@ -233,20 +233,28 @@ func runSimulationWithUIPayload(this js.Value, inputs []js.Value) interface{} {
         }
     }
 
-    // Ensure config is populated with safe defaults if obviously empty
-    // CRITICAL: Preserve RandomSeed and SimulationMode when applying defaults!
-    if input.Config.MeanSPYReturn == 0 && input.Config.MeanBondReturn == 0 && input.Config.MeanInflation == 0 {
-        savedSeed := input.Config.RandomSeed
-        savedMode := input.Config.SimulationMode
-        savedCashFloor := input.Config.CashFloor
-        savedLiteMode := input.Config.LiteMode
-        input.Config = GetDefaultStochasticConfig()
-        input.Config.RandomSeed = savedSeed
-        input.Config.SimulationMode = savedMode
-        input.Config.CashFloor = savedCashFloor
-        input.Config.LiteMode = savedLiteMode
-        simLogVerbose("WASM-BINDING UI-PAYLOAD: Applied default config, preserved seed=%d, mode=%s, liteMode=%v", savedSeed, savedMode, savedLiteMode)
-    }
+    // Always apply full defaults (GARCH, volatility, correlation, FatTailParameter, etc.)
+    // then restore user-provided overrides. Previously this only applied when all three
+    // means were 0, which left GARCH/volatility/correlation empty when means were overridden.
+    // CRITICAL: Preserve RandomSeed, SimulationMode, CashFloor, LiteMode, and any user mean overrides.
+    savedSeed := input.Config.RandomSeed
+    savedMode := input.Config.SimulationMode
+    savedCashFloor := input.Config.CashFloor
+    savedLiteMode := input.Config.LiteMode
+    savedMeanSPY := input.Config.MeanSPYReturn
+    savedMeanBond := input.Config.MeanBondReturn
+    savedMeanInflation := input.Config.MeanInflation
+    input.Config = GetDefaultStochasticConfig()
+    input.Config.RandomSeed = savedSeed
+    input.Config.SimulationMode = savedMode
+    input.Config.CashFloor = savedCashFloor
+    input.Config.LiteMode = savedLiteMode
+    // Restore user mean overrides (non-zero values override defaults)
+    if savedMeanSPY != 0 { input.Config.MeanSPYReturn = savedMeanSPY }
+    if savedMeanBond != 0 { input.Config.MeanBondReturn = savedMeanBond }
+    if savedMeanInflation != 0 { input.Config.MeanInflation = savedMeanInflation }
+    simLogVerbose("WASM-BINDING UI-PAYLOAD: Applied default config with overrides: meanSPY=%.4f, meanBond=%.4f, meanInflation=%.4f, seed=%d, mode=%s",
+        input.Config.MeanSPYReturn, input.Config.MeanBondReturn, input.Config.MeanInflation, savedSeed, savedMode)
 
     simLogVerbose("WASM-BINDING UI-PAYLOAD: Running simulation with %d runs", numberOfRuns)
 

@@ -77,6 +77,8 @@ export function bronzeParamsToSimulationInput(params) {
     debt = null,
     // Income Streams (v12)
     incomeStreams = null,
+    // Return Assumptions (v13)
+    returnAssumptions = null,
   } = params;
 
   // Validate required params
@@ -124,7 +126,7 @@ export function bronzeParamsToSimulationInput(params) {
   });
 
   // Build stochastic config with seed (pass annualSpending for cash floor calculation)
-  const config = buildBronzeConfig(seed, mcPaths, annualSpending);
+  const config = buildBronzeConfig(seed, mcPaths, annualSpending, returnAssumptions);
 
   // Build StrategySettings for dynamic rebalancing (v10)
   // This enables glide_path to recalculate allocations as simulated age changes
@@ -849,16 +851,20 @@ function buildBronzeEvents({
  * @param {number} seed - Random seed for reproducibility
  * @param {number} mcPaths - Number of Monte Carlo paths
  * @param {number} annualSpending - Annual spending for cash floor calculation
+ * @param {Object|null} returnAssumptions - Optional return overrides {stockReturn, bondReturn, inflationRate}
  * @returns {Object} StochasticModelConfig shape
  */
-function buildBronzeConfig(seed, mcPaths, annualSpending) {
+function buildBronzeConfig(seed, mcPaths, annualSpending, returnAssumptions = null) {
   // CRITICAL: Only send mode, seed, and cashFloor - let Go apply complete defaults
   // for mean returns, volatilities, GARCH parameters, correlation matrix, etc.
   // The Go code in wasm_bindings.go checks:
   //   if MeanSPYReturn == 0 && MeanBondReturn == 0 && MeanInflation == 0 { apply defaults }
   // By sending 0s for means, Go will use GetDefaultStochasticConfig() which has
   // all GARCH parameters, correlation matrix, and other advanced stochastic settings.
-  return {
+  //
+  // When returnAssumptions is provided, we send non-zero values for the overridden fields.
+  // The Go fallback in main.go fills in remaining zero fields with defaults individually.
+  const config = {
     // Mode selection
     simulationMode: mcPaths > 1 ? 'stochastic' : 'deterministic',
 
@@ -874,11 +880,24 @@ function buildBronzeConfig(seed, mcPaths, annualSpending) {
     // LiteMode was ~7% faster but produced artificially tight distributions
     // with no bankruptcy paths — not worth the accuracy tradeoff
     liteMode: false,
-
-    // DO NOT send mean/volatility values - let Go apply complete defaults
-    // including GARCH parameters, correlation matrix, fat tail parameters, etc.
-    // Sending partial config would override Go defaults with zeros for GARCH params.
   };
+
+  // v13: Apply user return assumption overrides if provided
+  // Non-zero values override Go defaults; zero/omitted fields still get defaults
+  // CRITICAL: JSON field names must match Go struct tags (camelCase, not PascalCase)
+  if (returnAssumptions) {
+    if (returnAssumptions.stockReturn != null) {
+      config.meanSpyReturn = returnAssumptions.stockReturn;
+    }
+    if (returnAssumptions.bondReturn != null) {
+      config.meanBondReturn = returnAssumptions.bondReturn;
+    }
+    if (returnAssumptions.inflationRate != null) {
+      config.meanInflation = returnAssumptions.inflationRate;
+    }
+  }
+
+  return config;
 }
 
 /**
@@ -1273,6 +1292,8 @@ export function extractBronzeParams(packetBuildRequest) {
     withdrawalStrategy,
     // Income Streams (MCP v12)
     incomeStreams,
+    // Return Assumptions (MCP v13)
+    returnAssumptions,
   } = packetBuildRequest;
 
   // Helper to extract value from confirmedChanges by fieldPath
@@ -1319,5 +1340,7 @@ export function extractBronzeParams(packetBuildRequest) {
     withdrawalStrategy: withdrawalStrategy || 'TAX_EFFICIENT',
     // Income Streams (v12)
     incomeStreams: incomeStreams || null,
+    // Return Assumptions (v13)
+    returnAssumptions: returnAssumptions || null,
   };
 }

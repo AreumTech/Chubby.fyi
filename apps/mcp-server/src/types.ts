@@ -288,6 +288,13 @@ export interface RunSimulationParams {
    * Default: Not modeled (no debt)
    */
   debt?: DebtConfig;
+
+  /**
+   * Return assumptions override (v13)
+   * Allows user to specify custom mean return and inflation assumptions.
+   * Default: stocks 7%, bonds 3%, inflation 2.5%
+   */
+  returnAssumptions?: ReturnAssumptions;
 }
 
 /**
@@ -859,6 +866,30 @@ export interface RothConversionConfig {
 }
 
 // =============================================================================
+// Return Assumptions (v13)
+// =============================================================================
+
+/**
+ * User-controllable return and inflation assumptions
+ *
+ * Allows overriding the default mean return assumptions used by the
+ * Monte Carlo engine. All values are annual rates as decimals.
+ *
+ * Default values (when not provided):
+ * - stockReturn: 0.07 (7% nominal)
+ * - bondReturn: 0.03 (3% nominal)
+ * - inflationRate: 0.025 (2.5%)
+ */
+export interface ReturnAssumptions {
+  /** Mean annual stock return (nominal), e.g. 0.07 = 7%. Default: 0.07 */
+  stockReturn?: number;
+  /** Mean annual bond return (nominal), e.g. 0.03 = 3%. Default: 0.03 */
+  bondReturn?: number;
+  /** Mean annual inflation rate, e.g. 0.025 = 2.5%. Default: 0.025 */
+  inflationRate?: number;
+}
+
+// =============================================================================
 // Concentration Risk (v6a + v6b)
 // =============================================================================
 
@@ -1035,11 +1066,9 @@ export interface FlexibilityCurvePoint {
 export interface ComparisonData {
   baseline: {
     mc: NonNullable<SimulationPacketResult['mc']>;
-    runId: string;
   };
   afterLoss: {
     mc: NonNullable<SimulationPacketResult['mc']>;
-    runId: string;
   };
   lossParams: {
     /** The requested loss percentage (0-100) */
@@ -1062,11 +1091,6 @@ export interface SimulationPacketResult {
   success: boolean;
   error?: string;
 
-  /**
-   * Unique run identifier for auditability (e.g., AF-7K3P9)
-   * Generated at MCP layer, random (not hash-based for privacy)
-   */
-  runId?: string;
 
   /**
    * Dollars mode - always shown in output
@@ -1299,6 +1323,9 @@ export interface SimulationPacketResult {
 
   /** Rebalancing config (echoed from input for widget display) */
   rebalancing?: RebalancingConfig;
+
+  /** Return assumptions (echoed from input for widget/model display) */
+  returnAssumptions?: ReturnAssumptions;
 
   /**
    * Modeling choices made for this simulation.

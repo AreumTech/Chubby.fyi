@@ -1908,7 +1908,7 @@
     <details class="collapsible assumptions-details" id="assumptions-details">
       <summary>
         <span class="assumptions-summary" id="assumptions-summary">
-          <span>Stocks 7% / Bonds 4%</span>
+          <span>Stocks 7% / Bonds 3%</span>
           <span>Surplus auto-invested</span>
           <span>~2.5% inflation</span>
           <span>Taxes: not modeled</span>
@@ -1961,8 +1961,6 @@
         <button id="copy-summary-btn" class="copy-summary-btn" title="Copy summary" aria-label="Copy summary"><span class="sr-only">Copy summary</span></button>
         <span id="copied-toast" class="copied-toast">Copied!</span>
       </span>
-      <span id="run-id" title="Simulation ID — use this to reference or share this run">—</span>
-      <span>·</span>
       <span>Age <span id="horizon-age">—</span></span>
       <span>·</span>
       <details class="footer-advanced">
@@ -3264,24 +3262,13 @@
                   d.taxMode === 'USER_DECLARED' ? 'User tax rates' :
                   d.taxMode ? 'Taxes: ' + d.taxMode : 'Taxes: not modeled';
 
-      // Asset allocation from inputs
-      const alloc = d.inputs?.assetAllocation;
-      let allocLabel = 'Stocks 7% / Bonds 4%';
-      if (alloc) {
-        const stocks = alloc.stocks ?? alloc.equities ?? alloc.stock ?? null;
-        const bonds = alloc.bonds ?? alloc.fixedIncome ?? alloc.bond ?? null;
-        if (stocks != null && bonds != null) {
-          const sPct = Math.round(stocks * (stocks <= 1 ? 100 : 1));
-          const bPct = Math.round(bonds * (bonds <= 1 ? 100 : 1));
-          allocLabel = sPct + '% stocks / ' + bPct + '% bonds';
-        }
-      }
-
-      // Inflation
-      const inflRate = d.inputs?.inflationRate ?? d.inputs?.inflation ?? null;
-      const inflLabel = inflRate != null
-        ? '~' + (inflRate <= 1 ? (inflRate * 100).toFixed(1) : inflRate.toFixed(1)) + '% inflation'
-        : '~2.5% inflation';
+      // Return assumptions — always resolved by server, never null
+      const ra = d.returnAssumptions || {};
+      const stockPctLabel = Math.round((ra.stockReturn ?? 0.07) * 100);
+      const bondPctLabel = Math.round((ra.bondReturn ?? 0.03) * 100);
+      const inflPct = (ra.inflationRate ?? 0.025) * 100;
+      let allocLabel = 'Stocks ' + stockPctLabel + '% / Bonds ' + bondPctLabel + '%';
+      const inflLabel = '~' + inflPct.toFixed(1) + '% inflation';
 
       // Summary line
       document.getElementById('assumptions-summary').innerHTML =
@@ -3294,20 +3281,10 @@
           '<div class="assumptions-section-title">Returns Model (nominal)</div>' +
           '<div class="assumptions-section-content">' +
             '<ul>' +
-              '<li>Equities: ~7% mean annual return, ~18% volatility</li>' +
-              '<li>Bonds: ~4% mean annual return, ~6% volatility</li>' +
+              '<li>Equities: ~' + stockPctLabel + '% mean annual return, ~18% volatility</li>' +
+              '<li>Bonds: ~' + bondPctLabel + '% mean annual return, ~6% volatility</li>' +
+              '<li>Inflation: ~' + inflPct.toFixed(1) + '%</li>' +
             '</ul>';
-        if (alloc) {
-          const stocks = alloc.stocks ?? alloc.equities ?? alloc.stock ?? null;
-          const bonds = alloc.bonds ?? alloc.fixedIncome ?? alloc.bond ?? null;
-          if (stocks != null && bonds != null) {
-            const sPct = Math.round(stocks * (stocks <= 1 ? 100 : 1));
-            const bPct = Math.round(bonds * (bonds <= 1 ? 100 : 1));
-            expandedHtml += '<div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-2);">' +
-              'Portfolio allocation: ' + sPct + '% equities, ' + bPct + '% bonds' +
-              (100 - sPct - bPct > 0 ? ', ' + (100 - sPct - bPct) + '% other' : '') + '.</div>';
-          }
-        }
         expandedHtml += '<div style="font-size: var(--font-size-2xs); color: var(--color-text-muted); margin-top: var(--space-2);">' +
             'Higher volatility means a wider spread between "Harder" and "Optimistic" outcomes over time.' +
           '</div>' +
@@ -3452,7 +3429,7 @@
       // Footer
       const horizonMonths = data.inputs?.horizonMonths || 360;
       const horizonAgeVal = (data.inputs?.currentAge || 35) + Math.floor(horizonMonths / 12);
-      document.getElementById('run-id').textContent = data.runId || '—';
+      // runId removed — unnecessary metadata
       document.getElementById('horizon-age').textContent = horizonAgeVal;
       document.getElementById('paths-run').textContent = data.pathsRun || 100;
       document.getElementById('seed').textContent = data.baseSeed || data.seed || '—';
@@ -3468,7 +3445,6 @@
     async function generateViewerLink(d) {
       try {
         var payload = {
-          runId: d.runId,
           success: d.success,
           inputs: d.inputs,
           mc: d.mc ? {
