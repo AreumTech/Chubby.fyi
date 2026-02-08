@@ -89,7 +89,28 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', init);
+    // On some hosts (Cloudflare Pages), DOMContentLoaded fires before
+    // the hash fragment is available. Retry briefly if hash is empty.
+    var _initDone = false;
+    function tryInit() {
+      if (_initDone) return;
+      if (window.location.hash && window.location.hash.length >= 2) {
+        _initDone = true;
+        init();
+      }
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      tryInit();
+      if (!_initDone) {
+        // Retry a few times in case hash arrives late
+        setTimeout(tryInit, 50);
+        setTimeout(tryInit, 200);
+        setTimeout(function() {
+          if (!_initDone) init(); // final attempt — will show error if still empty
+        }, 500);
+      }
+    });
+    window.addEventListener('hashchange', tryInit);
   </script>
 </body>
 </html>

@@ -13,6 +13,8 @@
   Content-Security-Policy: frame-ancestors *
 /viewer.html
   Content-Security-Policy: frame-ancestors *
+/simulation-widget.html
+  Content-Security-Policy: frame-ancestors *
 
 # WASM binary: aggressive caching (content-hashed by build)
 /pathfinder.wasm
