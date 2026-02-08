@@ -2572,7 +2572,7 @@
           ? pctPathsFunded < 0.5
           : p50Raw <= 0;
 
-        // Once constraint is hit, show marker and stop - no point showing $0 repeatedly
+        // Once constraint is hit, show marker and continue with P75 until it also depletes
         if (isConstrained) {
           if (!constraintMarkerShown) {
             // Use durationConstraintAge + durationConstraintPct (from renderDuration)
@@ -2580,12 +2580,14 @@
             const markerAge = durationConstraintAge || age;
             const depletedPct = durationConstraintPct;
             const depletedText = depletedPct !== null
-              ? '⚠️ In ' + depletedPct + '% of scenarios, assets depleted by Age ' + markerAge
-              : '⚠️ In most scenarios, assets depleted by Age ' + markerAge;
+              ? 'In ' + depletedPct + '% of scenarios, assets depleted by Age ' + markerAge
+              : 'In most scenarios, assets depleted by Age ' + markerAge;
             html += '<div class="traj-constraint-marker">' + depletedText + '</div>';
             constraintMarkerShown = true;
           }
-          return; // Skip rendering $0 rows
+          // Stop when even P75 hits 0 — all paths depleted
+          if (p75 <= 0) return;
+          // Otherwise fall through to render normal bar — P10/P50 at 0, P75 still visible
         }
 
         // Scale to percentage
@@ -2633,7 +2635,7 @@
             '<div class="traj-bar-p50" style="left:' + pct50 + '%"></div>' +
             eventMarkerHtml +
           '</div>' +
-          '<span class="traj-value" aria-hidden="true">' + fmt(p50) + '</span>' +
+          '<span class="traj-value" aria-hidden="true">' + fmt(p50) + (constraintMarkerShown && pctPathsFunded !== undefined ? ' (' + Math.round((1 - pctPathsFunded) * 100) + '% depleted)' : '') + '</span>' +
           spendingHtml +
           '<span class="traj-inspect" aria-hidden="true" title="Tap to inspect">ⓘ</span>' +
         '</div>';
@@ -2642,7 +2644,7 @@
       // Add explanatory note if assets depleted
       if (constraintMarkerShown) {
         html += '<div class="traj-constraint-note">' +
-          'After this point, paths continue on fixed income only (e.g., Social Security). ' +
+          'After depletion, remaining funded paths rely on fixed income (e.g., Social Security). ' +
           'No spending reduction is modeled.' +
         '</div>';
       }
@@ -3504,13 +3506,22 @@
           if (diff < minDiff) { minDiff = diff; pt = p; }
         });
         if (pt) {
-          const p50 = pt.p50 || 0;
-          const barLen = Math.round((p50 / maxP50) * 12);
-          const bar = '▓'.repeat(Math.max(1, barLen));
+          const p10val = pt.p10 != null ? pt.p10 : 0;
+          const p50val = pt.p50 || 0;
+          const p75val = pt.p75 != null ? pt.p75 : 0;
+          const pctFunded = pt.pctPathsFunded ?? pt.survivalRate;
+          const isConst = pctFunded !== undefined ? pctFunded < 0.5 : p50val <= 0;
+          // Stop when even P75 hits 0
+          if (isConst && p75val <= 0) continue;
+          const barLen = Math.round(((isConst ? p75val : p50val) / maxP50) * 12);
+          const filled = Math.max(isConst && p75val > 0 ? 1 : 0, barLen);
+          const bar = '\u2593'.repeat(filled) + '\u2591'.repeat(12 - filled);
+          const depletedSuffix = isConst && pctFunded !== undefined
+            ? ' (' + Math.round((1 - pctFunded) * 100) + '% depleted)'
+            : '';
           rows.push({
             age,
-            p10: fmt(pt.p10 != null ? pt.p10 : 0),
-            p50: fmt(p50),
+            val: fmt(Math.max(0, p50val)) + depletedSuffix,
             bar
           });
         }
@@ -3521,7 +3532,7 @@
       let durationText = 'Stays funded through Age ' + endAge;
       if (constraintProb > 0.5) {
         for (const row of rows) {
-          if (row.p50 === '$0') {
+          if (row.val.startsWith('$0')) {
             durationText = 'Runs out around Age ' + row.age;
             break;
           }
@@ -3549,9 +3560,9 @@
 
       // Trajectory with bar visualization
       lines.push('');
-      lines.push('TRAJECTORY (P10–P75)');
+      lines.push('TRAJECTORY');
       rows.forEach(r => {
-        lines.push('Age ' + r.age + ': ' + r.p10 + '–' + r.p50 + ' ' + r.bar);
+        lines.push('Age ' + r.age + ' ' + r.bar + ' ' + r.val);
       });
 
       // Footer
