@@ -10,11 +10,21 @@
 # Viewer: allow framing from any origin (embedded in ChatGPT/Claude responses)
 # CSP frame-ancestors supersedes X-Frame-Options per spec
 /viewer
+  ! X-Frame-Options
   Content-Security-Policy: frame-ancestors *
+  Cache-Control: no-store
 /viewer.html
+  ! X-Frame-Options
   Content-Security-Policy: frame-ancestors *
+  Cache-Control: no-store
+/simulation-widget
+  ! X-Frame-Options
+  Content-Security-Policy: frame-ancestors *
+  Cache-Control: no-store
 /simulation-widget.html
+  ! X-Frame-Options
   Content-Security-Policy: frame-ancestors *
+  Cache-Control: no-store
 
 # WASM binary: aggressive caching (content-hashed by build)
 /pathfinder.wasm
@@ -35,6 +45,4 @@
 /config/*
   Cache-Control: public, max-age=86400
 
-# Viewer page: short cache (may update between deploys)
-/viewer.html
-  Cache-Control: public, max-age=3600
+# Viewer and widget are deployment-sensitive. Avoid edge/browser staleness.

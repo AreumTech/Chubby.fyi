@@ -26,20 +26,28 @@
   <iframe id="widget" src="/simulation-widget.html" style="display:none"></iframe>
 
   <script>
+    function clearError() {
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('error-msg').textContent = '';
+    }
+
     function showError(msg) {
       document.getElementById('error-msg').textContent = msg;
       document.getElementById('error').style.display = 'block';
     }
 
     function init() {
+      clearError();
+
       const hash = window.location.hash;
-      if (!hash || hash.length < 2) { showError('No simulation data in URL.'); return; }
+      if (!hash || hash.length < 2) { showError('No simulation data in URL.'); return false; }
 
       // Extract payload directly — do NOT use URLSearchParams (it converts + to space)
       const raw = hash.slice(1);
-      if (!raw.startsWith('d=')) { showError('Invalid URL format.'); return; }
-      const payload = raw.slice(2);
-      if (!payload) { showError('No payload in URL.'); return; }
+      if (!raw.startsWith('d=')) { showError('Invalid URL format.'); return false; }
+      let payload = raw.slice(2);
+      try { payload = decodeURIComponent(payload); } catch (_) {}
+      if (!payload) { showError('No payload in URL.'); return false; }
 
       try {
         // Decode base64 (handle both standard and URL-safe base64)
@@ -83,34 +91,68 @@
           }
         });
 
+        return true;
       } catch (err) {
         console.error('[Chubby Viewer] Failed:', err);
         showError('Failed to decompress simulation data: ' + err.message);
+        return false;
       }
     }
 
     // On some hosts (Cloudflare Pages), DOMContentLoaded fires before
-    // the hash fragment is available. Retry briefly if hash is empty.
+    // the hash fragment is available. Poll for a few seconds first.
     var _initDone = false;
+    var _initStartedAt = 0;
+    var _initTimer = null;
+    var HASH_WAIT_TIMEOUT_MS = 5000;
+    var HASH_WAIT_POLL_MS = 50;
+
+    function clearInitTimer() {
+      if (_initTimer) {
+        clearTimeout(_initTimer);
+        _initTimer = null;
+      }
+    }
+
     function tryInit() {
       if (_initDone) return;
+
+      if (window.location.hash && window.location.hash.length >= 2) {
+        _initDone = true;
+        clearInitTimer();
+        init();
+        return;
+      }
+
+      if ((Date.now() - _initStartedAt) >= HASH_WAIT_TIMEOUT_MS) {
+        // Final attempt to surface a user-visible error.
+        clearInitTimer();
+        init();
+        return;
+      }
+
+      clearInitTimer();
+      _initTimer = setTimeout(tryInit, HASH_WAIT_POLL_MS);
+    }
+
+    function bootInitPolling() {
+      _initStartedAt = Date.now();
+      tryInit();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bootInitPolling);
+    } else {
+      bootInitPolling();
+    }
+
+    window.addEventListener('hashchange', function() {
+      clearInitTimer();
       if (window.location.hash && window.location.hash.length >= 2) {
         _initDone = true;
         init();
       }
-    }
-    document.addEventListener('DOMContentLoaded', function() {
-      tryInit();
-      if (!_initDone) {
-        // Retry a few times in case hash arrives late
-        setTimeout(tryInit, 50);
-        setTimeout(tryInit, 200);
-        setTimeout(function() {
-          if (!_initDone) init(); // final attempt — will show error if still empty
-        }, 500);
-      }
     });
-    window.addEventListener('hashchange', tryInit);
   </script>
 </body>
 </html>
