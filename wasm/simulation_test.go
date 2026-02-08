@@ -71,16 +71,16 @@ func TestStochasticState(t *testing.T) { // Modified signature
 		MeanRentalIncomeGrowth:    0.03,
 
 		GarchSPYOmega: 0.0001,
-		GarchSPYAlpha: 0.1,
-		GarchSPYBeta:  0.85,
+		GarchSPYAlpha: 0.15,
+		GarchSPYBeta:  0.80,
 
 		GarchBondOmega: 0.00005,
-		GarchBondAlpha: 0.05,
-		GarchBondBeta:  0.90,
+		GarchBondAlpha: 0.08,
+		GarchBondBeta:  0.85,
 
 		GarchIntlStockOmega: 0.00015,
-		GarchIntlStockAlpha: 0.12,
-		GarchIntlStockBeta:  0.80,
+		GarchIntlStockAlpha: 0.15,
+		GarchIntlStockBeta:  0.78,
 	}
 
 	state := InitializeStochasticState(config)
@@ -114,16 +114,16 @@ func TestStochasticReturns(t *testing.T) { // Modified signature
 		VolatilityRentalIncomeGrowth: 0.08,
 
 		GarchSPYOmega: 0.0001,
-		GarchSPYAlpha: 0.1,
-		GarchSPYBeta:  0.85,
+		GarchSPYAlpha: 0.15,
+		GarchSPYBeta:  0.80,
 
 		GarchBondOmega: 0.00005,
-		GarchBondAlpha: 0.05,
-		GarchBondBeta:  0.90,
+		GarchBondAlpha: 0.08,
+		GarchBondBeta:  0.85,
 
 		GarchIntlStockOmega: 0.00015,
-		GarchIntlStockAlpha: 0.12,
-		GarchIntlStockBeta:  0.80,
+		GarchIntlStockAlpha: 0.15,
+		GarchIntlStockBeta:  0.78,
 
 		AR1InflationConstant:          0.005,
 		AR1InflationPhi:               0.7,
@@ -185,16 +185,16 @@ func TestSimulationEngine(t *testing.T) { // Modified signature
 		VolatilityRentalIncomeGrowth: 0.08,
 
 		GarchSPYOmega: 0.0001,
-		GarchSPYAlpha: 0.1,
-		GarchSPYBeta:  0.85,
+		GarchSPYAlpha: 0.15,
+		GarchSPYBeta:  0.80,
 
 		GarchBondOmega: 0.00005,
-		GarchBondAlpha: 0.05,
-		GarchBondBeta:  0.90,
+		GarchBondAlpha: 0.08,
+		GarchBondBeta:  0.85,
 
 		GarchIntlStockOmega: 0.00015,
-		GarchIntlStockAlpha: 0.12,
-		GarchIntlStockBeta:  0.80,
+		GarchIntlStockAlpha: 0.15,
+		GarchIntlStockBeta:  0.78,
 
 		AR1InflationConstant:          0.005,
 		AR1InflationPhi:               0.7,
@@ -285,16 +285,16 @@ func GetZeroGrowthConfig() StochasticModelConfig {
 		VolatilityRentalIncomeGrowth: 0.0,
 
 		GarchSPYOmega: 1e-8, // Small positive value to satisfy validation
-		GarchSPYAlpha: 0.01,
-		GarchSPYBeta:  0.9, // Alpha + Beta < 1 for stationarity
+		GarchSPYAlpha: 0.15,
+		GarchSPYBeta:  0.80, // α + β = 0.95 < 1 for stationarity
 
 		GarchBondOmega: 1e-8,
-		GarchBondAlpha: 0.01,
-		GarchBondBeta:  0.9,
+		GarchBondAlpha: 0.08,
+		GarchBondBeta:  0.85,
 
 		GarchIntlStockOmega: 1e-8,
-		GarchIntlStockAlpha: 0.01,
-		GarchIntlStockBeta:  0.9,
+		GarchIntlStockAlpha: 0.15,
+		GarchIntlStockBeta:  0.78,
 
 		AR1InflationConstant:          0.0,
 		AR1InflationPhi:               0.0,

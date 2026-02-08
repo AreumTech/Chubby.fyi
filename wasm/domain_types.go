@@ -268,6 +268,21 @@ type PrecomputedMonthlyParams struct {
 	VolInflation  float64
 	VolHome       float64
 	VolRental     float64
+
+	// GARCH: derived monthly omega = targetMonthlyVar * (1 - α - β)
+	// These ensure the unconditional vol matches the configured annual vol.
+	GarchOmegaSPY        float64
+	GarchOmegaBond       float64
+	GarchOmegaIntl       float64
+	GarchOmegaOther      float64
+	GarchOmegaIndividual float64
+
+	// GARCH: variance cap = targetMonthlyVar * 6.25 (allows up to 2.5x unconditional vol)
+	GarchMaxVarSPY        float64
+	GarchMaxVarBond       float64
+	GarchMaxVarIntl       float64
+	GarchMaxVarOther      float64
+	GarchMaxVarIndividual float64
 }
 
 // =============================================================================

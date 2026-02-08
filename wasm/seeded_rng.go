@@ -159,11 +159,14 @@ func StudentTRandomSeeded(degreesOfFreedom float64, rng *SeededRNG) float64 {
 		return GaussianRandomSeeded(0, 1, rng)
 	}
 
-	// Use the fact that t = Z / sqrt(Chi2/nu) where Z ~ N(0,1) and Chi2 ~ χ²(nu)
+	// Standardized t: t = Z / sqrt(Chi2/(nu-2)) so E[t²] = 1
 	z := rng.NormFloat64()
 	chi2 := generateChiSquaredSeeded(degreesOfFreedom, rng)
 
-	return z / math.Sqrt(chi2/degreesOfFreedom)
+	if degreesOfFreedom <= 2 {
+		return z / math.Sqrt(chi2/degreesOfFreedom)
+	}
+	return z / math.Sqrt(chi2/(degreesOfFreedom-2))
 }
 
 // generateChiSquaredSeeded generates chi-squared random variable using seeded RNG

@@ -24,31 +24,30 @@ func GetDefaultStochasticConfig() StochasticModelConfig {
 		VolatilityOther:              0.25,  // 25% alternative assets volatility
 		VolatilityIndividualStock:    0.35,  // 35% individual stock volatility
 
-		// GARCH Parameters for volatility clustering
-		// SPY GARCH(1,1) parameters (estimated from historical data)
-		GarchSPYOmega: 0.000015, // Long-term variance level
-		GarchSPYAlpha: 0.08,     // Impact of previous shock
-		GarchSPYBeta:  0.91,     // Persistence of volatility
+		// GARCH(1,1) parameters for volatility clustering
+		// Monthly frequency calibration. Daily V-Lab SPX: α≈0.10, β≈0.88 → α+β=0.98.
+		// Monthly aggregation reduces persistence (half-life: VIX mean-reverts in ~4-6 months).
+		// Uses standardized t(5) innovations (E[z²]=1). Stationarity: α + β < 1.
+		// Omega is IGNORED at runtime — derived from target vol in PrecomputeConfigParameters.
+		GarchSPYOmega: 0.000015, // Legacy (overridden by precomputed omega)
+		GarchSPYAlpha: 0.15,     // Monthly shock impact (higher than daily due to aggregation)
+		GarchSPYBeta:  0.80,     // Monthly persistence (α+β = 0.95, half-life ≈ 13 months)
 
-		// Bond GARCH(1,1) parameters
 		GarchBondOmega: 0.000005,
-		GarchBondAlpha: 0.05,
-		GarchBondBeta:  0.93,
+		GarchBondAlpha: 0.08,    // Lower shock for fixed income
+		GarchBondBeta:  0.85,    // (α+β = 0.93, half-life ≈ 10 months)
 
-		// International Stock GARCH(1,1) parameters
 		GarchIntlStockOmega: 0.000020,
-		GarchIntlStockAlpha: 0.09,
-		GarchIntlStockBeta:  0.89,
+		GarchIntlStockAlpha: 0.15,  // Similar to SPY
+		GarchIntlStockBeta:  0.78,  // (α+β = 0.93, half-life ≈ 10 months)
 
-		// Other/Alternative Assets GARCH(1,1) parameters
 		GarchOtherOmega: 0.0001,
-		GarchOtherAlpha: 0.12,
-		GarchOtherBeta:  0.86,
+		GarchOtherAlpha: 0.18,   // Higher shock for alternatives
+		GarchOtherBeta:  0.75,   // (α+β = 0.93, half-life ≈ 10 months)
 
-		// Individual Stock GARCH(1,1) parameters
 		GarchIndividualStockOmega: 0.0003,
-		GarchIndividualStockAlpha: 0.15,
-		GarchIndividualStockBeta:  0.82,
+		GarchIndividualStockAlpha: 0.20,  // Highest shock — single stocks
+		GarchIndividualStockBeta:  0.70,  // Lower persistence (α+β = 0.90, half-life ≈ 7 months)
 
 		// AR(1) parameters for inflation dynamics
 		AR1InflationConstant: 0.01,

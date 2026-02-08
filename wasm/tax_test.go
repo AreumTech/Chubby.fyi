@@ -542,16 +542,16 @@ func createDefaultConfigIfNeeded() StochasticModelConfig {
 		VolatilityRentalIncomeGrowth: 0.08,
 
 		GarchSPYOmega: 0.0001,
-		GarchSPYAlpha: 0.1,
-		GarchSPYBeta:  0.85,
+		GarchSPYAlpha: 0.15,
+		GarchSPYBeta:  0.80,
 
 		GarchBondOmega: 0.00005,
-		GarchBondAlpha: 0.05,
-		GarchBondBeta:  0.90,
+		GarchBondAlpha: 0.08,
+		GarchBondBeta:  0.85,
 
 		GarchIntlStockOmega: 0.00015,
-		GarchIntlStockAlpha: 0.12,
-		GarchIntlStockBeta:  0.80,
+		GarchIntlStockAlpha: 0.15,
+		GarchIntlStockBeta:  0.78,
 
 		AR1InflationConstant:          0.005,
 		AR1InflationPhi:               0.7,

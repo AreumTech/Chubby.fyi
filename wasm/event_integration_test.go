@@ -16,9 +16,9 @@ func createBasicTestConfig() StochasticModelConfig {
 		MeanBondReturn:      0.04,
 		MeanIntlStockReturn: 0.07,
 		MeanInflation:       0.025,
-		GarchSPYOmega:       0.0001, GarchSPYAlpha: 0.1, GarchSPYBeta: 0.85,
-		GarchBondOmega:      0.00005, GarchBondAlpha: 0.05, GarchBondBeta: 0.90,
-		GarchIntlStockOmega: 0.00015, GarchIntlStockAlpha: 0.12, GarchIntlStockBeta: 0.80,
+		GarchSPYOmega:       0.0001, GarchSPYAlpha: 0.15, GarchSPYBeta: 0.80,
+		GarchBondOmega:      0.00005, GarchBondAlpha: 0.08, GarchBondBeta: 0.85,
+		GarchIntlStockOmega: 0.00015, GarchIntlStockAlpha: 0.15, GarchIntlStockBeta: 0.78,
 		FatTailParameter:    4.0,
 		CorrelationMatrix: [][]float64{
 			{1, 0, 0, 0, 0, 0},

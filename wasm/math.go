@@ -63,11 +63,17 @@ func StudentTRandom(degreesOfFreedom float64) float64 {
 		return GaussianRandom(0, 1)
 	}
 
-	// Use the fact that t = Z / sqrt(Chi2/nu) where Z ~ N(0,1) and Chi2 ~ χ²(nu)
+	// Standardized t: t = Z / sqrt(Chi2/(nu-2)) so E[t²] = 1
+	// This is the standard GARCH-t convention (Bollerslev 1987).
+	// Raw t has E[z²] = nu/(nu-2); standardizing ensures GARCH
+	// unconditional variance equals the target without correction factors.
 	z := GaussianRandom(0, 1)
 	chi2 := generateChiSquared(degreesOfFreedom)
 
-	return z / math.Sqrt(chi2/degreesOfFreedom)
+	if degreesOfFreedom <= 2 {
+		return z / math.Sqrt(chi2/degreesOfFreedom)
+	}
+	return z / math.Sqrt(chi2/(degreesOfFreedom-2))
 }
 
 // Generate chi-squared random variable using gamma distribution
@@ -340,23 +346,18 @@ func GenerateCorrelatedTShocksSeededFixed8(choleskyMatrix [][]float64, degreesOf
 
 // InitializeStochasticState initializes the stochastic state at the beginning of simulation
 func InitializeStochasticState(config StochasticModelConfig) StochasticState {
-	// Calculate initial volatilities for GARCH models based on long-term variance
-	spyVolInit := math.Sqrt(config.GarchSPYOmega / math.Max(1e-9, (1-config.GarchSPYAlpha-config.GarchSPYBeta)))
-	bndVolInit := math.Sqrt(config.GarchBondOmega / math.Max(1e-9, (1-config.GarchBondAlpha-config.GarchBondBeta)))
-	intlVolInit := math.Sqrt(config.GarchIntlStockOmega / math.Max(1e-9, (1-config.GarchIntlStockAlpha-config.GarchIntlStockBeta)))
-	otherVolInit := math.Sqrt(config.GarchOtherOmega / math.Max(1e-9, (1-config.GarchOtherAlpha-config.GarchOtherBeta)))
-	individualStockVolInit := math.Sqrt(config.GarchIndividualStockOmega / math.Max(1e-9, (1-config.GarchIndividualStockAlpha-config.GarchIndividualStockBeta)))
-
+	// Initialize GARCH volatilities to configured annual target vols.
+	// These are the unconditional vols the GARCH process mean-reverts to.
 	return StochasticState{
-		SPYVolatility:                     spyVolInit,
+		SPYVolatility:                     config.VolatilitySPY,
 		SPYLastReturn:                     config.MeanSPYReturn,
-		BNDVolatility:                     bndVolInit,
+		BNDVolatility:                     config.VolatilityBond,
 		BNDLastReturn:                     config.MeanBondReturn,
-		IntlVolatility:                    intlVolInit,
+		IntlVolatility:                    config.VolatilityIntlStock,
 		IntlLastReturn:                    config.MeanIntlStockReturn,
-		OtherVolatility:                   otherVolInit,
+		OtherVolatility:                   config.VolatilityOther,
 		OtherLastReturn:                   config.MeanOtherReturn,
-		IndividualStockVolatility:         individualStockVolInit,
+		IndividualStockVolatility:         config.VolatilityIndividualStock,
 		IndividualStockLastReturn:         config.MeanIndividualStockReturn,
 		LastInflation:                     config.MeanInflation,
 		LastHomeValueGrowth:               config.MeanHomeValueAppreciation,
@@ -409,6 +410,12 @@ func PrecomputeConfigParameters(config *StochasticModelConfig) error {
 
 	// Pre-compute monthly parameters (avoid repeated AnnualToMonthly conversions)
 	if config.PrecomputedMonthly == nil {
+		volSPY := AnnualToMonthlyVolatility(config.VolatilitySPY)
+		volBond := AnnualToMonthlyVolatility(config.VolatilityBond)
+		volIntl := AnnualToMonthlyVolatility(config.VolatilityIntlStock)
+		volOther := AnnualToMonthlyVolatility(config.VolatilityOther)
+		volIndividual := AnnualToMonthlyVolatility(config.VolatilityIndividualStock)
+
 		config.PrecomputedMonthly = &PrecomputedMonthlyParams{
 			// Monthly means
 			MeanSPY:        AnnualToMonthlyRate(config.MeanSPYReturn),
@@ -421,14 +428,31 @@ func PrecomputeConfigParameters(config *StochasticModelConfig) error {
 			MeanRental:     AnnualToMonthlyRate(config.MeanRentalIncomeGrowth),
 
 			// Monthly volatilities
-			VolSPY:        AnnualToMonthlyVolatility(config.VolatilitySPY),
-			VolBond:       AnnualToMonthlyVolatility(config.VolatilityBond),
-			VolIntl:       AnnualToMonthlyVolatility(config.VolatilityIntlStock),
-			VolOther:      AnnualToMonthlyVolatility(config.VolatilityOther),
-			VolIndividual: AnnualToMonthlyVolatility(config.VolatilityIndividualStock),
+			VolSPY:        volSPY,
+			VolBond:       volBond,
+			VolIntl:       volIntl,
+			VolOther:      volOther,
+			VolIndividual: volIndividual,
 			VolInflation:  AnnualToMonthlyVolatility(config.VolatilityInflation),
 			VolHome:       AnnualToMonthlyVolatility(config.VolatilityHomeValue),
 			VolRental:     AnnualToMonthlyVolatility(config.VolatilityRentalIncomeGrowth),
+
+			// GARCH: derive omega from target unconditional variance
+			// With standardized t-distribution (E[z²]=1), formula is:
+			// ω = σ²_target * (1 - α - β)
+			GarchOmegaSPY:        volSPY * volSPY * (1 - config.GarchSPYAlpha - config.GarchSPYBeta),
+			GarchOmegaBond:       volBond * volBond * (1 - config.GarchBondAlpha - config.GarchBondBeta),
+			GarchOmegaIntl:       volIntl * volIntl * (1 - config.GarchIntlStockAlpha - config.GarchIntlStockBeta),
+			GarchOmegaOther:      volOther * volOther * (1 - config.GarchOtherAlpha - config.GarchOtherBeta),
+			GarchOmegaIndividual: volIndividual * volIndividual * (1 - config.GarchIndividualStockAlpha - config.GarchIndividualStockBeta),
+
+			// GARCH: variance cap at 6.25x unconditional (= 2.5x unconditional vol)
+			// SPY 16% → max 40%, Intl 20% → max 50%, etc.
+			GarchMaxVarSPY:        volSPY * volSPY * 6.25,
+			GarchMaxVarBond:       volBond * volBond * 6.25,
+			GarchMaxVarIntl:       volIntl * volIntl * 6.25,
+			GarchMaxVarOther:      volOther * volOther * 6.25,
+			GarchMaxVarIndividual: volIndividual * volIndividual * 6.25,
 		}
 	}
 
@@ -437,105 +461,102 @@ func PrecomputeConfigParameters(config *StochasticModelConfig) error {
 
 // validateStochasticConfig validates the stochastic model configuration
 func validateStochasticConfig(config *StochasticModelConfig) error {
-	// SAFETY NET: Apply Go-side defaults for any zero GARCH parameters
-	// This prevents JavaScript config errors from breaking simulation
+	// SAFETY NET: Apply Go-side defaults for any zero GARCH parameters.
+	// Monthly frequency, standardized t(5). Must match GetDefaultStochasticConfig().
 	if config.GarchSPYOmega <= 0 {
-		config.GarchSPYOmega = 0.000015
+		config.GarchSPYOmega = 0.000015 // Legacy; omega derived from target vol at runtime
 	}
 	if config.GarchSPYAlpha <= 0 {
-		config.GarchSPYAlpha = 0.12
+		config.GarchSPYAlpha = 0.15
 	}
 	if config.GarchSPYBeta <= 0 {
-		config.GarchSPYBeta = 0.87
+		config.GarchSPYBeta = 0.80
 	}
 
 	if config.GarchBondOmega <= 0 {
-		config.GarchBondOmega = 0.000004
+		config.GarchBondOmega = 0.000005
 	}
 	if config.GarchBondAlpha <= 0 {
-		config.GarchBondAlpha = 0.15
+		config.GarchBondAlpha = 0.08
 	}
 	if config.GarchBondBeta <= 0 {
-		config.GarchBondBeta = 0.82
+		config.GarchBondBeta = 0.85
 	}
 
 	if config.GarchIntlStockOmega <= 0 {
-		config.GarchIntlStockOmega = 0.000361
+		config.GarchIntlStockOmega = 0.000020
 	}
 	if config.GarchIntlStockAlpha <= 0 {
-		config.GarchIntlStockAlpha = 0.14
+		config.GarchIntlStockAlpha = 0.15
 	}
 	if config.GarchIntlStockBeta <= 0 {
-		config.GarchIntlStockBeta = 0.85
+		config.GarchIntlStockBeta = 0.78
 	}
 
 	if config.GarchOtherOmega <= 0 {
 		config.GarchOtherOmega = 0.0001
 	}
 	if config.GarchOtherAlpha <= 0 {
-		config.GarchOtherAlpha = 0.12
+		config.GarchOtherAlpha = 0.18
 	}
 	if config.GarchOtherBeta <= 0 {
-		config.GarchOtherBeta = 0.86
+		config.GarchOtherBeta = 0.75
 	}
 
 	if config.GarchIndividualStockOmega <= 0 {
-		config.GarchIndividualStockOmega = 0.00015
+		config.GarchIndividualStockOmega = 0.0003
 	}
 	if config.GarchIndividualStockAlpha <= 0 {
-		config.GarchIndividualStockAlpha = 0.15
+		config.GarchIndividualStockAlpha = 0.20
 	}
 	if config.GarchIndividualStockBeta <= 0 {
-		config.GarchIndividualStockBeta = 0.82
+		config.GarchIndividualStockBeta = 0.70
 	}
 
-	// Validate GARCH parameters for SPY
-	if config.GarchSPYAlpha < 0 || config.GarchSPYBeta < 0 || config.GarchSPYOmega <= 0 {
-		return fmt.Errorf("invalid GARCH SPY parameters: alpha=%.6f, beta=%.6f, omega=%.6f",
-			config.GarchSPYAlpha, config.GarchSPYBeta, config.GarchSPYOmega)
+	// Validate GARCH stationarity: α + β < 1
+	// (t-distribution is standardized to E[z²]=1, so no fat-tail correction needed)
+	if config.GarchSPYAlpha < 0 || config.GarchSPYBeta < 0 {
+		return fmt.Errorf("invalid GARCH SPY parameters: alpha=%.6f, beta=%.6f",
+			config.GarchSPYAlpha, config.GarchSPYBeta)
 	}
 	if config.GarchSPYAlpha+config.GarchSPYBeta >= 1.0 {
-		return fmt.Errorf("GARCH SPY parameters violate stationarity: alpha + beta = %.6f >= 1.0",
+		return fmt.Errorf("GARCH SPY non-stationary: α+β = %.6f >= 1.0",
 			config.GarchSPYAlpha+config.GarchSPYBeta)
 	}
 
-	// Validate GARCH parameters for Bonds
-	if config.GarchBondAlpha < 0 || config.GarchBondBeta < 0 || config.GarchBondOmega <= 0 {
-		return fmt.Errorf("invalid GARCH Bond parameters: alpha=%.6f, beta=%.6f, omega=%.6f",
-			config.GarchBondAlpha, config.GarchBondBeta, config.GarchBondOmega)
+	if config.GarchBondAlpha < 0 || config.GarchBondBeta < 0 {
+		return fmt.Errorf("invalid GARCH Bond parameters: alpha=%.6f, beta=%.6f",
+			config.GarchBondAlpha, config.GarchBondBeta)
 	}
 	if config.GarchBondAlpha+config.GarchBondBeta >= 1.0 {
-		return fmt.Errorf("GARCH Bond parameters violate stationarity: alpha + beta = %.6f >= 1.0",
+		return fmt.Errorf("GARCH Bond non-stationary: α+β = %.6f >= 1.0",
 			config.GarchBondAlpha+config.GarchBondBeta)
 	}
 
-	// Validate GARCH parameters for International Stocks
-	if config.GarchIntlStockAlpha < 0 || config.GarchIntlStockBeta < 0 || config.GarchIntlStockOmega <= 0 {
-		return fmt.Errorf("invalid GARCH Intl parameters: alpha=%.6f, beta=%.6f, omega=%.6f",
-			config.GarchIntlStockAlpha, config.GarchIntlStockBeta, config.GarchIntlStockOmega)
+	if config.GarchIntlStockAlpha < 0 || config.GarchIntlStockBeta < 0 {
+		return fmt.Errorf("invalid GARCH Intl parameters: alpha=%.6f, beta=%.6f",
+			config.GarchIntlStockAlpha, config.GarchIntlStockBeta)
 	}
 	if config.GarchIntlStockAlpha+config.GarchIntlStockBeta >= 1.0 {
-		return fmt.Errorf("GARCH Intl parameters violate stationarity: alpha + beta = %.6f >= 1.0",
+		return fmt.Errorf("GARCH Intl non-stationary: α+β = %.6f >= 1.0",
 			config.GarchIntlStockAlpha+config.GarchIntlStockBeta)
 	}
 
-	// Validate GARCH parameters for Other Assets
-	if config.GarchOtherAlpha < 0 || config.GarchOtherBeta < 0 || config.GarchOtherOmega <= 0 {
-		return fmt.Errorf("invalid GARCH Other parameters: alpha=%.6f, beta=%.6f, omega=%.6f",
-			config.GarchOtherAlpha, config.GarchOtherBeta, config.GarchOtherOmega)
+	if config.GarchOtherAlpha < 0 || config.GarchOtherBeta < 0 {
+		return fmt.Errorf("invalid GARCH Other parameters: alpha=%.6f, beta=%.6f",
+			config.GarchOtherAlpha, config.GarchOtherBeta)
 	}
 	if config.GarchOtherAlpha+config.GarchOtherBeta >= 1.0 {
-		return fmt.Errorf("GARCH Other parameters violate stationarity: alpha + beta = %.6f >= 1.0",
+		return fmt.Errorf("GARCH Other non-stationary: α+β = %.6f >= 1.0",
 			config.GarchOtherAlpha+config.GarchOtherBeta)
 	}
 
-	// Validate GARCH parameters for Individual Stock
-	if config.GarchIndividualStockAlpha < 0 || config.GarchIndividualStockBeta < 0 || config.GarchIndividualStockOmega <= 0 {
-		return fmt.Errorf("invalid GARCH Individual Stock parameters: alpha=%.6f, beta=%.6f, omega=%.6f",
-			config.GarchIndividualStockAlpha, config.GarchIndividualStockBeta, config.GarchIndividualStockOmega)
+	if config.GarchIndividualStockAlpha < 0 || config.GarchIndividualStockBeta < 0 {
+		return fmt.Errorf("invalid GARCH Individual Stock parameters: alpha=%.6f, beta=%.6f",
+			config.GarchIndividualStockAlpha, config.GarchIndividualStockBeta)
 	}
 	if config.GarchIndividualStockAlpha+config.GarchIndividualStockBeta >= 1.0 {
-		return fmt.Errorf("GARCH Individual Stock parameters violate stationarity: alpha + beta = %.6f >= 1.0",
+		return fmt.Errorf("GARCH Individual Stock non-stationary: α+β = %.6f >= 1.0",
 			config.GarchIndividualStockAlpha+config.GarchIndividualStockBeta)
 	}
 
@@ -748,67 +769,83 @@ func GenerateAdvancedStochasticReturns(state StochasticState, config *Stochastic
 		monthlyVolatilityRental = AnnualToMonthlyVolatility(config.VolatilityRentalIncomeGrowth)
 	}
 
-	// GARCH omega parameters: properly scale for monthly frequency
-	// For annual to monthly: ω_monthly = ω_annual / 12
-	// This ensures the long-run variance is preserved across frequencies
-	monthlyGarchSPYOmega := config.GarchSPYOmega / 12.0
-	monthlyGarchBondOmega := config.GarchBondOmega / 12.0
-	monthlyGarchIntlOmega := config.GarchIntlStockOmega / 12.0
-	monthlyGarchOtherOmega := config.GarchOtherOmega / 12.0
-	monthlyGarchIndividualStockOmega := config.GarchIndividualStockOmega / 12.0
+	// GARCH omega: use precomputed values derived from target unconditional vol.
+	// Variance clamped to prevent explosive behavior with fat-tailed shocks.
+	// Safety: if PrecomputedMonthly is nil, compute omega inline.
+	garchPM := config.PrecomputedMonthly
+	if garchPM == nil {
+		// Fallback: compute GARCH omega from target vol (shouldn't happen in normal flow)
+		volSPYm := AnnualToMonthlyVolatility(config.VolatilitySPY)
+		volBondm := AnnualToMonthlyVolatility(config.VolatilityBond)
+		volIntlm := AnnualToMonthlyVolatility(config.VolatilityIntlStock)
+		volOtherm := AnnualToMonthlyVolatility(config.VolatilityOther)
+		volIndivm := AnnualToMonthlyVolatility(config.VolatilityIndividualStock)
+		garchPM = &PrecomputedMonthlyParams{
+			GarchOmegaSPY:        volSPYm * volSPYm * (1 - config.GarchSPYAlpha - config.GarchSPYBeta),
+			GarchOmegaBond:       volBondm * volBondm * (1 - config.GarchBondAlpha - config.GarchBondBeta),
+			GarchOmegaIntl:       volIntlm * volIntlm * (1 - config.GarchIntlStockAlpha - config.GarchIntlStockBeta),
+			GarchOmegaOther:      volOtherm * volOtherm * (1 - config.GarchOtherAlpha - config.GarchOtherBeta),
+			GarchOmegaIndividual: volIndivm * volIndivm * (1 - config.GarchIndividualStockAlpha - config.GarchIndividualStockBeta),
+			GarchMaxVarSPY:        volSPYm * volSPYm * 6.25,
+			GarchMaxVarBond:       volBondm * volBondm * 6.25,
+			GarchMaxVarIntl:       volIntlm * volIntlm * 6.25,
+			GarchMaxVarOther:      volOtherm * volOtherm * 6.25,
+			GarchMaxVarIndividual: volIndivm * volIndivm * 6.25,
+		}
+	}
 
 	// --- GARCH(1,1) for SPY ---
 	monthlyLastSPYReturn := AnnualToMonthlyRate(state.SPYLastReturn)
 	spyDiff := monthlyLastSPYReturn - monthlyMeanSPYReturn
-	spyErrorSq := spyDiff * spyDiff
 	spyLastMonthlyVol := state.SPYVolatility / sqrt12
-	spyVariance := monthlyGarchSPYOmega +
-		config.GarchSPYAlpha*spyErrorSq +
+	spyVariance := garchPM.GarchOmegaSPY +
+		config.GarchSPYAlpha*spyDiff*spyDiff +
 		config.GarchSPYBeta*spyLastMonthlyVol*spyLastMonthlyVol
+	spyVariance = math.Min(spyVariance, garchPM.GarchMaxVarSPY)
 	newMonthlySPYVolatility := math.Sqrt(math.Max(1e-12, spyVariance))
 	monthlySPYReturn := monthlyMeanSPYReturn + newMonthlySPYVolatility*zSPY
 
 	// --- GARCH(1,1) for BND ---
 	monthlyLastBNDReturn := AnnualToMonthlyRate(state.BNDLastReturn)
 	bndDiff := monthlyLastBNDReturn - monthlyMeanBondReturn
-	bndErrorSq := bndDiff * bndDiff
 	bndLastMonthlyVol := state.BNDVolatility / sqrt12
-	bndVariance := monthlyGarchBondOmega +
-		config.GarchBondAlpha*bndErrorSq +
+	bndVariance := garchPM.GarchOmegaBond +
+		config.GarchBondAlpha*bndDiff*bndDiff +
 		config.GarchBondBeta*bndLastMonthlyVol*bndLastMonthlyVol
+	bndVariance = math.Min(bndVariance, garchPM.GarchMaxVarBond)
 	newMonthlyBNDVolatility := math.Sqrt(math.Max(1e-12, bndVariance))
 	monthlyBNDReturn := monthlyMeanBondReturn + newMonthlyBNDVolatility*zBND
 
 	// --- GARCH(1,1) for INTL Stocks ---
 	monthlyLastIntlReturn := AnnualToMonthlyRate(state.IntlLastReturn)
 	intlDiff := monthlyLastIntlReturn - monthlyMeanIntlReturn
-	intlErrorSq := intlDiff * intlDiff
 	intlLastMonthlyVol := state.IntlVolatility / sqrt12
-	intlVariance := monthlyGarchIntlOmega +
-		config.GarchIntlStockAlpha*intlErrorSq +
+	intlVariance := garchPM.GarchOmegaIntl +
+		config.GarchIntlStockAlpha*intlDiff*intlDiff +
 		config.GarchIntlStockBeta*intlLastMonthlyVol*intlLastMonthlyVol
+	intlVariance = math.Min(intlVariance, garchPM.GarchMaxVarIntl)
 	newMonthlyIntlVolatility := math.Sqrt(math.Max(1e-12, intlVariance))
 	monthlyIntlReturn := monthlyMeanIntlReturn + newMonthlyIntlVolatility*zIntl
 
 	// --- GARCH(1,1) for Other Assets ---
 	monthlyLastOtherReturn := AnnualToMonthlyRate(state.OtherLastReturn)
 	otherDiff := monthlyLastOtherReturn - monthlyMeanOtherReturn
-	otherErrorSq := otherDiff * otherDiff
 	otherLastMonthlyVol := state.OtherVolatility / sqrt12
-	otherVariance := monthlyGarchOtherOmega +
-		config.GarchOtherAlpha*otherErrorSq +
+	otherVariance := garchPM.GarchOmegaOther +
+		config.GarchOtherAlpha*otherDiff*otherDiff +
 		config.GarchOtherBeta*otherLastMonthlyVol*otherLastMonthlyVol
+	otherVariance = math.Min(otherVariance, garchPM.GarchMaxVarOther)
 	newMonthlyOtherVolatility := math.Sqrt(math.Max(1e-12, otherVariance))
 	monthlyOtherReturn := monthlyMeanOtherReturn + newMonthlyOtherVolatility*zOther
 
 	// --- GARCH(1,1) for Individual Stock ---
 	monthlyLastIndividualStockReturn := AnnualToMonthlyRate(state.IndividualStockLastReturn)
 	indivDiff := monthlyLastIndividualStockReturn - monthlyMeanIndividualStockReturn
-	individualStockErrorSq := indivDiff * indivDiff
 	indivLastMonthlyVol := state.IndividualStockVolatility / sqrt12
-	individualStockVariance := monthlyGarchIndividualStockOmega +
-		config.GarchIndividualStockAlpha*individualStockErrorSq +
+	individualStockVariance := garchPM.GarchOmegaIndividual +
+		config.GarchIndividualStockAlpha*indivDiff*indivDiff +
 		config.GarchIndividualStockBeta*indivLastMonthlyVol*indivLastMonthlyVol
+	individualStockVariance = math.Min(individualStockVariance, garchPM.GarchMaxVarIndividual)
 	newMonthlyIndividualStockVolatility := math.Sqrt(math.Max(1e-12, individualStockVariance))
 	monthlyIndividualStockReturn := monthlyMeanIndividualStockReturn + newMonthlyIndividualStockVolatility*zIndividualStock
 
@@ -1093,65 +1130,81 @@ func GenerateAdvancedStochasticReturnsSeeded(state StochasticState, config *Stoc
 		monthlyVolatilityRental = AnnualToMonthlyVolatility(config.VolatilityRentalIncomeGrowth)
 	}
 
-	// GARCH omega parameters: scale for monthly frequency
-	monthlyGarchSPYOmega := config.GarchSPYOmega / 12.0
-	monthlyGarchBondOmega := config.GarchBondOmega / 12.0
-	monthlyGarchIntlOmega := config.GarchIntlStockOmega / 12.0
-	monthlyGarchOtherOmega := config.GarchOtherOmega / 12.0
-	monthlyGarchIndividualStockOmega := config.GarchIndividualStockOmega / 12.0
+	// GARCH omega: use precomputed values derived from target unconditional vol.
+	pm2 := config.PrecomputedMonthly
+	if pm2 == nil {
+		// Fallback: compute GARCH omega from target vol
+		volSPYm := AnnualToMonthlyVolatility(config.VolatilitySPY)
+		volBondm := AnnualToMonthlyVolatility(config.VolatilityBond)
+		volIntlm := AnnualToMonthlyVolatility(config.VolatilityIntlStock)
+		volOtherm := AnnualToMonthlyVolatility(config.VolatilityOther)
+		volIndivm := AnnualToMonthlyVolatility(config.VolatilityIndividualStock)
+		pm2 = &PrecomputedMonthlyParams{
+			GarchOmegaSPY:        volSPYm * volSPYm * (1 - config.GarchSPYAlpha - config.GarchSPYBeta),
+			GarchOmegaBond:       volBondm * volBondm * (1 - config.GarchBondAlpha - config.GarchBondBeta),
+			GarchOmegaIntl:       volIntlm * volIntlm * (1 - config.GarchIntlStockAlpha - config.GarchIntlStockBeta),
+			GarchOmegaOther:      volOtherm * volOtherm * (1 - config.GarchOtherAlpha - config.GarchOtherBeta),
+			GarchOmegaIndividual: volIndivm * volIndivm * (1 - config.GarchIndividualStockAlpha - config.GarchIndividualStockBeta),
+			GarchMaxVarSPY:        volSPYm * volSPYm * 6.25,
+			GarchMaxVarBond:       volBondm * volBondm * 6.25,
+			GarchMaxVarIntl:       volIntlm * volIntlm * 6.25,
+			GarchMaxVarOther:      volOtherm * volOtherm * 6.25,
+			GarchMaxVarIndividual: volIndivm * volIndivm * 6.25,
+		}
+	}
 
 	// --- GARCH(1,1) for SPY ---
 	monthlyLastSPYReturn := AnnualToMonthlyRate(state.SPYLastReturn)
 	spyDiff := monthlyLastSPYReturn - monthlyMeanSPYReturn
-	spyErrorSq := spyDiff * spyDiff
 	spyLastMonthlyVol := state.SPYVolatility / sqrt12
-	spyVariance := monthlyGarchSPYOmega +
-		config.GarchSPYAlpha*spyErrorSq +
+	spyVariance := pm2.GarchOmegaSPY +
+		config.GarchSPYAlpha*spyDiff*spyDiff +
 		config.GarchSPYBeta*spyLastMonthlyVol*spyLastMonthlyVol
+	spyVariance = math.Min(spyVariance, pm2.GarchMaxVarSPY)
 	newMonthlySPYVolatility := math.Sqrt(math.Max(1e-12, spyVariance))
 	monthlySPYReturn := monthlyMeanSPYReturn + newMonthlySPYVolatility*zSPY
 
 	// --- GARCH(1,1) for BND ---
 	monthlyLastBNDReturn := AnnualToMonthlyRate(state.BNDLastReturn)
 	bndDiff := monthlyLastBNDReturn - monthlyMeanBondReturn
-	bndErrorSq := bndDiff * bndDiff
 	bndLastMonthlyVol := state.BNDVolatility / sqrt12
-	bndVariance := monthlyGarchBondOmega +
-		config.GarchBondAlpha*bndErrorSq +
+	bndVariance := pm2.GarchOmegaBond +
+		config.GarchBondAlpha*bndDiff*bndDiff +
 		config.GarchBondBeta*bndLastMonthlyVol*bndLastMonthlyVol
+	bndVariance = math.Min(bndVariance, pm2.GarchMaxVarBond)
 	newMonthlyBNDVolatility := math.Sqrt(math.Max(1e-12, bndVariance))
 	monthlyBNDReturn := monthlyMeanBondReturn + newMonthlyBNDVolatility*zBND
 
 	// --- GARCH(1,1) for INTL Stocks ---
 	monthlyLastIntlReturn := AnnualToMonthlyRate(state.IntlLastReturn)
 	intlDiff := monthlyLastIntlReturn - monthlyMeanIntlReturn
-	intlErrorSq := intlDiff * intlDiff
 	intlLastMonthlyVol := state.IntlVolatility / sqrt12
-	intlVariance := monthlyGarchIntlOmega +
-		config.GarchIntlStockAlpha*intlErrorSq +
+	intlVariance := pm2.GarchOmegaIntl +
+		config.GarchIntlStockAlpha*intlDiff*intlDiff +
 		config.GarchIntlStockBeta*intlLastMonthlyVol*intlLastMonthlyVol
+	intlVariance = math.Min(intlVariance, pm2.GarchMaxVarIntl)
 	newMonthlyIntlVolatility := math.Sqrt(math.Max(1e-12, intlVariance))
 	monthlyIntlReturn := monthlyMeanIntlReturn + newMonthlyIntlVolatility*zIntl
 
 	// --- GARCH(1,1) for Other Assets ---
 	monthlyLastOtherReturn := AnnualToMonthlyRate(state.OtherLastReturn)
 	otherDiff := monthlyLastOtherReturn - monthlyMeanOtherReturn
-	otherErrorSq := otherDiff * otherDiff
 	otherLastMonthlyVol := state.OtherVolatility / sqrt12
-	otherVariance := monthlyGarchOtherOmega +
-		config.GarchOtherAlpha*otherErrorSq +
+	otherVariance := pm2.GarchOmegaOther +
+		config.GarchOtherAlpha*otherDiff*otherDiff +
 		config.GarchOtherBeta*otherLastMonthlyVol*otherLastMonthlyVol
+	otherVariance = math.Min(otherVariance, pm2.GarchMaxVarOther)
 	newMonthlyOtherVolatility := math.Sqrt(math.Max(1e-12, otherVariance))
 	monthlyOtherReturn := monthlyMeanOtherReturn + newMonthlyOtherVolatility*zOther
 
 	// --- GARCH(1,1) for Individual Stock ---
 	monthlyLastIndividualStockReturn := AnnualToMonthlyRate(state.IndividualStockLastReturn)
 	indivDiff := monthlyLastIndividualStockReturn - monthlyMeanIndividualStockReturn
-	individualStockErrorSq := indivDiff * indivDiff
 	indivLastMonthlyVol := state.IndividualStockVolatility / sqrt12
-	individualStockVariance := monthlyGarchIndividualStockOmega +
-		config.GarchIndividualStockAlpha*individualStockErrorSq +
+	individualStockVariance := pm2.GarchOmegaIndividual +
+		config.GarchIndividualStockAlpha*indivDiff*indivDiff +
 		config.GarchIndividualStockBeta*indivLastMonthlyVol*indivLastMonthlyVol
+	individualStockVariance = math.Min(individualStockVariance, pm2.GarchMaxVarIndividual)
 	newMonthlyIndividualStockVolatility := math.Sqrt(math.Max(1e-12, individualStockVariance))
 	monthlyIndividualStockReturn := monthlyMeanIndividualStockReturn + newMonthlyIndividualStockVolatility*zIndividualStock
 
