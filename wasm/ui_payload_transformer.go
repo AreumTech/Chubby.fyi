@@ -2453,6 +2453,80 @@ func aggregateNetWorthTrajectory(samplePaths []SimulationResult, input Simulatio
 	startYear := input.StartYear
 	startAge := input.InitialAge
 
+	// pathNW pairs net worth with path index for sorting
+	type pathNW struct {
+		nw    float64
+		index int
+	}
+
+	// extractHoldings classifies holdings into an AccountDetail
+	extractHoldings := func(holdings []Holding) *AccountDetail {
+		if len(holdings) == 0 {
+			return nil
+		}
+		d := &AccountDetail{}
+		for _, h := range holdings {
+			switch h.AssetClass {
+			case AssetClassUSStocksTotalMarket:
+				d.USStocks += h.CurrentMarketValueTotal
+			case AssetClassInternationalStocks:
+				d.IntlStocks += h.CurrentMarketValueTotal
+			case AssetClassUSBondsTotalMarket:
+				d.Bonds += h.CurrentMarketValueTotal
+			case AssetClassIndividualStock:
+				d.Individual += h.CurrentMarketValueTotal
+			case AssetClassLeveragedSPY:
+				d.Leveraged += h.CurrentMarketValueTotal
+			default:
+				d.Other += h.CurrentMarketValueTotal
+			}
+		}
+		return d
+	}
+
+	// extractAccounts extracts account breakdown + per-account asset class detail from a path at a given month
+	extractAccounts := func(path SimulationResult, month int) *PercentileAccounts {
+		if month >= len(path.MonthlyData) {
+			return &PercentileAccounts{}
+		}
+		accts := path.MonthlyData[month].Accounts
+		pa := &PercentileAccounts{
+			Cash: accts.Cash,
+		}
+		if accts.Taxable != nil {
+			pa.Taxable = accts.Taxable.TotalValue
+			pa.TaxableDetail = extractHoldings(accts.Taxable.Holdings)
+		}
+		if accts.TaxDeferred != nil {
+			pa.TaxDeferred = accts.TaxDeferred.TotalValue
+			pa.TaxDefDetail = extractHoldings(accts.TaxDeferred.Holdings)
+		}
+		if accts.Roth != nil {
+			pa.Roth = accts.Roth.TotalValue
+			pa.RothDetail = extractHoldings(accts.Roth.Holdings)
+		}
+		// Include checking/savings in cash
+		if accts.Checking != nil {
+			pa.Cash += accts.Checking.TotalValue
+		}
+		if accts.Savings != nil {
+			pa.Cash += accts.Savings.TotalValue
+		}
+		return pa
+	}
+
+	// findPathAtPercentile finds the path index closest to the given percentile in a sorted slice
+	findPathAtPercentile := func(sorted []pathNW, p float64) int {
+		if len(sorted) == 0 {
+			return -1
+		}
+		idx := int(math.Round(p * float64(len(sorted)-1)))
+		if idx >= len(sorted) {
+			idx = len(sorted) - 1
+		}
+		return sorted[idx].index
+	}
+
 	// Aggregate at year-end (December) for each year
 	for y := 0; y < numYears; y++ {
 		// Use December of each year (month 11, 23, 35, ...)
@@ -2461,9 +2535,8 @@ func aggregateNetWorthTrajectory(samplePaths []SimulationResult, input Simulatio
 			monthOffset = maxMonths - 1 // Use last available month
 		}
 
-		// Collect net worth and annual spending at this month across all paths
-		// Count paths that are still funded (haven't breached cash floor) at this month
-		netWorths := make([]float64, 0, len(samplePaths))
+		// Collect net worth with path index, and annual spending
+		pathNetWorths := make([]pathNW, 0, len(samplePaths))
 		annualSpending := make([]float64, 0, len(samplePaths))
 		solventCount := 0
 
@@ -2473,24 +2546,20 @@ func aggregateNetWorthTrajectory(samplePaths []SimulationResult, input Simulatio
 			yearStartMonth = 0
 		}
 
-		for _, path := range samplePaths {
+		for i, path := range samplePaths {
 			if monthOffset < len(path.MonthlyData) {
 				nw := path.MonthlyData[monthOffset].NetWorth
-				netWorths = append(netWorths, nw)
-				// Path is funded if net worth is positive at this age
+				pathNetWorths = append(pathNetWorths, pathNW{nw: nw, index: i})
 				if nw > 0 {
 					solventCount++
 				}
-				// Sum annual spending for this year
 				var yearSpending float64
 				for m := yearStartMonth; m <= monthOffset && m < len(path.MonthlyData); m++ {
 					yearSpending += path.MonthlyData[m].ExpensesThisMonth
 				}
 				annualSpending = append(annualSpending, yearSpending)
 			} else {
-				// Bankrupt path: include as $0 instead of excluding (prevents survivorship bias)
-				netWorths = append(netWorths, 0.0)
-				// Sum spending for months that exist, 0 for months after data ends
+				pathNetWorths = append(pathNetWorths, pathNW{nw: 0, index: i})
 				var yearSpending float64
 				for m := yearStartMonth; m <= monthOffset && m < len(path.MonthlyData); m++ {
 					yearSpending += path.MonthlyData[m].ExpensesThisMonth
@@ -2499,16 +2568,28 @@ func aggregateNetWorthTrajectory(samplePaths []SimulationResult, input Simulatio
 			}
 		}
 
-		if len(netWorths) == 0 {
+		if len(pathNetWorths) == 0 {
 			continue
 		}
 
-		// Sort and calculate percentiles
-		sort.Float64s(netWorths)
+		// Sort by net worth (preserving path index)
+		sort.Slice(pathNetWorths, func(i, j int) bool {
+			return pathNetWorths[i].nw < pathNetWorths[j].nw
+		})
+
+		// Extract sorted net worths for percentile calculation
+		netWorths := make([]float64, len(pathNetWorths))
+		for i, pnw := range pathNetWorths {
+			netWorths[i] = pnw.nw
+		}
 		sort.Float64s(annualSpending)
 
-		// Pct paths funded = % of paths still funded (spending sustainable) at this age
 		pctPathsFunded := float64(solventCount) / float64(len(samplePaths))
+
+		// Find representative paths for each percentile and extract account breakdowns
+		p10Idx := findPathAtPercentile(pathNetWorths, 0.10)
+		p50Idx := findPathAtPercentile(pathNetWorths, 0.50)
+		p75Idx := findPathAtPercentile(pathNetWorths, 0.75)
 
 		point := NetWorthTrajectoryPoint{
 			MonthOffset:    monthOffset,
@@ -2523,6 +2604,16 @@ func aggregateNetWorthTrajectory(samplePaths []SimulationResult, input Simulatio
 			SpendingP10:    getPct(annualSpending, 0.10),
 			SpendingP50:    getPct(annualSpending, 0.50),
 			SpendingP75:    getPct(annualSpending, 0.75),
+		}
+
+		if p10Idx >= 0 {
+			point.P10Accounts = extractAccounts(samplePaths[p10Idx], monthOffset)
+		}
+		if p50Idx >= 0 {
+			point.P50Accounts = extractAccounts(samplePaths[p50Idx], monthOffset)
+		}
+		if p75Idx >= 0 {
+			point.P75Accounts = extractAccounts(samplePaths[p75Idx], monthOffset)
 		}
 
 		trajectory = append(trajectory, point)

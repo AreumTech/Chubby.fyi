@@ -110,10 +110,10 @@
       --focus-ring: 0 0 0 2px var(--color-link);
 
       /* Account type colors for stacked bar */
-      --color-account-cash: var(--gray-400);
-      --color-account-taxable: var(--color-link);
-      --color-account-tax-deferred: light-dark(#7c3aed, #a78bfa);
-      --color-account-roth: var(--color-positive);
+      --color-account-cash: light-dark(#b0b0b0, #505050);
+      --color-account-taxable: light-dark(#8bafc4, #6a8fa3);
+      --color-account-tax-deferred: light-dark(#a89bb8, #8878a0);
+      --color-account-roth: light-dark(#8cb89e, #6a9a7e);
 
     }
 
@@ -151,10 +151,10 @@
       --color-bar-negative: #e8d4d0;
       --color-bar-negative-border: #9a6458;
       --focus-ring: 0 0 0 2px #0285ff;
-      --color-account-cash: #8f8f8f;
-      --color-account-taxable: #0285ff;
-      --color-account-tax-deferred: #7c3aed;
-      --color-account-roth: #2d8a4e;
+      --color-account-cash: #b0b0b0;
+      --color-account-taxable: #8bafc4;
+      --color-account-tax-deferred: #a89bb8;
+      --color-account-roth: #8cb89e;
     }
 
     :root[data-theme="dark"] {
@@ -190,10 +190,10 @@
       --color-bar-negative: #3d2a27;
       --color-bar-negative-border: #c4897c;
       --focus-ring: 0 0 0 2px #60a5fa;
-      --color-account-cash: #414141;
-      --color-account-taxable: #60a5fa;
-      --color-account-tax-deferred: #a78bfa;
-      --color-account-roth: #6db88a;
+      --color-account-cash: #505050;
+      --color-account-taxable: #6a8fa3;
+      --color-account-tax-deferred: #8878a0;
+      --color-account-roth: #6a9a7e;
     }
 
     * {
@@ -1051,6 +1051,36 @@
     .minimal-ledger-accounts .val {
       font-weight: 500;
       color: var(--color-text-secondary);
+    }
+
+    /* Expandable percentile rows */
+    .pctl-detail {
+      margin: 0;
+    }
+    .pctl-detail > summary {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      cursor: pointer;
+      list-style: none;
+      color: var(--color-text-secondary);
+    }
+    .pctl-detail > summary::-webkit-details-marker { display: none; }
+    .pctl-detail > summary::marker { content: ''; }
+    .pctl-detail.pctl-total > summary {
+      border-top: 1px solid var(--color-border);
+      margin-top: var(--space-1);
+      padding-top: var(--space-2);
+      font-weight: 500;
+      color: var(--color-text);
+    }
+    .pctl-detail > summary > span:first-child::before {
+      content: '\25B8 ';
+      font-size: 0.7em;
+      color: var(--color-text-tertiary);
+    }
+    .pctl-detail[open] > summary > span:first-child::before {
+      content: '\25BE ';
     }
 
     /* =========================================================================
@@ -2846,6 +2876,58 @@
       '</div>';
     }
 
+    function renderPercentileAccountBreakdown(accts) {
+      if (!accts) return '';
+      const cash = accts.cash || 0;
+      const taxable = accts.taxable || 0;
+      const taxDeferred = accts.taxDeferred || 0;
+      const roth = accts.roth || 0;
+      const total = cash + taxable + taxDeferred + roth;
+      if (total <= 0) return '';
+
+      const pctCash = Math.round((cash / total) * 100);
+      const pctTaxable = Math.round((taxable / total) * 100);
+      const pctTaxDeferred = Math.round((taxDeferred / total) * 100);
+      const pctRoth = 100 - pctCash - pctTaxable - pctTaxDeferred;
+
+      let segments = '';
+      if (pctCash > 0) segments += '<div class="accounts-stack-segment cash" style="width:' + pctCash + '%"></div>';
+      if (pctTaxable > 0) segments += '<div class="accounts-stack-segment taxable" style="width:' + pctTaxable + '%"></div>';
+      if (pctTaxDeferred > 0) segments += '<div class="accounts-stack-segment tax-deferred" style="width:' + pctTaxDeferred + '%"></div>';
+      if (pctRoth > 0) segments += '<div class="accounts-stack-segment roth" style="width:' + pctRoth + '%"></div>';
+
+      // Helper: format asset class detail as inline parenthetical
+      function detailStr(d) {
+        if (!d) return '';
+        var parts = [];
+        if (d.usStocks) parts.push('US ' + fmt(d.usStocks));
+        if (d.intlStocks) parts.push("Int'l " + fmt(d.intlStocks));
+        if (d.bonds) parts.push('Bonds ' + fmt(d.bonds));
+        if (d.individual) parts.push('Indiv ' + fmt(d.individual));
+        if (d.leveraged) parts.push('Lev ' + fmt(d.leveraged));
+        if (d.other) parts.push('Other ' + fmt(d.other));
+        if (parts.length === 0) return '';
+        return ' <span style="font-size: var(--font-size-2xs); color: var(--color-text-tertiary);">(' + parts.join(' · ') + ')</span>';
+      }
+
+      let legend = '';
+      if (cash > 0) legend += '<div class="accounts-legend-item"><span class="accounts-legend-swatch cash"></span>Cash <span class="accounts-legend-value">' + fmt(cash) + '</span></div>';
+      if (taxable > 0) {
+        legend += '<div class="accounts-legend-item"><span class="accounts-legend-swatch taxable"></span>Taxable <span class="accounts-legend-value">' + fmt(taxable) + '</span>' + detailStr(accts.taxableDetail) + '</div>';
+      }
+      if (taxDeferred > 0) {
+        legend += '<div class="accounts-legend-item"><span class="accounts-legend-swatch tax-deferred"></span>Tax-def <span class="accounts-legend-value">' + fmt(taxDeferred) + '</span>' + detailStr(accts.taxDefDetail) + '</div>';
+      }
+      if (roth > 0) {
+        legend += '<div class="accounts-legend-item"><span class="accounts-legend-swatch roth"></span>Roth <span class="accounts-legend-value">' + fmt(roth) + '</span>' + detailStr(accts.rothDetail) + '</div>';
+      }
+
+      return '<div class="accounts-stack" style="border-top: none; margin-top: var(--space-1); padding-top: 0;">' +
+        '<div class="accounts-stack-bar">' + segments + '</div>' +
+        '<div class="accounts-legend" style="display: block;">' + legend + '</div>' +
+      '</div>';
+    }
+
     // Render summary header (start → delta → end)
     function renderInspectorSummary(start, end) {
       const delta = end - start;
@@ -3040,12 +3122,34 @@
       const isConstrained = pt ? (pt.p50 || 0) <= 0 : false;
 
       // Primary: P50/P10 headline (matches trajectory bar)
+      const p50Bd = renderPercentileAccountBreakdown(pt?.p50Accounts);
+      const p10Bd = renderPercentileAccountBreakdown(pt?.p10Accounts);
+      const p75Bd = renderPercentileAccountBreakdown(pt?.p75Accounts);
+
       let ledgerHtml = '<div class="minimal-ledger">' +
-        '<div class="minimal-ledger-row" style="font-weight: 500; color: var(--color-text-tertiary); font-size: var(--font-size-2xs); text-transform: uppercase; letter-spacing: 0.3px; padding-bottom: var(--space-2);">Net Worth at Age ' + age + '</div>' +
-        '<div class="minimal-ledger-row total"><span>Typical (P50)</span><span>' + (isConstrained ? '$0 ⚠️' : fmt(p50)) + '</span></div>' +
-        '<div class="minimal-ledger-row"><span>Harder scenarios (P10)</span><span>' + fmt(p10) + '</span></div>';
+        '<div class="minimal-ledger-row" style="font-weight: 500; color: var(--color-text-tertiary); font-size: var(--font-size-2xs); text-transform: uppercase; letter-spacing: 0.3px; padding-bottom: var(--space-2);">Net Worth at Age ' + age + '</div>';
+
+      // P50 row
+      if (p50Bd && !isConstrained) {
+        ledgerHtml += '<details class="pctl-detail pctl-total"><summary><span>Typical (P50)</span><span>' + fmt(p50) + '</span></summary>' + p50Bd + '</details>';
+      } else {
+        ledgerHtml += '<div class="minimal-ledger-row total"><span>Typical (P50)</span><span>' + (isConstrained ? '$0 ⚠️' : fmt(p50)) + '</span></div>';
+      }
+
+      // P10 row
+      if (p10Bd) {
+        ledgerHtml += '<details class="pctl-detail"><summary><span>Harder scenarios (P10)</span><span>' + fmt(p10) + '</span></summary>' + p10Bd + '</details>';
+      } else {
+        ledgerHtml += '<div class="minimal-ledger-row"><span>Harder scenarios (P10)</span><span>' + fmt(p10) + '</span></div>';
+      }
+
+      // P75 row
       if (p75 > 0 && !isConstrained) {
-        ledgerHtml += '<div class="minimal-ledger-row"><span>Stronger markets (P75)</span><span>' + fmt(p75) + '</span></div>';
+        if (p75Bd) {
+          ledgerHtml += '<details class="pctl-detail"><summary><span>Stronger markets (P75)</span><span>' + fmt(p75) + '</span></summary>' + p75Bd + '</details>';
+        } else {
+          ledgerHtml += '<div class="minimal-ledger-row"><span>Stronger markets (P75)</span><span>' + fmt(p75) + '</span></div>';
+        }
       }
       if (isConstrained) {
         ledgerHtml += '<div style="margin-top: var(--space-2); padding: var(--space-2); background: rgba(217, 115, 13, 0.1); border-radius: 4px; font-size: var(--font-size-2xs); color: #d9730d;">Assets depleted — spending exceeded available resources.</div>';

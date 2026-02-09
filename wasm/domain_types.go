@@ -1535,6 +1535,27 @@ type MCBreachProbability struct {
 	NewBreachesThisMonth int     `json:"newBreachesThisMonth"` // Count of paths first breaching this month
 }
 
+// AccountDetail holds per-asset-class breakdown within a single account
+type AccountDetail struct {
+	USStocks   float64 `json:"usStocks,omitempty"`
+	IntlStocks float64 `json:"intlStocks,omitempty"`
+	Bonds      float64 `json:"bonds,omitempty"`
+	Individual float64 `json:"individual,omitempty"` // Individual stock positions
+	Leveraged  float64 `json:"leveraged,omitempty"`  // Leveraged ETFs
+	Other      float64 `json:"other,omitempty"`
+}
+
+// PercentileAccounts represents account-level breakdown for a representative path at a given percentile
+type PercentileAccounts struct {
+	Cash          float64        `json:"cash"`
+	Taxable       float64        `json:"taxable"`
+	TaxDeferred   float64        `json:"taxDeferred"`
+	Roth          float64        `json:"roth"`
+	TaxableDetail *AccountDetail `json:"taxableDetail,omitempty"`
+	TaxDefDetail  *AccountDetail `json:"taxDefDetail,omitempty"`
+	RothDetail    *AccountDetail `json:"rothDetail,omitempty"`
+}
+
 // NetWorthTrajectoryPoint represents net worth percentiles at a specific time point
 // Used for fan chart visualization showing outcome dispersion over time
 type NetWorthTrajectoryPoint struct {
@@ -1550,6 +1571,9 @@ type NetWorthTrajectoryPoint struct {
 	SpendingP10    float64 `json:"spendingP10,omitempty"`    // Annual spending 10th percentile
 	SpendingP50    float64 `json:"spendingP50,omitempty"`    // Annual spending median
 	SpendingP75    float64 `json:"spendingP75,omitempty"`    // Annual spending 75th percentile
+	P10Accounts    *PercentileAccounts `json:"p10Accounts,omitempty"` // Account breakdown for path near P10
+	P50Accounts    *PercentileAccounts `json:"p50Accounts,omitempty"` // Account breakdown for path near P50
+	P75Accounts    *PercentileAccounts `json:"p75Accounts,omitempty"` // Account breakdown for path near P75
 }
 
 // ExemplarPath holds reference to median path (trace fetched separately)
