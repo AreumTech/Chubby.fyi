@@ -2633,7 +2633,16 @@
       // Click and keyboard handlers for trajectory rows
       document.querySelectorAll('.traj-row').forEach(row => {
         const handler = () => {
-          showInspector(parseInt(row.dataset.age), parseInt(row.dataset.year));
+          const age = parseInt(row.dataset.age);
+          const inspector = document.getElementById('inspector');
+          if (inspector.classList.contains('visible') && inspector._openAge === age) {
+            inspector.classList.remove('visible');
+            inspector.setAttribute('aria-hidden', 'true');
+            inspector._openAge = null;
+            if (inspector._triggerEl) { inspector._triggerEl.focus(); inspector._triggerEl = null; }
+            return;
+          }
+          showInspector(age, parseInt(row.dataset.year));
         };
         row.addEventListener('click', handler);
         row.addEventListener('keydown', e => {
@@ -3186,6 +3195,7 @@
 
       inspector.classList.add('visible');
       inspector.setAttribute('aria-hidden', 'false');
+      inspector._openAge = age;
 
       // Track triggering element for focus return
       inspector._triggerEl = document.activeElement;
@@ -3715,6 +3725,7 @@
         const inspector = document.getElementById('inspector');
         inspector.classList.remove('visible');
         inspector.setAttribute('aria-hidden', 'true');
+        inspector._openAge = null;
         // Return focus to the row that opened the inspector
         if (inspector._triggerEl) {
           inspector._triggerEl.focus();
